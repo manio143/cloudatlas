@@ -1,0 +1,1 @@
+SELECT (SELECT avg(cpu_usage) WHERE false) AS smth

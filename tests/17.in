@@ -1,0 +1,1 @@
+SELECT floor(5.0 / 1.9) AS fl

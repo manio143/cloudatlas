@@ -1,0 +1,1 @@
+SELECT to_integer((to_double(3) - 5.6) / 11.0 + to_double(47 * (31 - 15))) AS math WHERE true

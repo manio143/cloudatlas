@@ -1,0 +1,1 @@
+SELECT land(cpu_usage < 0.5) AS cpu_ok

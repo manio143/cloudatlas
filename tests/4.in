@@ -1,0 +1,1 @@
+SELECT first(99, name) AS new_contacts ORDER BY cpu_usage DESC NULLS LAST, num_cores ASC NULLS FIRST

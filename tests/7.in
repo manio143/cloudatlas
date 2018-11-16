@@ -1,0 +1,1 @@
+SELECT first(1, name) + last(1,name) AS concat_name WHERE num_cores >= (SELECT min(num_cores) ORDER BY timestamp) ORDER BY creation ASC NULLS LAST

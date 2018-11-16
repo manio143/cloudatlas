@@ -1,0 +1,1 @@
+SELECT lor(unfold(some_names) + "xx" REGEXP "([a-z]*)atkax([a-z]*)") AS beatka

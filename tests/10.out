@@ -1,0 +1,6 @@
+/uw: min_name: khaki13
+/uw: max_name: [violet07]
+/pjwstk: min_name: whatever01
+/pjwstk: max_name: [whatever02]
+/: min_name: pjwstk
+/: max_name: [uw]

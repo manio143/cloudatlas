@@ -1,0 +1,1 @@
+SELECT min(name) AS min_name, to_string(first(1, name)) AS max_name ORDER BY name DESC

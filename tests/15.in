@@ -1,0 +1,1 @@
+SELECT avg(cpu_usage) AS cpu_usage WHERE (SELECT sum(cardinality)) > (SELECT to_integer((1 + 2 + 3 + 4) / 5))

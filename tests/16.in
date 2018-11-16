@@ -1,0 +1,1 @@
+SELECT ceil(to_double(min(num_cores)) / 1.41) AS sth

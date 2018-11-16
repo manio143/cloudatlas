@@ -1,0 +1,1 @@
+SELECT avg(cpu_usage * to_double(num_cores)) AS cpu_load, sum(num_cores) AS num_cores

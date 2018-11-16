@@ -1,0 +1,1 @@
+SELECT min(sum(distinct(2 * level)) + 38 * size(contacts)) AS sth WHERE num_cores < 8

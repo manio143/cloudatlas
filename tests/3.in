@@ -1,0 +1,1 @@
+SELECT count(members) AS members_count

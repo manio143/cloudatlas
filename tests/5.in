@@ -1,0 +1,1 @@
+SELECT count(num_cores - size(some_names)) AS sth
