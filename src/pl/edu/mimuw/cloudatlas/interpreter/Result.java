@@ -150,13 +150,11 @@ abstract class Result {
 	public abstract ValueList getColumn();
 
 	public ResultSingle aggregationOperation(AggregationOperation operation) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		return new ResultSingle(operation.perform(getList()));
 	}
 
 	public Result transformOperation(TransformOperation operation) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		return new ResultList(operation.perform(getList()));
 	}
 
 	public Result isEqual(Result right) {
