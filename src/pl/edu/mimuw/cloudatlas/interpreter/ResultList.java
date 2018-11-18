@@ -25,37 +25,52 @@
 package pl.edu.mimuw.cloudatlas.interpreter;
 
 import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
-class ResultSingle extends Result {
+class ResultList extends Result {
 	private final ValueList value;
 
-	public ResultSingle(ValueList value) {
+	public ResultList(ValueList value) {
 		this.value = value;
 	}
 	
 	@Override
 	protected ResultList binaryOperationTyped(BinaryOperation operation, ResultSingle right) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		ValueList r = new ValueList(((TypeCollection)value.getType()).getElementType());
+		for (Value v : value.getValue()) {
+			r.add(operation.perform(v, right.getValue()));
+		}
+		return new ResultList(r);
 	}
 
 	@Override
 	public ResultList unaryOperation(UnaryOperation operation) {
-		// TODO
-		throw new UnsupportedOperationException("Not yet implemented");
+		ValueList r = new ValueList(((TypeCollection)value.getType()).getElementType());
+		for (Value v : value.getValue()) {
+			r.add(operation.perform(v));
+		}
+		return new ResultList(r);
+	}
+
+	@Override
+	public Result binaryOperation(BinaryOperation operation, Result right) {
+		if(right.getValue().getType().isCollection())
+			return new ResultList((ValueList)operation.perform(value, right.getValue()));
+		return binaryOperationTyped(operation, (ResultSingle)right);
 	}
 
 	@Override
 	protected Result callMe(BinaryOperation operation, Result left) {
-		return left.binaryOperationTyped(operation, this);
+		throw new UnsupportedOperationException("Not a ResultSingle");
 	}
 
 	@Override
 	public Value getValue() {
-		throw new UnsupportedOperationException("Not a ResultSingle");		
+		throw new UnsupportedOperationException("Not a ResultSingle");
 	}
 
 	@Override
@@ -70,25 +85,20 @@ class ResultSingle extends Result {
 
 	@Override
 	public Result filterNulls() {
-		return transformOperation(new TransformOperation {
-			public ValueList perform(ValueList values) {
-				// TODO
-				throw new UnsupportedOperationException("Not yet implemented");
-			}
-		})
+		return new ResultList(filterNullsList(value));
 	}
 
 	@Override
 	public Result first(int size) {
-		for(Value v : value.getList())
-			return v;
-		return new ResultSingle(new ValueNull());
+		for(Value v : value.getValue())
+			return new ResultSingle(v);
+		return new ResultSingle(ValueNull.getInstance());
 	}
 
 	@Override
 	public Result last(int size) {
-		Value r = new ValueNull();
-		for(Value v : value.getList())
+		Value r = ValueNull.getInstance();
+		for(Value v : value.getValue())
 			r = v;
 		return new ResultSingle(r);
 	}
@@ -99,8 +109,11 @@ class ResultSingle extends Result {
 	}
 
 	@Override
-	public ResultList convertTo(Type to) {
-		return new ResultList(value.convertTo(to));
+	public Result convertTo(Type to) {
+		Value v = value.convertTo(to);
+		if(v.getType().getPrimaryType().equals(Type.PrimaryType.LIST))
+			return new ResultList((ValueList)v);
+		else return new ResultSingle(v);
 	}
 
 	@Override
