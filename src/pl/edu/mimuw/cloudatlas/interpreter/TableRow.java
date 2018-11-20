@@ -43,4 +43,12 @@ public class TableRow {
 	public Value getIth(int i) {
 		return columns[i];
 	}
+
+	@Override
+	public String toString() {
+		String r = "";
+		for (Value c : columns)
+			r += c + "\t";
+		return r;
+	}
 }

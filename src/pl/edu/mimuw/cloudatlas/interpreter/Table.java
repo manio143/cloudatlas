@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
@@ -85,6 +86,17 @@ public class Table implements Iterable<TableRow> {
 					+ row.getSize() + ".");
 		rows.add(row);
 	}
+	
+	public Environment collapse() {
+		List<Value> values = new ArrayList<>(columns.size());
+		for (int i = 0; i < columns.size(); i++)
+			values.add(new ValueList(rows.size() > 0 ? rows.get(0).getIth(i).getType() : TypePrimitive.NULL));
+		for (TableRow tr : rows) {
+			for (int i = 0; i < columns.size(); i++)
+				((ValueList)values.get(i)).add(tr.getIth(i));
+		}
+		return new Environment(new TableRow(values.toArray(new Value[0])), getColumns());
+	}
 
 	public int getColumnIndex(String column) {
 		try {
@@ -119,5 +131,17 @@ public class Table implements Iterable<TableRow> {
 
 	public void sort(Comparator<TableRow> comparator) {
 		Collections.sort(rows, comparator);
+	}
+
+	@Override
+	public String toString() {
+		String header = "";
+		for (String c : getColumns())
+			header += c + "\t";
+		header += "\n";
+		String rows = "";
+		for (TableRow tr : this)
+			rows += tr + "\n";
+		return header + rows;
 	}
 }
