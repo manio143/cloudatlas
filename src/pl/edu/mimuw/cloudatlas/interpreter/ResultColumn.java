@@ -24,33 +24,30 @@
 
 package pl.edu.mimuw.cloudatlas.interpreter;
 
+import java.util.List;
+
 import pl.edu.mimuw.cloudatlas.model.Type;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
-class ResultList extends Result {
-	private final ValueList value;
+class ResultColumn extends Result {
+	private final List<Value> value;
 
-	public ResultList(ValueList value) {
-		this.value = value;
+	public ResultColumn(ValueList value) {
+		this.value = value.isNull() ? null : value.getValue();
 	}
 	
 	@Override
-	protected ResultList binaryOperationTyped(BinaryOperation operation, Result right) {
+	protected Result binaryOperationTyped(BinaryOperation operation, Result right) {
 		if (right.isSingle())
-			return new ResultList(map(new Transform() {
+			return new ResultColumn(map(new Transform() {
 				public Value transform(Value v) {
 					return operation.perform(v, right.getValue());
 				}
 			}));
-		if (operation.equals(ADD_VALUE)) {
-			return new ResultList(getList().addValue(right.getList()));
-		}
-		return new ResultList(zipWith(right, new Zipper() {
+		return new ResultColumn(zipWith(right, new Zipper() {
 			public Value zipf(Value e1, Value e2) {
 				return operation.perform(e1, e2);
 			}
@@ -58,8 +55,8 @@ class ResultList extends Result {
 	}
 
 	@Override
-	public ResultList unaryOperation(UnaryOperation operation) {
-		return new ResultList(map(new Transform() {
+	public Result unaryOperation(UnaryOperation operation) {
+		return new ResultColumn(map(new Transform() {
             public Value transform(Value v) {
                 return operation.perform(v);
             }
@@ -68,17 +65,17 @@ class ResultList extends Result {
 
 	@Override
 	public Value getValue() {
-		return getList();
+		return new ValueList(value, value.size() > 0 ? value.get(0).getType() : ValueNull.getInstance().getType());
 	}
 
 	@Override
 	public ValueList getList() {
-		return value;
+		return (ValueList) getValue();
 	}
 
 	@Override
 	public ValueList getColumn() {
-		throw new UnsupportedOperationException("Not a ResultColumn.");
+		return (ValueList) getValue();		
 	}
 
 	@Override
@@ -103,7 +100,7 @@ class ResultList extends Result {
 
 	@Override
 	public Result convertTo(Type to) {
-		return new ResultList(map(new Transform() {
+		return new ResultColumn(map(new Transform() {
             public Value transform(Value v) {
                 return v.convertTo(to);
             }
@@ -112,11 +109,12 @@ class ResultList extends Result {
 
 	@Override
 	public ResultSingle isNull() {
-		return new ResultSingle(new ValueBoolean(value.isNull()));
+		return new ResultSingle(new ValueBoolean(value == null));
 	}
 
 	@Override
 	public Type getType() {
-		return value.getType();
+		Type type = value.size() > 0 ? value.get(0).getType() : ValueNull.getInstance().getType();
+		return type;
 	}
 }

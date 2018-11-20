@@ -28,6 +28,7 @@ import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 class ResultSingle extends Result {
 	private final Value value;
@@ -37,18 +38,19 @@ class ResultSingle extends Result {
 	}
 	
 	@Override
-	protected ResultSingle binaryOperationTyped(BinaryOperation operation, ResultSingle right) {
-		return new ResultSingle(operation.perform(value, right.value));
+	protected Result binaryOperationTyped(BinaryOperation operation, Result right) {
+		if(right.isSingle())
+			return new ResultSingle(operation.perform(value, right.getValue()));
+		return new ResultList(right.map(new Transform() {
+			public Value transform(Value v) {
+				return operation.perform(v, value);
+			}
+		}));
 	}
 
 	@Override
 	public ResultSingle unaryOperation(UnaryOperation operation) {
 		return new ResultSingle(operation.perform(value));
-	}
-
-	@Override
-	protected Result callMe(BinaryOperation operation, Result left) {
-		return left.binaryOperationTyped(operation, this);
 	}
 
 	@Override
@@ -58,6 +60,8 @@ class ResultSingle extends Result {
 
 	@Override
 	public ValueList getList() {
+		if (value.isNull())
+			return new ValueList(ValueNull.getInstance().getType());
 		throw new UnsupportedOperationException("Not a ResultList.");
 	}
 
@@ -99,5 +103,10 @@ class ResultSingle extends Result {
 	@Override
 	public Type getType() {
 		return value.getType();
+	}
+
+	@Override
+	public boolean isSingle() {
+		return true;
 	}
 }

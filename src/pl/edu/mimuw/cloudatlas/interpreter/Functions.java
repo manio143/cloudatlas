@@ -146,6 +146,9 @@ class Functions {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
 			ValueList nlist = Result.filterNullsList(values);
+			if(((TypeCollection)nlist.getType()).getElementType().getPrimaryType().equals(Type.PrimaryType
+			.NULL))
+				return new ValueBoolean(null);
 			if(nlist.getValue() == null) {
 				return new ValueBoolean(null);
 			} else if(values.isEmpty()) {
@@ -166,6 +169,9 @@ class Functions {
 		@Override
 		public ValueBoolean perform(ValueList values) { // lazy
 			ValueList nlist = Result.filterNullsList(values);
+			if(((TypeCollection)nlist.getType()).getElementType().getPrimaryType().equals(Type.PrimaryType
+			.NULL))
+				return new ValueBoolean(null);
 			if(nlist.getValue() == null) {
 				return new ValueBoolean(null);
 			} else if(values.isEmpty()) {
@@ -219,16 +225,20 @@ class Functions {
 	private static final TransformOperation UNFOLD = new TransformOperation() {
 		@Override
 		public ValueList perform(ValueList values) {
-			if(!((TypeCollection)values.getType()).getElementType().isCollection()) {
+			Type elementType = ((TypeCollection)values.getType()).getElementType();
+			if (elementType.getPrimaryType().equals(Type.PrimaryType.NULL)) {
+				return new ValueList(elementType);
+			}
+			if(!elementType.isCollection()) {
 				throw new IllegalArgumentException("All elements must have a collection compatible type.");
 			}
 			ValueList nlist = Result.filterNullsList(values);
 			if(nlist.getValue() == null) {
 				return new ValueList(null,
-						((TypeCollection)((TypeCollection)values.getType()).getElementType()).getElementType());
+						((TypeCollection)elementType).getElementType());
 			} else if(nlist.isEmpty()) {
 				return new ValueList(
-						((TypeCollection)((TypeCollection)values.getType()).getElementType()).getElementType());
+						((TypeCollection)elementType).getElementType());
 			}
 			List<Value> ret = new ArrayList<Value>();
 			for(Value v : nlist) {
@@ -298,7 +308,7 @@ class Functions {
 	}
 
 	public Result evaluate(String name, List<Result> arguments) {
-		switch(name) {
+		switch(name.toLowerCase()) {
 			case "round":
 				if(arguments.size() == 1)
 					return arguments.get(0).unaryOperation(ROUND);

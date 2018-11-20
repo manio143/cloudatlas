@@ -31,6 +31,7 @@ import pl.edu.mimuw.cloudatlas.model.Type;
 import pl.edu.mimuw.cloudatlas.model.TypeCollection;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueList;
+import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 abstract class Result {
 	public interface BinaryOperation {
@@ -63,7 +64,7 @@ abstract class Result {
 		}
 	};
 
-	private static final BinaryOperation ADD_VALUE = new BinaryOperation() {
+	protected static final BinaryOperation ADD_VALUE = new BinaryOperation() {
 		@Override
 		public Value perform(Value v1, Value v2) {
 			return v1.addValue(v2);
@@ -133,7 +134,7 @@ abstract class Result {
 		}
 	};
 
-	protected abstract Result binaryOperationTyped(BinaryOperation operation, ResultSingle right);
+	protected abstract Result binaryOperationTyped(BinaryOperation operation, Result right);
 
 	public Result binaryOperation(BinaryOperation operation, Result right) {
 		return right.callMe(operation, this);
@@ -141,7 +142,9 @@ abstract class Result {
 
 	public abstract Result unaryOperation(UnaryOperation operation);
 
-	protected abstract Result callMe(BinaryOperation operation, Result left);
+	protected Result callMe(BinaryOperation operation, Result left) {
+		return left.binaryOperationTyped(operation, this);
+	}
 
 	public abstract Value getValue();
 
@@ -212,7 +215,7 @@ abstract class Result {
 		for(Value v : list)
 			if(!v.isNull())
 				result.add(v);
-		return new ValueList(result.isEmpty()? null : result, ((TypeCollection)list.getType()).getElementType());
+		return new ValueList(result, ((TypeCollection)list.getType()).getElementType());
 	}
 
 	public abstract Result filterNulls();
@@ -259,5 +262,38 @@ abstract class Result {
 
 	public abstract ResultSingle isNull();
 
+	public boolean isSingle() {
+		return false;
+	}
+
 	public abstract Type getType();
+
+	protected interface Transform {
+        Value transform(Value v);
+    }
+
+	protected ValueList map(Transform t) {
+		ValueList value = getList();
+		Type type = value.size() > 0 ? t.transform(value.get(0)).getType() : ValueNull.getInstance().getType();
+        ValueList r = new ValueList(type);
+        for (Value v : value) {
+            r.add(t.transform(v));
+        }
+        return r;
+    }
+
+    protected interface Zipper {
+        Value zipf(Value e1, Value e2);
+    }
+
+	protected ValueList zipWith(Result v, Zipper z) {
+		ValueList value = getList();
+		Type type = value.size() > 0 ? value.get(0).getType() : ValueNull.getInstance().getType();	
+        ValueList r = new ValueList(type);
+        List<Value> left = value;
+        List<Value> right = v.getList();
+        for (int i = 0; i < Math.min(left.size(), right.size()); i++)
+            r.add(z.zipf(left.get(i), right.get(i)));
+        return r;
+    }
 }

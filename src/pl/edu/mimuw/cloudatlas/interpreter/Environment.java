@@ -28,23 +28,36 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.Value;
+import pl.edu.mimuw.cloudatlas.model.ValueList;
 import pl.edu.mimuw.cloudatlas.model.ValueNull;
 
 class Environment {
 	private final TableRow row;
 	private final Map<String, Integer> columns = new HashMap<String, Integer>();
+	private boolean requireColumns = false;
 
 	public Environment(TableRow row, List<String> columns) {
 		this.row = row;
 		int i = 0;
-		for(String c : columns)
+		for (String c : columns)
 			this.columns.put(c, i++);
+	}
+	
+	public void setSelect() {
+		requireColumns = true;
 	}
 
 	public Result getIdent(String ident) {
 		try {
-			return new ResultSingle(row.getIth(columns.get(ident)));
-		} catch(NullPointerException exception) {
+			Value v = row.getIth(columns.get(ident));
+			if (v.getType().getPrimaryType() == Type.PrimaryType.LIST)
+				return new ResultColumn((ValueList) v);
+			return new ResultSingle(v);
+		} catch (NullPointerException exception) {
+			if (requireColumns)
+				throw new InternalInterpreterException("No such attribute: \"" + ident + "\"");
 			return new ResultSingle(ValueNull.getInstance());
 		}
 	}
