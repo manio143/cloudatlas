@@ -147,11 +147,28 @@ public class ValueDuration extends ValueSimple<Long> {
 	}
 	
 	@Override
+	public String toString() {
+		if(getValue() == 0)
+			return "+0";
+		long remaining = getValue();
+		int days = (int) Math.floor(remaining / (1000 * 60 * 60 * 24));
+		remaining -= days * 24 * 60 * 60 * 1000;
+		int hours = (int) Math.floor(remaining / (1000 * 60 * 60));
+		remaining -= hours * 60 * 60 * 1000;
+		int minutes = (int) Math.floor(remaining / (1000 * 60));
+		remaining -= minutes * 60 * 1000;
+		int seconds = (int) Math.floor(remaining / 1000);
+		remaining -= seconds * 1000;
+		int milliseconds = (int) remaining;
+		return String.format("%s%d %02d:%02d:%02d.%03d", getValue() > 0 ? "+" : "-", days, hours, minutes, seconds, milliseconds);
+	}
+
+	@Override
 	public ValueBoolean isLowerThan(Value value) {
 		sameTypesOrThrow(value, Operation.COMPARE);
 		if(isNull() || value.isNull())
 			return new ValueBoolean(null);
-		return new ValueBoolean(getValue() < ((ValueDuration)value).getValue());
+		return new ValueBoolean(getValue() < ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override
@@ -159,7 +176,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.ADD);
 		if(isNull() || value.isNull())
 			return new ValueDuration((Long)null);
-		return new ValueDuration(getValue() + ((ValueDuration)value).getValue());
+		return new ValueDuration(getValue() + ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override
@@ -167,7 +184,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.SUBTRACT);
 		if(isNull() || value.isNull())
 			return new ValueDuration((Long)null);
-		return new ValueDuration(getValue() - ((ValueDuration)value).getValue());
+		return new ValueDuration(getValue() - ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override
@@ -175,7 +192,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.MULTIPLY);
 		if(isNull() || value.isNull())
 			return new ValueDuration((Long)null);
-		return new ValueDuration(getValue() * ((ValueDuration)value).getValue());
+		return new ValueDuration(getValue() * ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override
@@ -183,7 +200,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.DIVIDE);
 		if(isNull() || value.isNull())
 			return new ValueDuration((Long)null);
-		return new ValueDuration(getValue() / ((ValueDuration)value).getValue());
+		return new ValueDuration(getValue() / ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override
@@ -191,7 +208,7 @@ public class ValueDuration extends ValueSimple<Long> {
 		sameTypesOrThrow(value, Operation.SUBTRACT);
 		if(isNull() || value.isNull())
 			return new ValueDuration((Long)null);
-		return new ValueDuration(getValue() % ((ValueDuration)value).getValue());
+		return new ValueDuration(getValue() % ((ValueDuration)value.convertTo(getType())).getValue());
 	}
 	
 	@Override

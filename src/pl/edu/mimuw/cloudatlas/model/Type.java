@@ -67,7 +67,7 @@ public abstract class Type {
 	 * @see ValueNull
 	 */
 	public boolean isCompatible(Type type) {
-		return getPrimaryType() == PrimaryType.NULL || type.getPrimaryType() == PrimaryType.NULL || getPrimaryType() == type.getPrimaryType();
+		return getPrimaryType() == PrimaryType.NULL || type.getPrimaryType() == PrimaryType.NULL || getPrimaryType() == type.getPrimaryType() || (getPrimaryType() == PrimaryType.INT && type.getPrimaryType() == PrimaryType.DURATION) || (getPrimaryType() == PrimaryType.DURATION && type.getPrimaryType() == PrimaryType.INT);
 	}
 	
 	/**
