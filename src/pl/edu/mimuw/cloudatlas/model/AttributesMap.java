@@ -270,6 +270,10 @@ public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneab
 		return result;
 	}
 	
+	public int size() {
+		return map.size();
+	}
+
 	/**
 	 * Returns a string representation of this map listing all key-value pairs stored in it.
 	 * 
