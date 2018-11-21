@@ -148,6 +148,8 @@ public class ValueDuration extends ValueSimple<Long> {
 	
 	@Override
 	public String toString() {
+		if (getValue() == null)
+			return ValueString.NULL_STRING.getValue();
 		if(getValue() == 0)
 			return "+0";
 		long remaining = getValue();
