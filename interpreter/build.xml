@@ -1,0 +1,23 @@
+<project name="CloudAtlas interpreter" default="compile" basedir=".">
+	<property name="build" location="bin"/>
+
+	<target name="init">
+		<tstamp/>
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="compile" depends="init">
+		<javac srcdir="src:../model/src" destdir="${build}" includeantruntime="false" debug="true">
+			<classpath>
+				<pathelement path="${classpath}"/>
+				<fileset dir="lib">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}"/>
+	</target>
+</project>

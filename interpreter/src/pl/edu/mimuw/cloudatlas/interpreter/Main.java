@@ -79,7 +79,7 @@ public class Main {
 					System.out.println(zone + ": " + r);
 					zmi.getAttributes().addOrChange(r.getName(), r.getValue());
 				}
-			} catch(InterpreterException exception) {}
+			} catch (InterpreterException e) { }
 		}
 	}
 	
