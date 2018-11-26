@@ -24,10 +24,13 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * A type of a value that may be stored as an attribute.
  */
-public abstract class Type {
+public abstract class Type implements Serializable {
 	/**
 	 * A primary type. This is a characteristic that every type has. It can be extended: for instance a collection may
 	 * be parameterized with a type of stored values.
@@ -36,7 +39,7 @@ public abstract class Type {
 		BOOLEAN, CONTACT, DOUBLE, DURATION, INT, LIST, NULL, SET, STRING, TIME,
 	}
 	
-	private final PrimaryType primaryType;
+	protected PrimaryType primaryType;
 	
 	/**
 	 * Creates a <code>Type</code> object with a given primary type.
@@ -46,7 +49,7 @@ public abstract class Type {
 	public Type(PrimaryType primaryType) {
 		this.primaryType = primaryType;
 	}
-	
+
 	/**
 	 * Returns a primary type of this type.
 	 * 
@@ -55,7 +58,23 @@ public abstract class Type {
 	public PrimaryType getPrimaryType() {
 		return primaryType;
 	}
-	
+
+//	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+//		SerializationOutputStream sos = new SerializationOutputStream(stream);
+//		sos.writeType(this);
+//	}
+//
+//	private void readObject(java.io.ObjectInputStream stream)
+//			throws IOException, ClassNotFoundException {
+//		SerializationInputStream sis = new SerializationInputStream(stream);
+//		Type deserialized = sis.readType();
+//		this.fromType(deserialized);
+//	}
+
+	protected void fromType(Type t) {
+		this.primaryType = t.primaryType;
+	}
+
 	/**
 	 * Indicates whether this type can be implicitly "cast" to given one and vice verse. This is introduced to deal with
 	 * null values. In practice, two types are compatible either if they are the same or if one them is a special

@@ -41,18 +41,18 @@ public abstract class Value implements Serializable {
 	}
 
 	protected abstract void fromValue(Value v);
-
-    private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-        SerializationOutputStream sos = new SerializationOutputStream(stream);
-        sos.writeValue(this);
-    }
-
-    private void readObject(java.io.ObjectInputStream stream)
-            throws IOException, ClassNotFoundException {
-        SerializationInputStream sis = new SerializationInputStream(stream);
-        Value deserialized = sis.readValue();
-        this.fromValue(deserialized);
-    }
+//
+//    private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+//        SerializationOutputStream sos = new SerializationOutputStream(stream);
+//        sos.writeValue(this);
+//    }
+//
+//    private void readObject(java.io.ObjectInputStream stream)
+//            throws IOException, ClassNotFoundException {
+//        SerializationInputStream sis = new SerializationInputStream(stream);
+//        Value deserialized = sis.readValue();
+//        this.fromValue(deserialized);
+//    }
 
 	/**
 	 * Gets type of this value.

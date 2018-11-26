@@ -68,21 +68,21 @@ public class ZMI implements Cloneable, Serializable {
 	 * @return a father of this ZMI or <code>null</code> if this is the root zone
 	 */
 
-	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-		SerializationOutputStream sos = new SerializationOutputStream(stream);
-		sos.writeZMI(this);
-	}
-
-	private void readObject(java.io.ObjectInputStream stream)
-			throws IOException, ClassNotFoundException {
-		SerializationInputStream sis = new SerializationInputStream(stream);
-		ZMI deserialized = sis.readZMI();
-		this.father = deserialized.father;
-		for (Entry<Attribute, Value> entry : deserialized.attributes) {
-			this.attributes.add(entry.getKey(), entry.getValue());
-		}
-		this.sons.addAll(deserialized.sons);
-	}
+//	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+//		SerializationOutputStream sos = new SerializationOutputStream(stream);
+//		sos.writeZMI(this);
+//	}
+//
+//	private void readObject(java.io.ObjectInputStream stream)
+//			throws IOException, ClassNotFoundException {
+//		SerializationInputStream sis = new SerializationInputStream(stream);
+//		ZMI deserialized = sis.readZMI();
+//		this.father = deserialized.father;
+//		for (Entry<Attribute, Value> entry : deserialized.attributes) {
+//			this.attributes.add(entry.getKey(), entry.getValue());
+//		}
+//		this.sons.addAll(deserialized.sons);
+//	}
 
 	public ZMI getFather() {
 		return father;

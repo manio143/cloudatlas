@@ -46,6 +46,7 @@ public class Fetcher {
 
             String pathName = "/uw/violet07";
             List<Pair> attributes = new ArrayList<Pair>();
+            attributes.add(new Pair("creation", new ValueTime("2011/11/09 20:8:13.123")));
             attributes.add(new Pair("cpu_usage", new ValueDouble(0.9)));
             attributes.add(new Pair("num_cores", new ValueInt(3L)));
             attributes.add(new Pair("num_processes", new ValueInt(131L)));
@@ -53,9 +54,12 @@ public class Fetcher {
             List<Value> some_names = new ArrayList<>();
             some_names.add(new ValueString("tola"));
             some_names.add(new ValueString("tosia"));
-//            attributes.add(new Pair("some_names", new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING)));
+            ValueList vl = new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING);
+            attributes.add(new Pair("some_names", vl));
+            attributes.add(new Pair("expiry", new ValueDuration("+1 12:00:00.000")));
 
             for (Pair p : attributes) {
+//                System.out.println(p.val);
                 stub.setAttribute(pathName, p.attr, p.val);
             }
 

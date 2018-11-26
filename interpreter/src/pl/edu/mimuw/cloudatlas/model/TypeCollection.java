@@ -38,7 +38,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueNull;
  * @see TypePrimitve
  */
 public class TypeCollection extends Type {
-	private final Type elementType;
+	private Type elementType;
 	
 	/**
 	 * Creates a new collection type.
@@ -58,7 +58,13 @@ public class TypeCollection extends Type {
 		}
 		this.elementType = elementType;
 	}
-	
+
+	@Override
+	protected void fromType(Type t) {
+		this.primaryType = t.primaryType;
+		this.elementType = ((TypeCollection)t).elementType;
+	}
+
 	/**
 	 * Gets a type of elements stored in this collection.
 	 * 

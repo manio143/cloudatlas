@@ -34,7 +34,7 @@ import java.io.Serializable;
  * <p>
  * This class is immutable.
  */
-public class Attribute {
+public class Attribute implements Serializable {
 	private final String name;
 	
 	/**
