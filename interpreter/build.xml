@@ -7,7 +7,8 @@
 	</target>
 
 	<target name="compile" depends="init">
-		<javac srcdir="src:../model/src" destdir="${build}" includeantruntime="false" debug="true">
+		<javac srcdir="src" destdir="${build}" includeantruntime="false" debug="true">
+			<!--<compilerarg value="-Xlint:unchecked"/>-->
 			<classpath>
 				<pathelement path="${classpath}"/>
 				<fileset dir="lib">

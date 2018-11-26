@@ -1,1 +1,1 @@
-SELECT 2 + 2 AS two_plus_two
+SELECT 2 + 2 AS two_plus_two 
