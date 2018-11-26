@@ -56,7 +56,7 @@ public class Fetcher {
             some_names.add(new ValueString("tosia"));
             ValueList vl = new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING);
             attributes.add(new Pair("some_names", vl));
-            attributes.add(new Pair("expiry", new ValueDuration("+1 12:00:00.000")));
+            attributes.add(new Pair("expiry", new ValueDuration(13,12,0,0,0)));
 
             for (Pair p : attributes) {
 //                System.out.println(p.val);

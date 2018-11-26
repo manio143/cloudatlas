@@ -56,8 +56,16 @@ public class Main {
 		root = createTestHierarchy();
 		Scanner scanner = new Scanner(System.in);
 		scanner.useDelimiter("\\n");
-		while(scanner.hasNext())
-			executeQueries(root, scanner.next());
+		while(scanner.hasNext()) {
+			if (args.length > 0) {
+				String selects = scanner.next().split(":")[1];
+				for (String select : selects.split(";")) {
+					executeQueries(root, select);
+				}
+			} else {
+				executeQueries(root, scanner.next());
+			}
+		}
 		scanner.close();
 	}
 	
