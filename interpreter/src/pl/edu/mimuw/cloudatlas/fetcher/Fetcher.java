@@ -53,7 +53,7 @@ public class Fetcher {
             List<Value> some_names = new ArrayList<>();
             some_names.add(new ValueString("tola"));
             some_names.add(new ValueString("tosia"));
-            attributes.add(new Pair("some_names", new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING)));
+//            attributes.add(new Pair("some_names", new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING)));
 
             for (Pair p : attributes) {
                 stub.setAttribute(pathName, p.attr, p.val);
