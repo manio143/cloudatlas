@@ -145,6 +145,7 @@ public class ClientServer {
                         }
                         response += value + ",\n";
                     }
+                    response = response.substring(0, response.length() - 2);
                     response += "\n}";
                 } catch (ZoneNotFoundException e) {
                     response = "Error: no node under that path";
