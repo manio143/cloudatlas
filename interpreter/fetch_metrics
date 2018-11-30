@@ -1,0 +1,62 @@
+#!/bin/bash
+
+rm -rf $2
+
+cp $1 $2
+
+echo -n "cpu_load : double = " >> $2
+
+uptime | awk '{for(i=NF;i>=1;i--) printf "%s ", $i;print ""}' | cut -f 3 -d ' ' | rev | cut -c 2- | rev | sed 's/,/./g' >> $2
+
+
+echo -n "free_disk : int = " >> $2
+
+df --total | grep total | sed 's/  */ /g' | cut -f 4 -d ' ' >> $2
+
+echo -n "total_disk : int = " >> $2
+
+df --total | grep total | sed 's/  */ /g' | cut -f 2 -d ' ' >> $2
+
+
+echo -n "free_ram : int = " >> $2
+
+free | grep "Mem" | sed 's/  */ /g' | cut -f 4 -d ' ' >> $2 # free RAM
+
+echo -n "total_ram : int = " >> $2
+
+free | grep "Mem" | sed 's/  */ /g' | cut -f 2 -d ' ' >> $2 # total RAM
+
+echo -n "free_swap : int = " >> $2
+
+free | grep "Swap"  | sed 's/  */ /g' | cut -f 4 -d ' ' >> $2 # free swap
+
+echo -n "total_swap : int = " >> $2
+
+free | grep "Swap"  | sed 's/  */ /g' | cut -f 2 -d ' ' >> $2 # total swap
+
+
+echo -n "num_processes : int = " >> $2
+
+ps aux --no-heading | wc -l >> $2
+
+
+echo -n "num_cores : int = " >> $2
+
+nproc >> $2
+
+
+echo -n "kernel_ver : string = " >> $2
+
+uname -r >> $2
+
+
+echo -n "logged_users : int = " >> $2
+
+users | wc -w >> $2
+
+
+echo -n "dns_name : string = " >> $2
+
+dnsdomainname >> $2
+
+echo "" >> $2

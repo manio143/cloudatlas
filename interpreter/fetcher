@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=general.policy pl.edu.mimuw.cloudatlas.fetcher.Fetcher localhost fetcher.ini
+java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=general.policy pl.edu.mimuw.cloudatlas.fetcher.Fetcher localhost fetcher.ini start_file metrics_file

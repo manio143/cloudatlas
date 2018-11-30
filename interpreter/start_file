@@ -1,0 +1,8 @@
+/uv/violet07
+creation : time = 2011/11/09 20:8:13.123
+cpu_usage : double = 0.9
+num_cores : integer = 3
+num_processes : integer = 131
+has_ups : boolean = NULL
+some_names : list string = ["tola", "tosia"]
+expiry : duration = +1 12:00:00.000
