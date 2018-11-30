@@ -23,14 +23,16 @@ import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 
 public class ClientServer {
     private CloudAtlasAPI stub;
+    private Integer port;
     private String host;
 
-    public ClientServer(String host) {
+    public ClientServer(String host, String port) {
         this.host = host;
+        this.port = Integer.parseInt(port);
     }
 
     public static void main(String[] args) {
-        ClientServer server = new ClientServer(args[0]);
+        ClientServer server = new ClientServer(args[0], args[1]);
         server.run();
     }
 
@@ -41,7 +43,7 @@ public class ClientServer {
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-            HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/zones", new ZonesHandler());
             server.createContext("/attributes", new AttributesHandler());
             server.setExecutor(null);
@@ -146,6 +148,8 @@ public class ClientServer {
                     response += "\n}";
                 } catch (ZoneNotFoundException e) {
                     response = "Error: no node under that path";
+                } catch (Exception e) {
+                    response = e.getMessage();
                 }
             }
 
