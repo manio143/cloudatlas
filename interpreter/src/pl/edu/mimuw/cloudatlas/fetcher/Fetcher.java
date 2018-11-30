@@ -18,6 +18,7 @@ public class Fetcher {
     private String iniFile;
     private String startFile;
     private String metricsFile;
+    private String pathName;
 
     public Fetcher(String host, String iniFile, String startFile, String metricsFile) {
         this.host = host;
@@ -71,17 +72,21 @@ public class Fetcher {
                 return new ValueString(valueString);
             case "set":
                 Set<Value> valuesSet = new HashSet<>();
-                for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
-                    String trimmedElem = elem.trim();
-                    System.out.println(trimmedElem.substring(1, trimmedElem.length() - 1));
-                    valuesSet.add(createValue(types, trimmedElem.substring(1, trimmedElem.length() - 1), which + 1));
+                if (valueString.length() > 2) {
+                    for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
+                        String trimmedElem = elem.trim();
+                        System.out.println(trimmedElem.substring(1, trimmedElem.length() - 1));
+                        valuesSet.add(createValue(types, trimmedElem.substring(1, trimmedElem.length() - 1), which + 1));
+                    }
                 }
                 return new ValueSet(new HashSet<>(valuesSet), typeFromStrings(types, which + 1));
             case "list":
                 List<Value> valuesList = new ArrayList<>();
-                for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
+                if (valueString.length() > 2) {
+                    for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
                     String trimmedElem = elem.trim();
                     valuesList.add(createValue(types, trimmedElem.substring(1, trimmedElem.length() - 1), which + 1));
+                    }
                 }
                 return new ValueList(new ArrayList<>(valuesList), typeFromStrings(types, which + 1));
             case "time":
@@ -95,6 +100,10 @@ public class Fetcher {
                 }
         }
         return new ValueString("");
+    }
+
+    private AttributesMap() {
+
     }
 
     private void run() {
