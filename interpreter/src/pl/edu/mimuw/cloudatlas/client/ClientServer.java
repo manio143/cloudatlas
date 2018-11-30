@@ -47,6 +47,8 @@ public class ClientServer {
             server.createContext("/zones", new ZonesHandler());
             server.createContext("/attributes", new AttributesHandler());
             server.createContext("/", new FileHandler("www/table.html"));
+            server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
+            server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
             server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
             server.createContext("/jquery.treetable.js", new FileHandler("www/jquery.treetable.js"));
             server.createContext("/jquery.treetable.css", new FileHandler("www/jquery.treetable.css"));
