@@ -46,6 +46,11 @@ public class ClientServer {
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/zones", new ZonesHandler());
             server.createContext("/attributes", new AttributesHandler());
+            server.createContext("/", new FileHandler("www/table.html"));
+            server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
+            server.createContext("/jquery.treetable.js", new FileHandler("www/jquery.treetable.js"));
+            server.createContext("/jquery.treetable.css", new FileHandler("www/jquery.treetable.css"));
+            server.createContext("/jquery.treetable.theme.default.css", new FileHandler("www/jquery.treetable.theme.default.css"));
             server.setExecutor(null);
             server.start();
 
@@ -106,7 +111,7 @@ public class ClientServer {
                 if (i != 0) {
                     response += ", ";
                 }
-                response += zones.get(i);
+                response += "\"" + zones.get(i) + "\"";
             }
 
             response += "]\n}";
@@ -132,7 +137,7 @@ public class ClientServer {
                 response = "Error: path not specified!";
             } else {
                 try {
-                    AttributesMap attributes = stub.getAttributes((String)parameters.get("path"));
+                    AttributesMap attributes = stub.getAttributes((String) parameters.get("path"));
                     for (Map.Entry<Attribute, Value> entry : attributes) {
                         Attribute attr = entry.getKey();
                         Value val = entry.getValue();
@@ -157,6 +162,24 @@ public class ClientServer {
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
+            os.close();
+        }
+    }
+    
+    class FileHandler implements HttpHandler {
+        String path;
+
+        public FileHandler(String path) {
+            this.path = path;
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            byte[] response = Files.readAllBytes(Paths.get(path));
+
+            t.sendResponseHeaders(200, response.length);
+            OutputStream os = t.getResponseBody();
+            os.write(response);
             os.close();
         }
     }
