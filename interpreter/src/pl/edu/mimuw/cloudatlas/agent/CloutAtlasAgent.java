@@ -83,7 +83,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    private void collectZones(ZMI zmi, Set<String> set, String fatherPath) {
+    private void collectZones(ZMI zmi, List<String> set, String fatherPath) {
         String name = getName(zmi);
         String zone = fatherPath + "/" + name;
         set.add(zone);
@@ -92,8 +92,8 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public Set<String> zones() {
-        Set<String> res = new HashSet<String>();
+    public List<String> getZones() {
+        List<String> res = new ArrayList<String>();
         res.add("/");
         for (ZMI zmi : root.getSons()) {
             collectZones(zmi, res, "");
@@ -206,7 +206,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
-        zmi.getAttributes().add(attr, val);
+        zmi.getAttributes().addOrChange(attr, val);
         updateQueries(zmi);
     }
 

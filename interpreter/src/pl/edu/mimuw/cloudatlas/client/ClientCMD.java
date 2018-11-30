@@ -5,10 +5,11 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-public class Client {
+public class ClientCMD {
     public static void main(String[] args) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
@@ -26,7 +27,7 @@ public class Client {
 
 //            stub.uninstallQuery("two_plus_two");
 
-            Set<String> zones = stub.zones();
+            List<String> zones = stub.getZones();
             for(String zone : zones) {
                 AttributesMap map = stub.getAttributes(zone);
                 System.out.println(zone + ": " + map);
@@ -34,7 +35,7 @@ public class Client {
 
 
         } catch (Exception e) {
-            System.err.println("Client exception:");
+            System.err.println("ClientCMD exception:");
             e.printStackTrace();
         }
     }

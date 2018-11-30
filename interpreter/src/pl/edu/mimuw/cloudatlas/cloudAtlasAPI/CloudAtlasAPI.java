@@ -11,7 +11,7 @@ import java.util.Set;
 
 
 public interface CloudAtlasAPI extends Remote {
-    Set<String> zones() throws RemoteException;
+    List<String> getZones() throws RemoteException;
 
     AttributesMap getAttributes(String pathName) throws RemoteException;
 
