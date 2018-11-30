@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>CloudAtlas</title>
+
+    <link href="jquery.treetable.css" rel="stylesheet" type="text/css" />
+    <link href="jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
+    <script src="jquery-3.3.1.min.js"></script>
+    <script src="jquery.treetable.js"></script>
+    <script>
+        // load data and generate table
+        var attrDict = {};
+        $.ajax({
+            url: "/zones",
+        }).done(function (dataS) {
+            let data = JSON.parse(dataS);
+            console.log(data.Zones);
+            let promises = data.Zones.map((zone) =>
+                $.ajax({ url: "/attributes?path=" + zone })
+                    .done(function (dataSS) {
+                        let attrs = JSON.parse(dataSS);
+                        attrDict[zone] = attrs;
+                        console.log("Added "+zone);
+                    })
+            );
+            $.when.apply($, promises).then(() => {
+                console.log("All added");
+                generateTable();
+                $("#status").treetable({
+                    expandable: true,
+                });
+            })
+        });
+
+        function generateTable() {
+            var attrNames = [];
+            for (var key in attrDict) {
+                let zone = key;
+                let attributes = attrDict[key];
+                for (var attr in attributes) {
+                    if (attrNames.indexOf(attr) < 0)
+                        attrNames.push(attr);
+                }
+            }
+            var table = "<table id='status'>\n<thead>\n";
+            table += "  <th>name</th>\n";
+            for (var attr of attrNames)
+                table += "  <th>" + attr + "</th>\n";
+            table += "</thead>\n<tbody>\n";
+            for (var key of Object.keys(attrDict).sort()) {
+                let zone = key;
+                let attributes = attrDict[key];
+                table += "  <tr data-tt-id='" + zone + "'";
+                if (zone != "/") {
+                    let parent = zone.substr(0, zone.lastIndexOf('/'));
+                    if (parent == "") parent = "/";
+                    table += " data-tt-parent-id='" + parent + "'";
+                }
+                table += ">\n";
+                if (zone == '/') table += "    <td>/</td>\n";
+                else table += "    <td>" + zone.substr(zone.lastIndexOf('/') + 1, zone.length - zone.lastIndexOf('/') - 1) + "</td>\n";
+                for (var attr of attrNames) {
+                    table += "    <td>" + (attributes[attr] == undefined ? "" : attributes[attr]) + "</td>\n";
+                }
+                table += "  </tr>\n\n";
+            }
+            table += "</tbody>\n";
+
+            $('body').append(table);
+        }
+    </script>
+</head>
+
+<body>
+
+</body>
+
+</html>
