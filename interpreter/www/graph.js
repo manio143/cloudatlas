@@ -19,7 +19,10 @@ function renderGraph() {
         return;
     }
     ch.style.display = "";
-    var labels = graphNodes[0].data.map(er => new Date(er.timestamp)).map(d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2));
+    let dateFormat = interval >= 60 ?
+        d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
+        : d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
+    var labels = graphNodes[0].data.map(er => new Date(er.timestamp)).map(dateFormat);
 
     chart.destroy();
     chart = new Chart(ctx, {
@@ -50,5 +53,5 @@ function colorOfHash(hash, a) {
     var r = (hash >> 16) % 256;
     var g = (hash >> 8) % 256;
     var b = hash % 256;
-    return 'rgba(' + r + ", " + g + ", " + b + ","+a+")";
+    return 'rgba(' + r + ", " + g + ", " + b + "," + a + ")";
 }

@@ -199,13 +199,18 @@
             element.remove();
         }
 
+        var interval;
         $("document").ready(function () {
             updateTable();
-            setInterval(() => {
-                $('#status').remove();
-                updateTable();
-                replot();
-            }, 60 * 1000); //every minute
+
+            $.ajax("/interval").done(str => {
+                interval = new Number(str);
+                setInterval(() => {
+                    $('#status').remove();
+                    updateTable();
+                    replot();
+                }, interval * 1000);
+            }); //every interval seconds
         });
     </script>
 </head>
