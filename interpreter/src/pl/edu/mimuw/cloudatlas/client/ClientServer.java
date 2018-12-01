@@ -41,6 +41,7 @@ public class ClientServer implements Runnable {
             HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/rmi/all", new AllZonesHandler());
+            server.createContext("/rmi/overtime", new OvertimeHandler());
             server.createContext("/rmi/zones", new ZonesHandler());
             server.createContext("/rmi/contacts", new ContactsHandler());
             server.createContext("/rmi/set", new SetAttributeHandler());
@@ -168,6 +169,39 @@ public class ClientServer implements Runnable {
                 response.append("\t},\n");
             }
             response.replace(response.length() - 2, response.length() - 1, "");
+
+            response.append("}");
+            return response.toString();
+        }
+    }
+
+    class OvertimeHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) {
+            StringBuilder response = new StringBuilder();
+            response.append("{\n");
+
+            if (!parameters.containsKey("path")) {
+                return "Error: path not specified!";
+            } else if (!parameters.containsKey("attribute")) {
+                return "Error: attribute not specified!";
+            } else {
+                String path = parameters.get("path");
+                String attribute = parameters.get("attribute");
+                response.append("\t\"Values\" : [");
+                for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
+                    if (entry.getValue().containsKey(path)) {
+                        AttributesMap map = entry.getValue().get(path);
+                        Value val = map.getOrNull(attribute);
+                        if (val != null) {
+                            response.append("{\"timestamp\" : " + entry.getKey() + ", ");
+                            response.append("\"value\" : " + val + "},");
+                        }
+                    }
+                }
+                response.replace(response.length() - 1, response.length(), "");
+                response.append("]\n");
+            }
 
             response.append("}");
             return response.toString();
