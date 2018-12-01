@@ -56,8 +56,12 @@ public class ClientServer implements Runnable {
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
             server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
             server.createContext("/jquery.treetable.js", new FileHandler("www/jquery.treetable.js"));
+            server.createContext("/persist-min.js", new FileHandler("www/persist-min.js"));
+            server.createContext("/jquery.treetable-ajax-persist.js",
+                    new FileHandler("www/jquery.treetable-ajax-persist.js"));
             server.createContext("/jquery.treetable.css", new FileHandler("www/jquery.treetable.css"));
-            server.createContext("/jquery.treetable.theme.default.css", new FileHandler("www/jquery.treetable.theme.default.css"));
+            server.createContext("/jquery.treetable.theme.default.css",
+                    new FileHandler("www/jquery.treetable.theme.default.css"));
             server.setExecutor(null);
             server.start();
 

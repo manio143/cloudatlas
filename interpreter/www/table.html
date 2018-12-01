@@ -41,32 +41,42 @@
     <script src="jquery.treetable.js"></script>
     <script src="bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js" charset="utf-8"></script>
+    <script src="persist-min.js" charset="utf-8"></script>
+    <script src="jquery.treetable-ajax-persist.js" charset="utf-8"></script>
     <script src="graph.js"></script>
     <script>
         // load data and generate table
         var attrDict = {};
         var toPlot = [];
-        $.ajax({
-            url: "/rmi/zones",
-        }).done(function (dataS) {
-            let data = JSON.parse(dataS);
-            console.log(data.Zones);
-            let promises = data.Zones.map((zone) =>
-                $.ajax({ url: "/rmi/attributes?path=" + zone })
-                    .done(function (dataSS) {
-                        let attrs = JSON.parse(dataSS);
-                        attrDict[zone] = attrs;
-                        console.log("Added " + zone);
-                    })
-            );
-            $.when.apply($, promises).then(() => {
-                console.log("All added");
-                generateTable();
-                $("#status").treetable({
-                    expandable: true,
-                });
-            })
-        });
+        function updateTable() {
+            $.ajax({
+                url: "/rmi/zones",
+            }).done(function (dataS) {
+                let data = JSON.parse(dataS);
+                let promises = data.Zones.map((zone) =>
+                    $.ajax({ url: "/rmi/attributes?path=" + zone })
+                        .done(function (dataSS) {
+                            let attrs = JSON.parse(dataSS);
+                            attrDict[zone] = attrs;
+                            console.log("Added " + zone);
+                        })
+                );
+                $.when.apply($, promises).then(() => {
+                    console.log("All added");
+                    generateTable();
+                    $("#status").agikiTreeTable({
+                        expandable: true,
+                        persist: true,
+                        persistStoreName: "treetable"
+                    });
+
+                    $("#hiddenColumns").empty();
+                    for (var hc of hiddenColumns.splice(0, hiddenColumns.length)) {
+                        $('#th_' + hc).click();
+                    }
+                })
+            });
+        }
 
         function generateTable() {
             var attrNames = [];
@@ -82,7 +92,7 @@
             var table = "<table id='status'>\n<thead>\n";
             table += "  <th>name</th>\n";
             for (var attr of attrNames)
-                table += "  <th onclick='HideColumnIndex(this)'>" + attr + "</th>\n";
+                table += "  <th id='th_" + attr + "' onclick='HideColumnIndex(this)'>" + attr + "</th>\n";
             table += "</thead>\n<tbody>\n";
             for (var key of Object.keys(attrDict).sort()) {
                 let zone = key;
@@ -138,6 +148,24 @@
             }
         }
 
+        function replot() {
+            var plots = toPlot.slice();
+            for (var p of plots) {
+                var [zone, attr] = p.split(":");
+                $.ajax("/rmi/overtime?path=" + zone + "&attribute=" + attr)
+                    .done((str) => {
+                        var data = JSON.parse(str);
+                        var graphData = data.Values;
+                        cache[p] = { name: p, data: graphData };
+                        if (toPlot.indexOf(p) < 0) return;
+                        graphNodes.splice(graphNodes.indexOf(cache[p]), 1);
+                        graphNodes.push(cache[p]);
+                        renderGraph();
+                    });
+            }
+        }
+
+        var hiddenColumns = [];
         function HideColumnIndex(element) {
             var $el = $(element);
             var $cell = $el.closest('th,td')
@@ -150,6 +178,8 @@
             $table.find("tbody tr, thead tr")
                 .children(":nth-child(" + colIndex + ")")
                 .addClass('hide-col');
+
+            hiddenColumns.push(element.innerHTML);
 
             // show restore footer
             var button = "<button type='button' class='btn' href='#' style='margin-right:10px; margin-top:10px'"
@@ -165,8 +195,18 @@
             $table.find("tbody tr, thead tr")
                 .children(":nth-child(" + id + ")")
                 .removeClass('hide-col');
+            hiddenColumns.splice(hiddenColumns.indexOf(element.innerHTML), 1);
             element.remove();
         }
+
+        $("document").ready(function () {
+            updateTable();
+            setInterval(() => {
+                $('#status').remove();
+                updateTable();
+                replot();
+            }, 60 * 1000); //every minute
+        });
     </script>
 </head>
 
@@ -206,8 +246,9 @@
 
     <div id="tableHolder"></div>
 
-    <div class="container" id="hiddenColumns">
+    <div class="container">
         <h5>You can hide columns by clicking on them, and restore them below</h5>
+        <div id="hiddenColumns"></div>
     </div>
 
     <p id="labels"></p>
