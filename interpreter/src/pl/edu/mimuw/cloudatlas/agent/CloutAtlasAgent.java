@@ -15,7 +15,7 @@ import java.util.*;
 
 public class CloutAtlasAgent implements CloudAtlasAPI {
     private ZMI root = new ZMI();
-    private List<ValueContact> contacts = new ArrayList<ValueContact>();
+    private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
     private Map<String, Program> installedQueries = new HashMap<String, Program>();
 
@@ -110,7 +110,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         son.getAttributes().add("name", new ValueString(comp.get(which - 1)));
         son.getAttributes().add("level", new ValueInt((long) which));
         son.getAttributes().add("owner", new ValueString(pathName));
-        son.getAttributes().add("contacts", new ValueSet(new HashSet<Value>(contacts), TypePrimitive.CONTACT));
+        son.getAttributes().add("contacts", contacts);
         son.getAttributes().add("cardinality", new ValueInt(1L));
 
         ValueTime timestamp = new ValueTime(new Timestamp(System.currentTimeMillis()).getTime());
@@ -186,17 +186,20 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
                     installedQueries.put(attributeName, program);
                     calculateQueries(root, attributeName);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println(e.getStackTrace());
                 }
             }
         }
     }
 
     public synchronized void uninstallQuery(String queryName) {
+        if (!installedQueries.containsKey(queryName)) {
+            throw new AttributeNotFoundException();
+        }
+        installedQueries.remove(queryName);
         List<Attribute> attributes = queryAttributes.get(queryName);
         for (Attribute attribute : attributes) {
             removeAttribute(root, attribute);
-            installedQueries.remove(attribute);
             queryAttributes.remove(attribute);
         }
     }
@@ -210,7 +213,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         updateQueries(zmi);
     }
 
-    public synchronized void setFallbackContacts(List<ValueContact> contacts) {
+    public synchronized void setFallbackContacts(ValueSet contacts) {
         this.contacts = contacts;
     }
 }

@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.cloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.Value;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
+import pl.edu.mimuw.cloudatlas.model.ValueSet;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -21,5 +22,5 @@ public interface CloudAtlasAPI extends Remote {
 
     void setAttribute(String pathName, String attr, Value val) throws RemoteException;
 
-    void setFallbackContacts(List<ValueContact> contacts) throws RemoteException;
+    void setFallbackContacts(ValueSet contacts) throws RemoteException;
 }

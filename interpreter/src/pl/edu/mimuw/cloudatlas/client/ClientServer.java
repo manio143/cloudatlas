@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.w3c.dom.Attr;
+import pl.edu.mimuw.cloudatlas.agent.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.ZoneNotFoundException;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
@@ -38,10 +39,14 @@ public class ClientServer implements Runnable {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
+            server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/all", new AllZonesHandler());
             server.createContext("/zones", new ZonesHandler());
+            server.createContext("/contacts", new ContactsHandler());
+            server.createContext("/set", new SetAttributeHandler());
             server.createContext("/attributes", new AttributesHandler());
-            server.createContext("/", new FileHandler("www/table.html"));
+            server.createContext("/install", new InstallHandler());
+            server.createContext("/uninstall", new UninstallHandler());
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
             server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
@@ -89,8 +94,7 @@ public class ClientServer implements Runnable {
     }
 
     @SuppressWarnings("unchecked")
-    private static void parseQuery(String query, Map<String,
-            Object> parameters) throws UnsupportedEncodingException {
+    private static void parseQuery(String query, Map<String, String> parameters) throws UnsupportedEncodingException {
 
         if (query != null) {
             String pairs[] = query.split("[&]");
@@ -98,74 +102,32 @@ public class ClientServer implements Runnable {
                 String param[] = pair.split("[=]");
                 String key = null;
                 String value = null;
-                if (param.length > 0) {
-                    key = URLDecoder.decode(param[0],
-                            System.getProperty("file.encoding"));
-                }
 
                 if (param.length > 1) {
-                    value = URLDecoder.decode(param[1],
+                    key = URLDecoder.decode(param[0],
                             System.getProperty("file.encoding"));
-                }
 
-                if (parameters.containsKey(key)) {
-                    Object obj = parameters.get(key);
-                    if (obj instanceof List<?>) {
-                        List<String> values = (List<String>) obj;
-                        values.add(value);
+                    value = URLDecoder.decode(pair.substring(param[0].length() + 1, pair.length()),
+                            System.getProperty("file.encoding"));
 
-                    } else if (obj instanceof String) {
-                        List<String> values = new ArrayList<String>();
-                        values.add((String) obj);
-                        values.add(value);
-                        parameters.put(key, values);
-                    }
-                } else {
                     parameters.put(key, value);
                 }
             }
         }
     }
 
-    String resultsJSON() {
-        StringBuilder response = new StringBuilder();
-        response.append("{\n");
-        Integer which = 0;
-        for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
-            response.append("\t\"Fetch_" + which + "\": {\n");
-            which++;
-            response.append("\t\t\"Timestamp\" : " + entry.getKey() + ",\n");
-            response.append("\t\t\"Map\" : {\n");
+    private abstract class RMIHandler implements HttpHandler {
+        public abstract String prepareResponse(Map<String, String> parameters) throws RemoteException;
 
-            for (Map.Entry<String, AttributesMap> zone : entry.getValue().entrySet()) {
-                response.append("\t\t\t\"" + zone.getKey() + "\" : {\n");
-                for (Map.Entry<Attribute, Value> attribute : zone.getValue()) {
-                    Value val = attribute.getValue();
-                    response.append("\t\t\t\t\"" + attribute.getKey() + "\" : ");
-                    if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
-                        response.append(val.toString());
-                    } else {
-                        response.append("\"" + val.toString() + "\"");
-                    }
-                    response.append(",\n");
-                }
-                response.replace(response.length() - 2, response.length() - 1, "");
-                response.append("\t\t\t},\n");
-            }
-            response.replace(response.length() - 2, response.length() - 1, "");
-            response.append("\t\t}\n");
-            response.append("\t},\n");
-        }
-        response.replace(response.length() - 2, response.length() - 1, "");
-
-        response.append("}");
-        return response.toString();
-    }
-
-    class AllZonesHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
-            String response = resultsJSON();
+            Map<String, String> parameters = new HashMap<>();
+            URI requestedUri = t.getRequestURI();
+            String query = requestedUri.getRawQuery();
+
+            parseQuery(query, parameters);
+
+            String response = prepareResponse(parameters);
 
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
@@ -174,9 +136,47 @@ public class ClientServer implements Runnable {
         }
     }
 
-    class ZonesHandler implements HttpHandler {
+    private class AllZonesHandler extends RMIHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
+        public String prepareResponse(Map<String, String> parameters) {
+            StringBuilder response = new StringBuilder();
+            response.append("{\n");
+            Integer which = 0;
+            for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
+                response.append("\t\"Fetch_" + which + "\": {\n");
+                which++;
+                response.append("\t\t\"Timestamp\" : " + entry.getKey() + ",\n");
+                response.append("\t\t\"Map\" : {\n");
+
+                for (Map.Entry<String, AttributesMap> zone : entry.getValue().entrySet()) {
+                    response.append("\t\t\t\"" + zone.getKey() + "\" : {\n");
+                    for (Map.Entry<Attribute, Value> attribute : zone.getValue()) {
+                        Value val = attribute.getValue();
+                        response.append("\t\t\t\t\"" + attribute.getKey() + "\" : ");
+                        if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
+                            response.append(val.toString());
+                        } else {
+                            response.append("\"" + val.toString() + "\"");
+                        }
+                        response.append(",\n");
+                    }
+                    response.replace(response.length() - 2, response.length() - 1, "");
+                    response.append("\t\t\t},\n");
+                }
+                response.replace(response.length() - 2, response.length() - 1, "");
+                response.append("\t\t}\n");
+                response.append("\t},\n");
+            }
+            response.replace(response.length() - 2, response.length() - 1, "");
+
+            response.append("}");
+            return response.toString();
+        }
+    }
+
+    class ZonesHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
             String response = "{\n" +
                     "\t\"Zones\": [";
 
@@ -190,29 +190,39 @@ public class ClientServer implements Runnable {
             }
 
             response += "]\n}";
-
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            return response;
         }
     }
 
-    class AttributesHandler implements HttpHandler {
+    class ContactsHandler extends RMIHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
-            Map<String, Object> parameters = new HashMap<String, Object>();
-            URI requestedUri = t.getRequestURI();
-            String query = requestedUri.getRawQuery();
+        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
+            String response = "";
+            if (!parameters.containsKey("set")) {
+                response = "Error: contacts not specified!";
+            } else {
+                try {
+                    ValueSet contacts = (ValueSet)ValueReader.formValue("set contact", "{" + parameters.get("set") + "}");
+                    stub.setFallbackContacts(contacts);
+                    response = "Successfully set fallback contacts";
+                } catch (Exception e) {
+                    response = "Error: " + e.getMessage();
+                }
+            }
 
-            parseQuery(query, parameters);
+            return response;
+        }
+    }
 
+    class AttributesHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) {
             String response = "{\n";
             if (!parameters.containsKey("path")) {
                 response = "Error: path not specified!";
             } else {
                 try {
-                    AttributesMap attributes = stub.getAttributes((String) parameters.get("path"));
+                    AttributesMap attributes = stub.getAttributes(parameters.get("path"));
                     for (Map.Entry<Attribute, Value> entry : attributes) {
                         Attribute attr = entry.getKey();
                         Value val = entry.getValue();
@@ -233,13 +243,88 @@ public class ClientServer implements Runnable {
                     response = e.getMessage();
                 }
             }
-
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            return response;
         }
     }
+
+    class SetAttributeHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
+            String response = "";
+            if (!parameters.containsKey("path")) {
+                response = "Error: node path not specified!";
+            } else if (!parameters.containsKey("name")) {
+                response = "Error: attribute name not specified!";
+            } else if (!parameters.containsKey("type")) {
+                response = "Error: type not specified!";
+            } else if (!parameters.containsKey("value")) {
+                response = "Error: value not specified!";
+            } else {
+                try {
+                    Value val = ValueReader.formValue(parameters.get("type"), parameters.get("value"));
+                    stub.setAttribute(parameters.get("path"), parameters.get("name"), val);
+                    response = "Attribute changed!";
+                } catch(AgentException e) {
+                    response = e.getMessage();
+                }
+            }
+
+            return response;
+        }
+    }
+
+    class UninstallHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) {
+            String response = "";
+
+            if (!parameters.containsKey("attribute")) {
+                response = "Error: attribute not specified!";
+            } else {
+                try {
+                    stub.uninstallQuery(parameters.get("attribute"));
+                    response = "Successful uninstall of " + parameters.get("attribute");
+                } catch (AgentException e) {
+                    response = "AgentException: " + e.getMessage();
+                } catch (Exception e) {
+                    response = e.getMessage();
+                }
+            }
+
+            return response;
+        }
+    }
+
+    class InstallHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) {
+            String response = "";
+
+            if (!parameters.containsKey("attribute")) {
+                response = "Error: attribute not specified!";
+            } else if (!parameters.containsKey("query")) {
+                response = "Error: query not specified!";
+            } else {
+                try {
+                    String attribute = parameters.get("attribute");
+                    String select = parameters.get("query");
+//                    System.out.println(attribute);
+//                    System.out.println(select);
+                    String queries = "&" + attribute + ": " + select;
+//                    System.out.println(queries);
+                    stub.installQueries(queries);
+                    response = "Successful install of " + attribute;
+                } catch (AgentException e) {
+                    response = "AgentException: " + e.getMessage();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    response = "Error: " + e.getMessage();
+                }
+            }
+            return response;
+        }
+    }
+
     
     class FileHandler implements HttpHandler {
         String path;
