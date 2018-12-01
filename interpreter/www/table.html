@@ -152,7 +152,10 @@
                 .addClass('hide-col');
 
             // show restore footer
-            $('#hiddenColumns').append("<a href='#' onclick='restoreColumn(this); return false;' id='col" + colIndex + "'>" + element.innerText + "&nbsp;</a>");
+            var button = "<button type='button' class='btn' href='#' style='margin-right:10px; margin-top:10px'"
+                + "onclick='restoreColumn(this); return false;'"
+                + "id='col" + colIndex + "'>" + element.innerHTML + "</button>";
+            $('#hiddenColumns').append(button);
         }
 
         function restoreColumn(element) {
@@ -203,8 +206,8 @@
 
     <div id="tableHolder"></div>
 
-    <div id="hiddenColumns">
-        <h6>You can hide columns by clicking on them, and restore them below</h6>
+    <div class="container" id="hiddenColumns">
+        <h5>You can hide columns by clicking on them, and restore them below</h5>
     </div>
 
     <p id="labels"></p>
