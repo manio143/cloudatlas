@@ -203,7 +203,7 @@
         $("document").ready(function () {
             updateTable();
 
-            $.ajax("/interval").done(str => {
+            $.ajax("/rmi/interval").done(str => {
                 interval = new Number(str);
                 setInterval(() => {
                     $('#status').remove();

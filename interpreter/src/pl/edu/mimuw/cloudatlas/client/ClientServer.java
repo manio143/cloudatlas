@@ -31,7 +31,7 @@ public class ClientServer implements Runnable {
     final int MAX_SIZE = 100;
     TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
 
-    public ClientServer(String host, String port) {
+    public ClientServer(String host, String port, Long interval) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
@@ -51,6 +51,7 @@ public class ClientServer implements Runnable {
             server.createContext("/rmi/attributes", new AttributesHandler());
             server.createContext("/rmi/install", new InstallHandler());
             server.createContext("/rmi/uninstall", new UninstallHandler());
+            server.createContext("/rmi/interval", new IntervalHandler(interval));
             server.createContext("/graph.js", new FileHandler("www/graph.js"));
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
@@ -76,7 +77,7 @@ public class ClientServer implements Runnable {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[2]));
             Long interval = Long.parseLong(prop.getProperty("collection_interval"));
-            ClientServer server = new ClientServer(args[0], args[1]);
+            ClientServer server = new ClientServer(args[0], args[1], interval);
             ScheduledExecutorService scheduler =
                     Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);
@@ -368,7 +369,26 @@ public class ClientServer implements Runnable {
         }
     }
 
-    
+
+    class IntervalHandler implements HttpHandler {
+        Long interval;
+
+        public IntervalHandler(Long interval) {
+            this.interval = interval;
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            String response = interval.toString();
+
+            t.sendResponseHeaders(200, response.length());
+            OutputStream os = t.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+    }
+
+
     class FileHandler implements HttpHandler {
         String path;
 
