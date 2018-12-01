@@ -29,13 +29,26 @@ function renderGraph() {
         // The data for our dataset
         data: {
             labels: labels,
-            datasets: graphNodes.map(el => ({
-                label: el.name,
-                data: el.data.map(er => er.value)
-            }))
+            datasets: graphNodes.map(el => {
+                let hash = [].reduce.call(el.name, function (hash, i) { var chr = i.charCodeAt(0); hash = ((hash << 5) - hash) + chr; return hash | 0; }, 0)
+                return ({
+                    label: el.name,
+                    data: el.data.map(er => er.value),
+                    borderColor: colorOfHash(hash),
+                    backgroundColor: colorOfHash(hash, 0.3)
+                })
+            })
         },
 
         // Configuration options go here
         options: {}
     });
+}
+
+function colorOfHash(hash, a) {
+    if (a == undefined) a = 1;
+    var r = (hash >> 16) % 256;
+    var g = (hash >> 8) % 256;
+    var b = hash % 256;
+    return 'rgba(' + r + ", " + g + ", " + b + ","+a+")";
 }
