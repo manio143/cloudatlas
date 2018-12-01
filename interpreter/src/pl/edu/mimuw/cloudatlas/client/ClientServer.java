@@ -9,6 +9,9 @@ import java.nio.file.Paths;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -19,29 +22,19 @@ import pl.edu.mimuw.cloudatlas.model.*;
 
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 
-public class ClientServer {
+public class ClientServer implements Runnable {
     private CloudAtlasAPI stub;
-    private Integer port;
-    private String host;
+
+    List<Map<String, AttributesMap>> results;
 
     public ClientServer(String host, String port) {
-        this.host = host;
-        this.port = Integer.parseInt(port);
-    }
-
-    public static void main(String[] args) {
-        ClientServer server = new ClientServer(args[0], args[1]);
-        server.run();
-    }
-
-    private void run() {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
             server.createContext("/zones", new ZonesHandler());
             server.createContext("/attributes", new AttributesHandler());
             server.createContext("/", new FileHandler("www/table.html"));
@@ -58,6 +51,25 @@ public class ClientServer {
             System.err.println("Client server exception:");
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            Properties prop = new Properties();
+            prop.load(new FileInputStream(args[2]));
+            Long interval = Long.parseLong(prop.getProperty("collection_interval"));
+            ClientServer server = new ClientServer(args[0], args[1]);
+            ScheduledExecutorService scheduler =
+                    Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);
+        } catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    @Override
+    public void run() {
+        System.out.println("A");
     }
 
     @SuppressWarnings("unchecked")

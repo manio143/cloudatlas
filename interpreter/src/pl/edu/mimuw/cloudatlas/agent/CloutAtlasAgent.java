@@ -92,7 +92,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public List<String> getZones() {
+    public synchronized List<String> getZones() {
         List<String> res = new ArrayList<String>();
         res.add("/");
         for (ZMI zmi : root.getSons()) {
@@ -167,12 +167,12 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         return candidate;
     }
 
-    public AttributesMap getAttributes(String pathName) {
+    public synchronized AttributesMap getAttributes(String pathName) {
         ZMI zmi = reachZone(pathName, false);
         return zmi.getAttributes();
     }
 
-    public void installQueries(String input) {
+    public synchronized void installQueries(String input) {
         String[] lines = input.substring(1).split("&");
         for (String line : lines) {
             String[] parts = line.split(":");
@@ -192,7 +192,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public void uninstallQuery(String queryName) {
+    public synchronized void uninstallQuery(String queryName) {
         List<Attribute> attributes = queryAttributes.get(queryName);
         for (Attribute attribute : attributes) {
             removeAttribute(root, attribute);
@@ -201,7 +201,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public void setAttribute(String pathName, String attr, Value val) {
+    public synchronized void setAttribute(String pathName, String attr, Value val) {
         ZMI zmi = reachZone(pathName, true);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
@@ -210,7 +210,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         updateQueries(zmi);
     }
 
-    public void setFallbackContacts(List<ValueContact> contacts) {
+    public synchronized void setFallbackContacts(List<ValueContact> contacts) {
         this.contacts = contacts;
     }
 }

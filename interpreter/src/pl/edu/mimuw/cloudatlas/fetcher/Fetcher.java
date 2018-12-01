@@ -13,8 +13,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public class Fetcher extends TimerTask {
+public class Fetcher implements Runnable {
     private String startFile;
     private String metricsFile;
     private String pathName;
@@ -158,7 +161,7 @@ public class Fetcher extends TimerTask {
             pr.waitFor();
 
             for (Map.Entry<Attribute, Value> p : readAttributes()) {
-                System.out.println(p.getKey() + " : " + p.getValue());
+//                System.out.println(p.getKey() + " : " + p.getValue());
                 stub.setAttribute(pathName, p.getKey().getName(), p.getValue());
             }
 
@@ -174,8 +177,9 @@ public class Fetcher extends TimerTask {
             prop.load(new FileInputStream(args[1]));
             Long interval = Long.parseLong(prop.getProperty("collection_interval"));
             Fetcher fetcher = new Fetcher(args[0], args[2], args[3]);
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(fetcher, interval, 1000);
+            ScheduledExecutorService scheduler =
+                    Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(fetcher, 0L, interval, TimeUnit.SECONDS);
 
         } catch(Exception e) {
             System.out.println(e);
