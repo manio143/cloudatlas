@@ -69,7 +69,7 @@ public class Fetcher implements Runnable {
     public void run(){
         try {
             Runtime rt = Runtime.getRuntime();
-            Process pr = rt.exec("./fetch_metrics " + startFile + " " + metricsFile);
+            Process pr = rt.exec("./utility/fetch_metrics " + startFile + " " + metricsFile);
 
             pr.waitFor();
 
