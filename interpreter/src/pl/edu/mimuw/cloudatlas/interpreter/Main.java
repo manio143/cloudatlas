@@ -36,12 +36,13 @@ import pl.edu.mimuw.cloudatlas.model.*;
 
 public class Main {
 	private static ZMI root;
-	
-	public static void main(String[] args) throws Exception {
-		if (args.length > 1) {
-			TreeMap<String, AttributesMap> zoneMaps = ModelReader.readAttributes(args[1]);
 
-			boolean set = false;
+	public static void main(String[] args) throws Exception {
+		boolean printQueries = true;
+		if (args.length > 1) {
+			printQueries = false;
+			boolean rootSet = false;
+			TreeMap<String, AttributesMap> zoneMaps = ModelReader.readAttributes(args[1]);
 
 			for (Map.Entry<String, AttributesMap> zone : zoneMaps.entrySet()) {
 				ZMI son = new ZMI();
@@ -49,18 +50,13 @@ public class Main {
 					son.getAttributes().addOrChange(entry.getKey(), entry.getValue());
 				}
 				PathName pathName = new PathName(zone.getKey());
-				if (!set) {
+				if (!rootSet) {
 					root = son;
-					set = true;
+					rootSet = true;
 				} else {
 					addSon(root, son, pathName.getComponents(), 0);
 				}
 			}
-
-			for (ZMI son : root.getSons()) {
-				System.out.println(son.getAttributes());
-			}
-
 		} else {
 			root = createTestHierarchy();
 		}
@@ -72,13 +68,24 @@ public class Main {
 				String[] parts = line.split(":");
 				String selects = line.substring(parts[0].length() + 1, line.length());
 				for (String select : selects.split(";")) {
-					executeQueries(root, select);
+					executeQueries(root, select, printQueries);
 				}
 			} else {
-				executeQueries(root, scanner.next());
+				executeQueries(root, scanner.next(), printQueries);
 			}
 		}
 		scanner.close();
+
+		if (!printQueries) {
+			printZMI(root);
+		}
+	}
+
+	private static void printZMI(ZMI zmi) {
+		zmi.printAttributes(System.out);
+		for(ZMI son : zmi.getSons()) {
+			printZMI(son);
+		}
 	}
 
 	private static void addSon(ZMI parent, ZMI son, List<String> components, int which) {
@@ -100,17 +107,19 @@ public class Main {
 		return zmi.getFather() == null? PathName.ROOT : getPathName(zmi.getFather()).levelDown(name);
 	}
 	
-	private static void executeQueries(ZMI zmi, String query) throws Exception {
+	private static void executeQueries(ZMI zmi, String query, boolean printQueries) throws Exception {
 		if(!zmi.getSons().isEmpty()) {
 			for(ZMI son : zmi.getSons())
-				executeQueries(son, query);
+				executeQueries(son, query, printQueries);
 			Interpreter interpreter = new Interpreter(zmi);
 			Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
 			try {
 				List<QueryResult> result = interpreter.interpretProgram((new parser(lex)).pProgram());
 				PathName zone = getPathName(zmi);
 				for(QueryResult r : result) {
-					System.out.println(zone + ": " + r);
+					if (printQueries) {
+						System.out.println(zone + ": " + r);
+					}
 					zmi.getAttributes().addOrChange(r.getName(), r.getValue());
 				}
 			} catch (InterpreterException e) { }

@@ -6,4 +6,4 @@ num_cores : integer = 3
 num_processes : integer = 131
 has_ups : boolean = NULL
 some_names : list string = ["tola", "tosia"]
-expiry : duration = +1 12:00:00.000
+expiry : duration = 1166400000

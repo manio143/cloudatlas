@@ -72,6 +72,9 @@ public class ModelReader {
                 if (valueString.equals("NULL") || valueString.equals("null")) {
                     return new ValueDuration(0L);
                 }
+                if (valueString.matches("[0-9]+") || valueString.matches("-[0-9]+")) {
+                    return new ValueDuration(Long.parseLong(valueString));
+                }
                 return new ValueDuration(valueString);
             case "integer":
                 if (valueString.equals("NULL") || valueString.equals("null")) {
