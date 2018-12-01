@@ -350,10 +350,7 @@ public class ClientServer implements Runnable {
                 try {
                     String attribute = parameters.get("attribute");
                     String select = parameters.get("query");
-//                    System.out.println(attribute);
-//                    System.out.println(select);
                     String queries = "&" + attribute + ": " + select;
-//                    System.out.println(queries);
                     stub.installQueries(queries);
                     response = "Successful install of " + attribute;
                 } catch (AgentException e) {

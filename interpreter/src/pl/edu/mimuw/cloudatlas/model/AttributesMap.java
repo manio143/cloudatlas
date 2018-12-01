@@ -38,18 +38,6 @@ import java.util.Map.Entry;
 public class AttributesMap implements Iterable<Entry<Attribute, Value>>, Cloneable, Serializable {
 	private Map<Attribute, Value> map = new HashMap<Attribute, Value>();
 
-//	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-//		SerializationOutputStream sos = new SerializationOutputStream(stream);
-//		sos.writeAttributesMap(this);
-//	}
-//
-//	private void readObject(java.io.ObjectInputStream stream)
-//			throws IOException, ClassNotFoundException {
-//		SerializationInputStream sis = new SerializationInputStream(stream);
-//		AttributesMap deserialized = sis.readAttributesMap();
-//		map = deserialized.map;
-//	}
-
 	private void checkNulls(Attribute attribute, Value value) {
 		if(attribute == null)
 			throw new NullPointerException("The attribute cannot be null.");

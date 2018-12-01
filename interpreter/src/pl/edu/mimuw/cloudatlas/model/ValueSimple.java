@@ -70,13 +70,6 @@ abstract class ValueSimple<T> extends Value {
 	protected void setValue(T value) {
 		this.value = value;
 	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void fromValue(Value v) {
-		ValueSimple<T> vs = (ValueSimple<T>) v;
-		value = vs.value;
-	}
 	
 	@Override
 	public boolean isNull() {

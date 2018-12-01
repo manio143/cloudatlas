@@ -74,7 +74,6 @@ public class Fetcher implements Runnable {
             pr.waitFor();
 
             for (Map.Entry<Attribute, Value> p : readAttributes()) {
-//                System.out.println(p.getKey() + " : " + p.getValue());
                 stub.setAttribute(pathName, p.getKey().getName(), p.getValue());
             }
 

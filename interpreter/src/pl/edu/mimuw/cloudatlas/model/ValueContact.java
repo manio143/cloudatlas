@@ -36,8 +36,8 @@ import pl.edu.mimuw.cloudatlas.model.ValueContact;
  * This class is immutable.
  */
 public class ValueContact extends Value {
-	private PathName name;
-	private InetAddress address;
+	private final PathName name;
+	private final InetAddress address;
 	
 	/**
 	 * Constructs a new <code>ValueContact</code> with the specified path name and IP address.
@@ -48,13 +48,6 @@ public class ValueContact extends Value {
 	public ValueContact(PathName name, InetAddress address) {
 		this.name = name;
 		this.address = address;
-	}
-
-	@Override
-	protected void fromValue(Value v) {
-		ValueContact vs = (ValueContact) v;
-		this.name = vs.name;
-		this.address = vs.address;
 	}
 
 	@Override

@@ -49,13 +49,6 @@ import pl.edu.mimuw.cloudatlas.model.ValueList;
 public class ValueList extends ValueSimple<List<Value>> implements List<Value> {
 	private TypeCollection type;
 
-	@Override
-	protected void fromValue(Value v) {
-		ValueList vl = (ValueList)v;
-		this.setValue(vl.getValue());
-		this.type = vl.type;
-	}
-
 	/**
 	 * Creates a new <code>ValueList</code> containing all the elements in the specified list.
 	 * 

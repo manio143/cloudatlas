@@ -39,7 +39,7 @@ public abstract class Type implements Serializable {
 		BOOLEAN, CONTACT, DOUBLE, DURATION, INT, LIST, NULL, SET, STRING, TIME,
 	}
 	
-	protected PrimaryType primaryType;
+	private final PrimaryType primaryType;
 	
 	/**
 	 * Creates a <code>Type</code> object with a given primary type.
@@ -57,22 +57,6 @@ public abstract class Type implements Serializable {
 	 */
 	public PrimaryType getPrimaryType() {
 		return primaryType;
-	}
-
-//	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-//		SerializationOutputStream sos = new SerializationOutputStream(stream);
-//		sos.writeType(this);
-//	}
-//
-//	private void readObject(java.io.ObjectInputStream stream)
-//			throws IOException, ClassNotFoundException {
-//		SerializationInputStream sis = new SerializationInputStream(stream);
-//		Type deserialized = sis.readType();
-//		this.fromType(deserialized);
-//	}
-
-	protected void fromType(Type t) {
-		this.primaryType = t.primaryType;
 	}
 
 	/**

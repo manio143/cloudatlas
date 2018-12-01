@@ -58,13 +58,6 @@ public class ValueSet extends ValueSimple<Set<Value>> implements Set<Value> {
 		if(value != null)
 			setValue(value);
 	}
-
-	@Override
-	protected void fromValue(Value v) {
-		ValueSet vs = (ValueSet)v;
-		this.setValue(vs.getValue());
-		this.type = vs.type;
-	}
 	
 	/**
 	 * Creates an empty set.

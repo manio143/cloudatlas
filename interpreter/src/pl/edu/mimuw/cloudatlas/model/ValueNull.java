@@ -38,11 +38,6 @@ public class ValueNull extends Value {
 	
 	private ValueNull() {}
 
-	@Override
-	protected void fromValue(Value v) {
-		instance = null;
-	}
-
 	/**
 	 * Gets a singleton instance of a <code>ValueNull</code> class. Every call to this method returns the same
 	 * reference.
