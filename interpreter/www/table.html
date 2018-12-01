@@ -22,12 +22,12 @@
         // load data and generate table
         var attrDict = {};
         $.ajax({
-            url: "/zones",
+            url: "/rmi/zones",
         }).done(function (dataS) {
             let data = JSON.parse(dataS);
             console.log(data.Zones);
             let promises = data.Zones.map((zone) =>
-                $.ajax({ url: "/attributes?path=" + zone })
+                $.ajax({ url: "/rmi/attributes?path=" + zone })
                     .done(function (dataSS) {
                         let attrs = JSON.parse(dataSS);
                         attrDict[zone] = attrs;
@@ -53,6 +53,7 @@
                         attrNames.push(attr);
                 }
             }
+            attrNames.sort();
             var table = "<table id='status'>\n<thead>\n";
             table += "  <th>name</th>\n";
             for (var attr of attrNames)

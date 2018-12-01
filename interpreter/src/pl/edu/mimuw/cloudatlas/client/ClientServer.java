@@ -40,13 +40,13 @@ public class ClientServer implements Runnable {
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
             server.createContext("/", new FileHandler("www/table.html"));
-            server.createContext("/all", new AllZonesHandler());
-            server.createContext("/zones", new ZonesHandler());
-            server.createContext("/contacts", new ContactsHandler());
-            server.createContext("/set", new SetAttributeHandler());
-            server.createContext("/attributes", new AttributesHandler());
-            server.createContext("/install", new InstallHandler());
-            server.createContext("/uninstall", new UninstallHandler());
+            server.createContext("/rmi/all", new AllZonesHandler());
+            server.createContext("/rmi/zones", new ZonesHandler());
+            server.createContext("/rmi/contacts", new ContactsHandler());
+            server.createContext("/rmi/set", new SetAttributeHandler());
+            server.createContext("/rmi/attributes", new AttributesHandler());
+            server.createContext("/rmi/install", new InstallHandler());
+            server.createContext("/rmi/uninstall", new UninstallHandler());
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
             server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
@@ -72,7 +72,7 @@ public class ClientServer implements Runnable {
                     Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);
         } catch(Exception e) {
-            System.out.println(e);
+                System.out.println(e);
         }
     }
 
@@ -261,7 +261,11 @@ public class ClientServer implements Runnable {
                 response = "Error: value not specified!";
             } else {
                 try {
-                    Value val = ValueReader.formValue(parameters.get("type"), parameters.get("value"));
+                    String valueString =
+                            parameters.get("value")
+                                    .replace("<", "{")
+                                    .replace(">", "}");
+                    Value val = ValueReader.formValue(parameters.get("type"), valueString);
                     stub.setAttribute(parameters.get("path"), parameters.get("name"), val);
                     response = "Attribute changed!";
                 } catch(AgentException e) {

@@ -18,6 +18,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Fetcher implements Runnable {
+    boolean set = false;
     private String startFile;
     private String metricsFile;
     private String pathName;
@@ -38,12 +39,12 @@ public class Fetcher implements Runnable {
 
             ValueSet contacts = (ValueSet)ValueReader.formValue("set contact", "{/uw/khaki;10.1.1.38}");
             stub.setFallbackContacts(contacts);
+            this.set = true;
 
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
-
 
 
     private AttributesMap readAttributes() throws IOException {
@@ -82,6 +83,9 @@ public class Fetcher implements Runnable {
         }
     }
 
+    private boolean isSet() {
+        return set;
+    }
 
     public static void main(String[] args) {
         try {
@@ -89,12 +93,13 @@ public class Fetcher implements Runnable {
             prop.load(new FileInputStream(args[1]));
             Long interval = Long.parseLong(prop.getProperty("collection_interval"));
             Fetcher fetcher = new Fetcher(args[0], args[2], args[3]);
-            ScheduledExecutorService scheduler =
-                    Executors.newScheduledThreadPool(1);
-            scheduler.scheduleAtFixedRate(fetcher, 0L, interval, TimeUnit.SECONDS);
-
+            if (fetcher.isSet()) {
+                ScheduledExecutorService scheduler =
+                        Executors.newScheduledThreadPool(1);
+                scheduler.scheduleAtFixedRate(fetcher, 0L, interval, TimeUnit.SECONDS);
+            }
         } catch(Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 }
