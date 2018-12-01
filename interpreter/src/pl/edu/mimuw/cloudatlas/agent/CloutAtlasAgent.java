@@ -186,7 +186,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
                     installedQueries.put(attributeName, program);
                     calculateQueries(root, attributeName);
                 } catch (Exception e) {
-                    System.out.println(e.getStackTrace());
+                    throw new AgentParserException(query);
                 }
             }
         }
@@ -194,7 +194,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
 
     public synchronized void uninstallQuery(String queryName) {
         if (!installedQueries.containsKey(queryName)) {
-            throw new AttributeNotFoundException();
+            throw new QueryNotFoundException(queryName);
         }
         installedQueries.remove(queryName);
         List<Attribute> attributes = queryAttributes.get(queryName);

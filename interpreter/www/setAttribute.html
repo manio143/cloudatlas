@@ -18,6 +18,20 @@
     <script src="bootstrap.min.js"></script>
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
+    <script>
+        function setNodeAttribute() {
+            var path = $("#path").val();
+            var name = $("#attribute").val();
+            var type = $("#type").val();
+            var value = $("#value").val();
+            var url = "/rmi/set?path=" + path + "&name=" + name + "&type=" + type + "&value=" + value;
+            $.ajax({
+                url: url ,
+            }).done(function (dataS) {
+                alert(dataS);
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -41,7 +55,7 @@
                 <li class="active"><a href="/">Home</a></li>
                 <li class="active"><a href="/queries">Queries</a></li>
                 <li class="active"><a href="/set">Set attribute</a></li>
-                <li class="active"><a href="/fallback">Fallback Contacts</a></li>
+                <li class="active"><a href="/contacts">Fallback Contacts</a></li>
             </ul>
         </div>
     </div>
@@ -67,7 +81,7 @@
             <label for="value">Value:</label>
             <input type="text" class="form-control" id="value">
         </div>
-        <button type="button" class="btn">Set</button>
+        <button type="button" class="btn" onclick="setNodeAttribute()">Set</button>
     </div>
 </div>
 

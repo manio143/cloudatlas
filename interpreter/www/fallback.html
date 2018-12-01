@@ -18,6 +18,16 @@
     <script src="bootstrap.min.js"></script>
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
+    <script>
+        function setFallbackContacts() {
+            var url = "/rmi/contacts?set=" + $("#contacts").val();
+            $.ajax({
+                url: url ,
+            }).done(function (dataS) {
+                alert(dataS);
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -41,7 +51,7 @@
                 <li class="active"><a href="/">Home</a></li>
                 <li class="active"><a href="/queries">Queries</a></li>
                 <li class="active"><a href="/set">Set attribute</a></li>
-                <li class="active"><a href="/fallback">Fallback Contacts</a></li>
+                <li class="active"><a href="/contacts">Fallback Contacts</a></li>
             </ul>
         </div>
     </div>
@@ -54,11 +64,11 @@
         <div class="form-group">
             <input type="text" class="form-control" id="contacts">
         </div>
-        <button type="button" class="btn">Set</button>
+        <button type="button" class="btn" onclick="setFallbackContacts()">Set</button>
     </div>
     <div class="row">
-        <h5>*format: name1;ip1, name2;ip2, ...</h5>
-        <h5>example: UW1;10.1.1.38, UW2;10.1.1.39</h5>
+        <h5>*format: path1;ip1, path2;ip2, ...</h5>
+        <h5>example: /UW1;10.1.1.38, /UW2;10.1.1.39</h5>
     </div>
 </div>
 

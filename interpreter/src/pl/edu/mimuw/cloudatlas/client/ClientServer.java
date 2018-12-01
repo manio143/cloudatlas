@@ -42,7 +42,7 @@ public class ClientServer implements Runnable {
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/queries", new FileHandler("www/queries.html"));
             server.createContext("/set", new FileHandler("www/setAttribute.html"));
-            server.createContext("/fallback", new FileHandler("www/fallback.html"));
+            server.createContext("/contacts", new FileHandler("www/fallback.html"));
             server.createContext("/rmi/all", new AllZonesHandler());
             server.createContext("/rmi/overtime", new OvertimeHandler());
             server.createContext("/rmi/zones", new ZonesHandler());

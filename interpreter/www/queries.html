@@ -18,6 +18,24 @@
     <script src="bootstrap.min.js"></script>
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
+    <script>
+        function installQuery() {
+            var url = "/rmi/install?attribute=" + $("#installAttribute").val() + "&query=" + $("#query").val();
+            $.ajax({
+                url: url ,
+            }).done(function (dataS) {
+                alert(dataS);
+            });
+        }
+        function uninstallQuery() {
+            var url = "/rmi/uninstall?attribute=" + $("#uninstallAttribute").val();
+            $.ajax({
+                url: url ,
+            }).done(function (dataS) {
+                alert(dataS);
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -41,7 +59,7 @@
                 <li class="active"><a href="/">Home</a></li>
                 <li class="active"><a href="/queries">Queries</a></li>
                 <li class="active"><a href="/set">Set attribute</a></li>
-                <li class="active"><a href="/fallback">Fallback Contacts</a></li>
+                <li class="active"><a href="/contacts">Fallback Contacts</a></li>
             </ul>
         </div>
     </div>
@@ -59,7 +77,7 @@
             <label for="query">Query:</label>
             <input type="text" class="form-control" id="query">
         </div>
-        <button type="button" class="btn">Install</button>
+        <button type="button" class="btn" onclick="installQuery()">Install</button>
     </div>
     <div class="row" style="margin-top:20px">
         <h4>Query uninstallation</h4>
@@ -67,7 +85,7 @@
             <label for="uninstallAttribute">Attribute:</label>
             <input type="text" class="form-control" id="uninstallAttribute">
         </div>
-        <button type="button" class="btn">Uninstall</button>
+        <button type="button" class="btn" onclick="uninstallQuery()">Uninstall</button>
     </div>
 </div>
 
