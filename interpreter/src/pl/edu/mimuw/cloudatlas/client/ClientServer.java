@@ -13,8 +13,6 @@ import java.util.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.w3c.dom.Attr;
-import pl.edu.mimuw.cloudatlas.agent.NotSingletonZoneException;
 import pl.edu.mimuw.cloudatlas.agent.ZoneNotFoundException;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.*;

@@ -25,8 +25,6 @@ public class ClientCMD {
             }
             scanner.close();
 
-//            stub.uninstallQuery("two_plus_two");
-
             List<String> zones = stub.getZones();
             for(String zone : zones) {
                 AttributesMap map = stub.getAttributes(zone);
