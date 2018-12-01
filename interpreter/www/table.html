@@ -21,6 +21,17 @@
             padding: 0 !important;
             border: none !important;
         }
+
+        .axis path {
+            fill: none;
+            stroke: #777;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-family: Lato;
+            font-size: 13px;
+        }
     </style>
     <link href="bootstrap.min.css" , rel="stylesheet" type="text/css" />
 
@@ -29,9 +40,12 @@
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
     <script src="bootstrap.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="graph.js"></script>
     <script>
         // load data and generate table
         var attrDict = {};
+        var toPlot = [];
         $.ajax({
             url: "/rmi/zones",
         }).done(function (dataS) {
@@ -83,13 +97,45 @@
                 if (zone == '/') table += "    <td>/</td>\n";
                 else table += "    <td>" + zone.substr(zone.lastIndexOf('/') + 1, zone.length - zone.lastIndexOf('/') - 1) + "</td>\n";
                 for (var attr of attrNames) {
-                    table += "    <td>" + (attributes[attr] == undefined ? "" : attributes[attr]) + "</td>\n";
+                    table += "    <td onclick='plot(\"" + zone + ":" + attr + "\")' >" + (attributes[attr] == undefined ? "" : attributes[attr]) + "</td>\n";
                 }
                 table += "  </tr>\n\n";
             }
             table += "</tbody>\n";
 
             $("#tableHolder").append(table);
+        }
+
+        var cache = {}
+        function plot(param) {
+            var [zone, attr] = param.split(":");
+            if (toPlot.indexOf(param) < 0) {
+                toPlot.push(param);
+                if (cache[param] != undefined) {
+                    graphNodes.push(cache[param]);
+                    renderGraph();
+                }
+                else {
+                    $.ajax("/rmi/overtime?path=" + zone + "&attribute=" + attr)
+                        .done((str) => {
+                            var data = JSON.parse(str);
+                            var graphData = data.Values;//data.Values.map(el => ({ timestamp: new Date(el.timestamp), value: el.value }));
+                            if (cache[param] != undefined) return;
+                            cache[param] = { name: param, data: graphData };
+                            if (toPlot.indexOf(param) < 0) return;
+                            graphNodes.push(cache[param]);
+                            renderGraph();
+                        });
+                }
+            } else {
+                toPlot.splice(toPlot.indexOf(param), 1);
+                if (cache[param] != undefined) {
+                    if (graphNodes.indexOf(cache[param]) >= 0) {
+                        graphNodes.splice(graphNodes.indexOf(cache[param]), 1);
+                        renderGraph();
+                    }
+                }
+            }
         }
 
         function HideColumnIndex(element) {
@@ -164,6 +210,9 @@
     <div id="hiddenColumns">
         <h6>You can hide columns by clicking on them, and restore them below</h6>
     </div>
+
+    <p id="labels"></p>
+    <svg id="visualisation" width="1000" height="500" style="display:none"></svg>
 
     <div class="jumbotron text-center" style="margin-bottom:0">
         <p>Created by Marian Dziubiak and Jakub Kuklis</p>

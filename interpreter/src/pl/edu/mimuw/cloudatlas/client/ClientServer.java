@@ -51,6 +51,7 @@ public class ClientServer implements Runnable {
             server.createContext("/rmi/attributes", new AttributesHandler());
             server.createContext("/rmi/install", new InstallHandler());
             server.createContext("/rmi/uninstall", new UninstallHandler());
+            server.createContext("/graph.js", new FileHandler("www/graph.js"));
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
             server.createContext("/jquery-3.3.1.min.js", new FileHandler("www/jquery-3.3.1.min.js"));
