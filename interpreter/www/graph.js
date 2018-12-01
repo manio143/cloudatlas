@@ -8,60 +8,34 @@ Array.prototype.min = function () {
 
 var colors = ['red', 'green', 'blue', 'black', 'violet', 'brown', 'pink'];
 var graphNodes = [];
+var chart = { destroy: () => { } };
+
 function renderGraph() {
-    $('#labels').empty();
-    $('#visualisation').empty();
-    var vis = d3.select("#visualisation"),
-        WIDTH = 1000,
-        HEIGHT = 500,
-        MARGINS = {
-            top: 20,
-            right: 20,
-            bottom: 20,
-            left: 50
-        },
-        minTime = Array.from(graphNodes.values()).map(el => el.data.map(er => er.timestamp).min()).min(),
-        maxTime = Array.from(graphNodes.values()).map(el => el.data.map(er => er.timestamp).max()).max(),
-        xScale = d3.scale.linear().range([MARGINS.left, WIDTH - MARGINS.right]).domain([minTime, maxTime]),
-        yScale = d3.scale.linear().range([HEIGHT - MARGINS.top, MARGINS.bottom]).domain([0, 100]),
-        xAxis = d3.svg.axis()
-            .scale(xScale),
-        yAxis = d3.svg.axis()
-            .scale(yScale)
-            .orient("left");
+    var ch = document.getElementById('chart');
+    var ctx = ch.getContext('2d');
 
-    vis.append("svg:g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + (HEIGHT - MARGINS.bottom) + ")")
-        .call(xAxis);
-    vis.append("svg:g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(" + (MARGINS.left) + ",0)")
-        .call(yAxis);
-    var lineGen = d3.svg.line()
-        .x(function (d) {
-            return xScale(d.timestamp);
-        })
-        .y(function (d) {
-            return yScale(d.value);
-        })
-        .interpolate("basis");
-
-    if (graphNodes.length == 0)
-        document.getElementById('visualisation').style.display = "none";
-    else
-        document.getElementById('visualisation').style.display = "";
-
-    // DO TEGO MIEJSCA NIE MA PROBLEMU
-    
-    let colorIndex = 0;
-    for (var node of graphNodes) {
-        vis.append('svg-path')      //ALE TE LINIE SIE NIE POJAWIAJĄ
-            .attr('d', lineGen(node.data))
-            .attr('stroke', colors[colorIndex])
-            .attr('stroke-width', 2)
-            .attr('fill', 'none');
-        $('#labels').append("<span style='color: " + colors[colorIndex] + ";' >" + node.name + "&nbsp;</span>");
-        colorIndex = (colorIndex + 1) % colors.length;
+    if (graphNodes.length < 1) {
+        ch.style.display = 'none';
+        return;
     }
+    ch.style.display = "";
+    var labels = graphNodes[0].data.map(er => new Date(er.timestamp)).map(d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2));
+
+    chart.destroy();
+    chart = new Chart(ctx, {
+        // The type of chart we want to create
+        type: 'line',
+
+        // The data for our dataset
+        data: {
+            labels: labels,
+            datasets: graphNodes.map(el => ({
+                label: el.name,
+                data: el.data.map(er => er.value)
+            }))
+        },
+
+        // Configuration options go here
+        options: {}
+    });
 }
