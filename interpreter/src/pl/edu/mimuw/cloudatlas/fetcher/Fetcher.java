@@ -14,18 +14,32 @@ import java.rmi.registry.Registry;
 import java.text.ParseException;
 import java.util.*;
 
-public class Fetcher {
-    private String host;
-    private String iniFile;
+public class Fetcher extends TimerTask {
     private String startFile;
     private String metricsFile;
     private String pathName;
 
-    public Fetcher(String host, String iniFile, String startFile, String metricsFile) {
-        this.host = host;
-        this.iniFile = iniFile;
+    private CloudAtlasAPI stub;
+
+    public Fetcher(String host, String startFile, String metricsFile) {
         this.startFile = startFile;
         this.metricsFile = metricsFile;
+
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
+
+        try {
+            Registry registry = LocateRegistry.getRegistry(host);
+            stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
+
+            List<ValueContact> contacts = new ArrayList<ValueContact>();
+            contacts.add(createContact("/uw/khaki13", (byte) 10, (byte) 1, (byte) 1, (byte) 38));
+            stub.setFallbackContacts(contacts);
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 
     private static ValueContact createContact(String path, byte ip1, byte ip2, byte ip3, byte ip4)
@@ -135,29 +149,16 @@ public class Fetcher {
         return map;
     }
 
-    private void run() {
-        Properties prop = new Properties();
+    @Override
+    public void run(){
         try {
-            prop.load(new FileInputStream(iniFile));
-            System.out.println(prop.getProperty("collection_interval"));
-
             Runtime rt = Runtime.getRuntime();
             Process pr = rt.exec("./fetch_metrics " + startFile + " " + metricsFile);
 
             pr.waitFor();
 
-            if (System.getSecurityManager() == null) {
-                System.setSecurityManager(new SecurityManager());
-            }
-            Registry registry = LocateRegistry.getRegistry(host);
-            CloudAtlasAPI stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-
-            List<ValueContact> contacts = new ArrayList<ValueContact>();
-            contacts.add(createContact("/uw/khaki13", (byte)10, (byte)1, (byte)1, (byte)38));
-            stub.setFallbackContacts(contacts);
-
             for (Map.Entry<Attribute, Value> p : readAttributes()) {
-//                System.out.println(p.getValue());
+                System.out.println(p.getKey() + " : " + p.getValue());
                 stub.setAttribute(pathName, p.getKey().getName(), p.getValue());
             }
 
@@ -168,8 +169,17 @@ public class Fetcher {
 
 
     public static void main(String[] args) {
-        Fetcher f = new Fetcher(args[0], args[1], args[2], args[3]);
-        f.run();
+        try {
+            Properties prop = new Properties();
+            prop.load(new FileInputStream(args[1]));
+            Long interval = Long.parseLong(prop.getProperty("collection_interval"));
+            Fetcher fetcher = new Fetcher(args[0], args[2], args[3]);
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(fetcher, interval, 1000);
+
+        } catch(Exception e) {
+            System.out.println(e);
+        }
     }
 
     private class Pair {
