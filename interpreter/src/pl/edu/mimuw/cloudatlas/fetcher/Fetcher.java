@@ -6,6 +6,7 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.registry.LocateRegistry;
@@ -61,7 +62,18 @@ public class Fetcher {
             case "bool":
                 return new ValueBoolean(Boolean.parseBoolean(valueString));
             case "contact":
-
+                String[] parts = valueString.split(";");
+                String name = parts[0].trim();
+                String[] address = parts[1].trim().split("\\.");
+                Byte[] bytes = new Byte[4];
+                for (int i = 0; i < 4; i++) {
+                    bytes[i] = (byte)Integer.parseInt(address[i]);
+                }
+                try {
+                    return createContact(name, bytes[0], bytes[1], bytes[2], bytes[3]);
+                } catch (UnknownHostException e) {
+                    System.out.println(e.getMessage());
+                }
             case "double":
                 return new ValueDouble(Double.parseDouble(valueString));
             case "duration":
@@ -69,14 +81,12 @@ public class Fetcher {
             case "int":
                 return new ValueInt(Long.parseLong(valueString));
             case "string":
-                return new ValueString(valueString);
+                return new ValueString(valueString.substring(1, valueString.length() - 1));
             case "set":
                 Set<Value> valuesSet = new HashSet<>();
                 if (valueString.length() > 2) {
                     for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
-                        String trimmedElem = elem.trim();
-                        System.out.println(trimmedElem.substring(1, trimmedElem.length() - 1));
-                        valuesSet.add(createValue(types, trimmedElem.substring(1, trimmedElem.length() - 1), which + 1));
+                        valuesSet.add(createValue(types, elem.trim(), which + 1));
                     }
                 }
                 return new ValueSet(new HashSet<>(valuesSet), typeFromStrings(types, which + 1));
@@ -84,8 +94,7 @@ public class Fetcher {
                 List<Value> valuesList = new ArrayList<>();
                 if (valueString.length() > 2) {
                     for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
-                    String trimmedElem = elem.trim();
-                    valuesList.add(createValue(types, trimmedElem.substring(1, trimmedElem.length() - 1), which + 1));
+                        valuesList.add(createValue(types, elem.trim(), which + 1));
                     }
                 }
                 return new ValueList(new ArrayList<>(valuesList), typeFromStrings(types, which + 1));
@@ -102,8 +111,28 @@ public class Fetcher {
         return new ValueString("");
     }
 
-    private AttributesMap() {
+    private AttributesMap readAttributes() throws IOException {
+        AttributesMap map = new AttributesMap();
 
+        BufferedReader br = new BufferedReader(new FileReader(metricsFile));
+        String line = br.readLine();
+        pathName = line;
+
+        line = br.readLine();
+
+        while (line != null) {
+            String[] parts = line.split(":");
+            String attribute = parts[0].trim();
+            String secondPart = line.substring(parts[0].length() + 1, line.length()).trim();
+            String[] typesAndValue = secondPart.split("=");
+            String[] types = typesAndValue[0].trim().split(" ");
+            String valueString = typesAndValue[1].trim();
+            Value val = createValue(types, valueString, 0);
+            map.addOrChange(attribute, val);
+            line = br.readLine();
+        }
+
+        return map;
     }
 
     private void run() {
@@ -127,51 +156,10 @@ public class Fetcher {
             contacts.add(createContact("/uw/khaki13", (byte)10, (byte)1, (byte)1, (byte)38));
             stub.setFallbackContacts(contacts);
 
-            String pathName = "";
-            List<Pair> attributes = new ArrayList<Pair>();
-
-            try(BufferedReader br = new BufferedReader(new FileReader(metricsFile))) {
-                String line = br.readLine();
-                pathName = line;
-
-                System.out.println(pathName);
-
-                line = br.readLine();
-
-                while (line != null) {
-                    System.out.println(line);
-                    String[] parts = line.split(":");
-                    String attribute = parts[0].trim();
-                    String secondPart = line.substring(parts[0].length() + 1, line.length()).trim();
-                    System.out.println(secondPart);
-                    String[] typesAndValue = secondPart.split("=");
-                    String[] types = typesAndValue[0].trim().split(" ");
-                    String valueString = typesAndValue[1].trim();
-                    System.out.println(attribute);
-                    System.out.println(types[0]);
-                    System.out.println(valueString);
-                    Value val = createValue(types, valueString, 0);
-                    line = br.readLine();
-                }
+            for (Map.Entry<Attribute, Value> p : readAttributes()) {
+//                System.out.println(p.getValue());
+                stub.setAttribute(pathName, p.getKey().getName(), p.getValue());
             }
-
-            attributes.add(new Pair("creation", new ValueTime("2011/11/09 20:8:13.123")));
-            attributes.add(new Pair("cpu_usage", new ValueDouble(0.9)));
-            attributes.add(new Pair("num_cores", new ValueInt(3L)));
-            attributes.add(new Pair("num_processes", new ValueInt(131L)));
-            attributes.add(new Pair("has_ups", new ValueBoolean(null)));
-            List<Value> some_names = new ArrayList<>();
-            some_names.add(new ValueString("tola"));
-            some_names.add(new ValueString("tosia"));
-            ValueList vl = new ValueList(new ArrayList<Value>(some_names), TypePrimitive.STRING);
-            attributes.add(new Pair("some_names", vl));
-            attributes.add(new Pair("expiry", new ValueDuration(13,12,0,0,0)));
-
-            for (Pair p : attributes) {
-                System.out.println(p.val);
-                stub.setAttribute(pathName, p.attr, p.val);
-            }
-
 
         } catch (Exception e) {
             System.out.println(e);

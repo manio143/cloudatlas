@@ -1,4 +1,5 @@
 /uv/violet07
+members : set contact = {/UW1;10.1.1.38}
 creation : time = 2011/11/09 20:8:13.123
 cpu_usage : double = 0.9
 num_cores : integer = 3
