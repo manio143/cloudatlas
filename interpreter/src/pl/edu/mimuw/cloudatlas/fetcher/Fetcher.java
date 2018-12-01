@@ -7,11 +7,8 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,32 +34,13 @@ public class Fetcher implements Runnable {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
 
-            ValueSet contacts = (ValueSet)ValueReader.formValue("set contact", "{/uw/khaki;10.1.1.38}");
+            ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", "{/uw/khaki;10.1.1.38}");
             stub.setFallbackContacts(contacts);
             this.set = true;
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-
-    private AttributesMap readAttributes() throws IOException {
-        AttributesMap map = new AttributesMap();
-
-        BufferedReader br = new BufferedReader(new FileReader(metricsFile));
-        String line = br.readLine();
-        pathName = line;
-
-        line = br.readLine();
-
-        while (line != null) {
-            ValueReader.Pair toAdd = ValueReader.createAttribute(line);
-            map.addOrChange(toAdd.attr, toAdd.val);
-            line = br.readLine();
-        }
-
-        return map;
     }
 
     @Override
@@ -73,8 +51,10 @@ public class Fetcher implements Runnable {
 
             pr.waitFor();
 
-            for (Map.Entry<Attribute, Value> p : readAttributes()) {
-                stub.setAttribute(pathName, p.getKey().getName(), p.getValue());
+            for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
+                for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
+                    stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
+                }
             }
 
         } catch (Exception e) {

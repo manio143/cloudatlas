@@ -28,32 +28,42 @@ import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
-import pl.edu.mimuw.cloudatlas.model.PathName;
-import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
-import pl.edu.mimuw.cloudatlas.model.Value;
-import pl.edu.mimuw.cloudatlas.model.ValueBoolean;
-import pl.edu.mimuw.cloudatlas.model.ValueContact;
-import pl.edu.mimuw.cloudatlas.model.ValueDouble;
-import pl.edu.mimuw.cloudatlas.model.ValueDuration;
-import pl.edu.mimuw.cloudatlas.model.ValueInt;
-import pl.edu.mimuw.cloudatlas.model.ValueList;
-import pl.edu.mimuw.cloudatlas.model.ValueSet;
-import pl.edu.mimuw.cloudatlas.model.ValueString;
-import pl.edu.mimuw.cloudatlas.model.ValueTime;
-import pl.edu.mimuw.cloudatlas.model.ZMI;
+import pl.edu.mimuw.cloudatlas.model.*;
 
 public class Main {
 	private static ZMI root;
 	
 	public static void main(String[] args) throws Exception {
-		root = createTestHierarchy();
+		if (args.length > 1) {
+			TreeMap<String, AttributesMap> zoneMaps = ModelReader.readAttributes(args[1]);
+
+			boolean set = false;
+
+			for (Map.Entry<String, AttributesMap> zone : zoneMaps.entrySet()) {
+				ZMI son = new ZMI();
+				for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
+					son.getAttributes().addOrChange(entry.getKey(), entry.getValue());
+				}
+				PathName pathName = new PathName(zone.getKey());
+				if (!set) {
+					root = son;
+					set = true;
+				} else {
+					addSon(root, son, pathName.getComponents(), 0);
+				}
+			}
+
+			for (ZMI son : root.getSons()) {
+				System.out.println(son.getAttributes());
+			}
+
+		} else {
+			root = createTestHierarchy();
+		}
 		Scanner scanner = new Scanner(System.in);
 		scanner.useDelimiter("\\n");
 		while(scanner.hasNext()) {
@@ -70,7 +80,21 @@ public class Main {
 		}
 		scanner.close();
 	}
-	
+
+	private static void addSon(ZMI parent, ZMI son, List<String> components, int which) {
+		if (which == components.size() - 1) {
+			parent.addSon(son);
+			son.setFather(parent);
+		} else {
+			for (ZMI parentSon : parent.getSons()) {
+				String name = ((ValueString)parentSon.getAttributes().get("name")).getValue();
+				if (name.equals(components.get(which))) {
+					addSon(parentSon, son, components, which + 1);
+				}
+			}
+		}
+	}
+
 	private static PathName getPathName(ZMI zmi) {
 		String name = ((ValueString)zmi.getAttributes().get("name")).getValue();
 		return zmi.getFather() == null? PathName.ROOT : getPathName(zmi.getFather()).levelDown(name);
@@ -99,7 +123,7 @@ public class Main {
 			ip1, ip2, ip3, ip4
 		}));
 	}
-	
+
 	private static ZMI createTestHierarchy() throws ParseException, UnknownHostException {
 		ValueContact violet07Contact = createContact("/uw/violet07", (byte)10, (byte)1, (byte)1, (byte)10);
 		ValueContact khaki13Contact = createContact("/uw/khaki13", (byte)10, (byte)1, (byte)1, (byte)38);

@@ -21,14 +21,14 @@ DNS_NAME="$(dnsdomainname)"
 
 
 echo "cpu_load : double = ${CPU_LOAD}" >> $2
-echo "free_disk : int = ${FREE_DISK}" >> $2
-echo "total_disk : int = ${TOTAL_DISK}" >> $2
-echo "free_ram : int = ${FREE_RAM}" >> $2
-echo "total_ram : int = ${TOTAL_RAM}" >> $2
-echo "free_swap : int = ${FREE_SWAP}" >> $2
-echo "total_swap : int = ${TOTAL_SWAP}" >> $2
-echo "num_processes : int = ${NUM_PROCESSES}" >> $2
-echo "num_cores : int = ${NUM_CORES}" >> $2
+echo "free_disk : integer = ${FREE_DISK}" >> $2
+echo "total_disk : integer = ${TOTAL_DISK}" >> $2
+echo "free_ram : integer = ${FREE_RAM}" >> $2
+echo "total_ram : integer = ${TOTAL_RAM}" >> $2
+echo "free_swap : integer = ${FREE_SWAP}" >> $2
+echo "total_swap : integer = ${TOTAL_SWAP}" >> $2
+echo "num_processes : integer = ${NUM_PROCESSES}" >> $2
+echo "num_cores : integer = ${NUM_CORES}" >> $2
 echo -e "kernel_ver : string = \"${KERNEL_VER}\"" >> $2
-echo "logged_users : int = ${LOGGED_USERS}" >> $2
+echo "logged_users : integer = ${LOGGED_USERS}" >> $2
 echo "dns_name : set string = {${DNS_NAME}}" >> $2

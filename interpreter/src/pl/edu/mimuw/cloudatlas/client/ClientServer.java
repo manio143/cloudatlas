@@ -245,7 +245,7 @@ public class ClientServer implements Runnable {
                 response = "Error: contacts not specified!";
             } else {
                 try {
-                    ValueSet contacts = (ValueSet)ValueReader.formValue("set contact", "{" + parameters.get("set") + "}");
+                    ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", "{" + parameters.get("set") + "}");
                     stub.setFallbackContacts(contacts);
                     response = "Successfully set fallback contacts";
                 } catch (Exception e) {
@@ -308,7 +308,7 @@ public class ClientServer implements Runnable {
                             parameters.get("value")
                                     .replace("<", "{")
                                     .replace(">", "}");
-                    Value val = ValueReader.formValue(parameters.get("type"), valueString);
+                    Value val = ModelReader.formValue(parameters.get("type"), valueString);
                     stub.setAttribute(parameters.get("path"), parameters.get("name"), val);
                     response = "Attribute changed!";
                 } catch(AgentException e) {

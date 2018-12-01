@@ -1,0 +1,80 @@
+/
+    level : integer = 0
+    name : string = null
+/uw
+    level : integer = 1
+    name : string = "uw"
+/pjwstk
+    level : integer = 1
+    name : string = "pjwstk"
+/uw/violet07
+    level : integer = 2
+    name : string = "violet07"
+    owner : string = "/uw/violet07"
+    timestamp : time = 2012/11/09 18:00:00.000
+    contacts : set contact = {/UW1A;10.1.1.38, /UW1B;10.1.1.38, /UW1C;10.1.1.38}
+    cardinality : integer = 1
+    members : set contact = {/UW1;10.1.1.38}
+    creation : time = 2011/11/09 20:8:13.123
+    cpu_usage : double = 0.9
+    num_cores : integer = 3
+    num_processes : integer = 131
+    has_ups : boolean = NULL
+    some_names : list string = ["tola", "tosia"]
+    expiry : duration = +1 12:00:00.000
+/khaki31/uw
+    level : integer = 2
+    name : string = "khaki31"
+    owner : string = "/uw/khaki31"
+    timestamp : time = 2012/11/09 20:03:00.000
+    contacts : set contact = {/UW2A;10.1.1.38}
+    cardinality : integer = 1
+    members : set contact = {/UW2A;10.1.1.38}
+    creation : time = 2011/11/09 20:12:13.123
+    cpu_usage : double = NULL
+    num_cores : integer = 3
+    num_processes : integer = 124
+    has_ups : boolean = false
+    some_names : list string = ["agatka", "beatka", "celina"]
+    expiry : duration = -1 11:00:00.000
+/uw/khaki13
+    level : integer = 2
+    name : string = "khaki13"
+    owner : string = "/uw/khaki13"
+    timestamp : time = 2012/11/09 21:03:00.000
+    contacts : set contact = {/UW3A;10.1.1.38, /UW3B;10.1.1.38}
+    cardinality : integer = 1
+    members : set contact = {/UW3B;10.1.1.38}
+    creation : time = NULL
+    cpu_usage : double = 0.1
+    num_cores : integer = NULL
+    num_processes : integer = 107
+    has_ups : boolean = true
+    some_names : list string = []
+    expiry : duration = NULL
+/pjwstk/whatever01
+    level : integer = 2
+    name : string = "whatever01"
+    owner : string = "/pjwstk/whatever01"
+    timestamp : time = 2012/11/09 21:12:00.000
+    contacts : set contact = {/PJ1;10.1.1.38}
+    cardinality : integer = 1
+    members : set contact = {/PJ1;10.1.1.38}
+    creation : time = 2012/10/18 07:03:00.000
+    cpu_usage : double = 0.1
+    num_cores : integer = 7
+    num_processes : integer = 215
+    php_modules : list string = ["rewrite"]
+/pjwstk/whatever02
+    level : integer = 2
+    name : string = "whatever02"
+    owner : string = "/pjwstk/whatever02"
+    timestamp : time = 2012/11/09 21:13:00.000
+    contacts : set contact = {/PJ2;10.1.1.38}
+    cardinality : integer = 1
+    members : set contact = {/PJ2;10.1.1.38}
+    creation : time = 2012/10/18 07:04:00.000
+    cpu_usage : double = 0.4
+    num_processes : integer = 222
+    num_cores : integer = 13
+    php_modules : list ofstring = ["odbc"]
