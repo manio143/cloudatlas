@@ -11,14 +11,24 @@
             height: 200px;
             background: #aaa;
         }
+
+        .hide-col {
+            width: 0px !important;
+            height: 0px !important;
+            display: block !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
     </style>
-    <link href="bootstrap.min.css", rel="stylesheet" type="text/css" />
+    <link href="bootstrap.min.css" , rel="stylesheet" type="text/css" />
 
     <link href="jquery.treetable.css" rel="stylesheet" type="text/css" />
     <link href="jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
-    <script src="bootstrap.min.js"></script>
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
+    <script src="bootstrap.min.js"></script>
     <script>
         // load data and generate table
         var attrDict = {};
@@ -32,7 +42,7 @@
                     .done(function (dataSS) {
                         let attrs = JSON.parse(dataSS);
                         attrDict[zone] = attrs;
-                        console.log("Added "+zone);
+                        console.log("Added " + zone);
                     })
             );
             $.when.apply($, promises).then(() => {
@@ -58,7 +68,7 @@
             var table = "<table id='status'>\n<thead>\n";
             table += "  <th>name</th>\n";
             for (var attr of attrNames)
-                table += "  <th>" + attr + "</th>\n";
+                table += "  <th onclick='HideColumnIndex(this)'>" + attr + "</th>\n";
             table += "</thead>\n<tbody>\n";
             for (var key of Object.keys(attrDict).sort()) {
                 let zone = key;
@@ -81,24 +91,57 @@
 
             $("#tableHolder").append(table);
         }
+
+        function HideColumnIndex(element) {
+            var $el = $(element);
+            var $cell = $el.closest('th,td')
+            var $table = $cell.closest('table')
+
+            // get cell location - https://stackoverflow.com/a/4999018/1366033
+            var colIndex = $cell[0].cellIndex + 1;
+
+            // find and hide col index
+            $table.find("tbody tr, thead tr")
+                .children(":nth-child(" + colIndex + ")")
+                .addClass('hide-col');
+
+            // show restore footer
+            $('#hiddenColumns').append("<a href='#' onclick='restoreColumn(this); return false;' id='col" + colIndex + "'>" + element.innerText + "&nbsp;</a>");
+        }
+
+        function restoreColumn(element) {
+            var id = element.id.substr(3);
+            console.log(id);
+            var $table = $('#status');
+            $table.find("tbody tr, thead tr")
+                .children(":nth-child(" + id + ")")
+                .removeClass('hide-col');
+            element.remove();
+        }
     </script>
 </head>
 
 <body>
-<div class="jumbotron text-center" style="margin-bottom:0">
-    <h1>CloudAtlas</h1>
-    <p>Distributed system</p>
-</div>
+    <div class="jumbotron text-center" style="margin-bottom:0">
+        <h1>CloudAtlas</h1>
+        <p>Distributed system</p>
+    </div>
 
-<nav class="navbar navbar-inverse">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">CloudAtlas</a>
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">CloudAtlas</a>
+            </div>
+            <div class="collapse navbar-collapse" id="myNavbar">
+                <ul class="nav navbar-nav">
+                    <li class="active"><a href="#">Home</a></li>
+                </ul>
+            </div>
         </div>
         <div class="collapse navbar-collapse" id="myNavbar">
             <ul class="nav navbar-nav">
@@ -107,22 +150,24 @@
                 <li class="active"><a href="/set">Set attribute</a></li>
                 <li class="active"><a href="/contacts">Fallback Contacts</a></li>
             </ul>
+    </nav>
+
+
+    <div class="container">
+        <div class="row">
+            <h4>Table showing all stored ZMIs</h4>
         </div>
     </div>
-</nav>
 
+    <div id="tableHolder"></div>
 
-<div class="container">
-    <div class="row">
-        <h4>Table showing all stored ZMIs</h4>
+    <div id="hiddenColumns">
+        <h6>You can hide columns by clicking on them, and restore them below</h6>
     </div>
-</div>
 
-<div id="tableHolder"></div>
-
-<div class="jumbotron text-center" style="margin-bottom:0">
-    <p>Created by Marian Dziubiak and Jakub Kuklis</p>
-</div>
+    <div class="jumbotron text-center" style="margin-bottom:0">
+        <p>Created by Marian Dziubiak and Jakub Kuklis</p>
+    </div>
 </body>
 
 </html>
