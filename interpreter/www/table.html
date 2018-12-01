@@ -48,6 +48,7 @@
         // load data and generate table
         var attrDict = {};
         var toPlot = [];
+        var tableCreated = false;
         function updateTable() {
             $.ajax({
                 url: "/rmi/zones",
@@ -58,10 +59,17 @@
                         .done(function (dataSS) {
                             let attrs = JSON.parse(dataSS);
                             attrDict[zone] = attrs;
-                            console.log("Added " + zone);
+                            if (!tableCreated)
+                                console.log("Added " + zone);
+                            else {
+                                for (var attr in attrDict[zone])
+                                    document.getElementById(zone + ":" + attr).innerHTML = attrDict[zone][attr];
+                                console.log("Updated " + zone);
+                            }
                         })
                 );
                 $.when.apply($, promises).then(() => {
+                    if (tableCreated) return;
                     console.log("All added");
                     generateTable();
                     $("#status").agikiTreeTable({
@@ -107,13 +115,14 @@
                 if (zone == '/') table += "    <td>/</td>\n";
                 else table += "    <td>" + zone.substr(zone.lastIndexOf('/') + 1, zone.length - zone.lastIndexOf('/') - 1) + "</td>\n";
                 for (var attr of attrNames) {
-                    table += "    <td onclick='plot(\"" + zone + ":" + attr + "\")' >" + (attributes[attr] == undefined ? "" : attributes[attr]) + "</td>\n";
+                    table += "    <td id='" + zone + ":" + attr + "' onclick='plot(\"" + zone + ":" + attr + "\")' >" + (attributes[attr] == undefined ? "" : attributes[attr]) + "</td>\n";
                 }
                 table += "  </tr>\n\n";
             }
             table += "</tbody>\n";
 
             $("#tableHolder").append(table);
+            tableCreated = true;
         }
 
         var cache = {}
@@ -206,7 +215,6 @@
             $.ajax("/rmi/interval").done(str => {
                 interval = new Number(str);
                 setInterval(() => {
-                    $('#status').remove();
                     updateTable();
                     replot();
                 }, interval * 1000);
