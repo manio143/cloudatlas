@@ -1,0 +1,1 @@
+&attr: SELECT min(timestamp) + (max(timestamp) - epoch()) / 2 AS t2

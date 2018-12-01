@@ -58,7 +58,9 @@ public class Main {
 		scanner.useDelimiter("\\n");
 		while(scanner.hasNext()) {
 			if (args.length > 0) {
-				String selects = scanner.next().split(":")[1];
+				String line = scanner.next();
+				String[] parts = line.split(":");
+				String selects = line.substring(parts[0].length() + 1, line.length());
 				for (String select : selects.split(";")) {
 					executeQueries(root, select);
 				}

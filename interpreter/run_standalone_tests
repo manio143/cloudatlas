@@ -1,6 +1,6 @@
 #!/bin/sh
 
-NUM_TESTS=1
+NUM_TESTS=19
 
 for i in `seq $NUM_TESTS`; do
 	echo "Running test $i..."
