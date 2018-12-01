@@ -16,16 +16,19 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.w3c.dom.Attr;
 import pl.edu.mimuw.cloudatlas.agent.ZoneNotFoundException;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
 
+import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.DOUBLE;
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 
 public class ClientServer implements Runnable {
     private CloudAtlasAPI stub;
 
-    List<Map<String, AttributesMap>> results;
+    final int MAX_SIZE = 100;
+    TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
 
     public ClientServer(String host, String port) {
         if (System.getSecurityManager() == null) {
@@ -35,6 +38,7 @@ public class ClientServer implements Runnable {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
+            server.createContext("/all", new AllZonesHandler());
             server.createContext("/zones", new ZonesHandler());
             server.createContext("/attributes", new AttributesHandler());
             server.createContext("/", new FileHandler("www/table.html"));
@@ -69,7 +73,19 @@ public class ClientServer implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("A");
+        try {
+            if (results.size() > MAX_SIZE) {
+                results.remove(results.firstKey());
+            }
+            List<String> zones = stub.getZones();
+            Map<String, AttributesMap> res = new HashMap<>();
+            for (String zone : zones) {
+                res.put(zone, stub.getAttributes(zone));
+            }
+            results.put(System.currentTimeMillis(), res);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -108,6 +124,53 @@ public class ClientServer implements Runnable {
                     parameters.put(key, value);
                 }
             }
+        }
+    }
+
+    String resultsJSON() {
+        StringBuilder response = new StringBuilder();
+        response.append("{\n");
+        Integer which = 0;
+        for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
+            response.append("\t\"Fetch_" + which + "\": {\n");
+            which++;
+            response.append("\t\t\"Timestamp\" : " + entry.getKey() + ",\n");
+            response.append("\t\t\"Map\" : {\n");
+
+            for (Map.Entry<String, AttributesMap> zone : entry.getValue().entrySet()) {
+                response.append("\t\t\t\"" + zone.getKey() + "\" : {\n");
+                for (Map.Entry<Attribute, Value> attribute : zone.getValue()) {
+                    Value val = attribute.getValue();
+                    response.append("\t\t\t\t\"" + attribute.getKey() + "\" : ");
+                    if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
+                        response.append(val.toString());
+                    } else {
+                        response.append("\"" + val.toString() + "\"");
+                    }
+                    response.append(",\n");
+                }
+                response.replace(response.length() - 2, response.length() - 1, "");
+                response.append("\t\t\t},\n");
+            }
+            response.replace(response.length() - 2, response.length() - 1, "");
+            response.append("\t\t}\n");
+            response.append("\t},\n");
+        }
+        response.replace(response.length() - 2, response.length() - 1, "");
+
+        response.append("}");
+        return response.toString();
+    }
+
+    class AllZonesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            String response = resultsJSON();
+
+            t.sendResponseHeaders(200, response.length());
+            OutputStream os = t.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
         }
     }
 
