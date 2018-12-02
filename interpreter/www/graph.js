@@ -22,8 +22,16 @@ function renderGraph() {
     let dateFormat = interval >= 60 ?
         d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2)
         : d => ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getSeconds()).slice(-2);
-    var timestamps = graphNodes.map(el => el.data.map(er => new Date(er.timestamp)));
-    var labels = timestamps.reduce((acc, curr) => curr.length > acc.length ? curr : acc).map(dateFormat);
+    var timestamps = graphNodes.map(el => el.data.map(er => new Date(er.timestamp))).reduce((acc, curr) => curr.length > acc.length ? curr : acc);
+    var labels = timestamps.map(dateFormat);
+
+    for (var g of graphNodes) {
+        let ts = g.data.map(er => er.timestamp);
+        for (var t of timestamps.map(t => t.getTime()))
+            if (ts.indexOf(t) < 0)
+                g.data.push({ timestamp: t, value: 0 });
+        g.data.sort((a, b) => a.timestamp - b.timestamp);
+    }
 
     chart.destroy();
     chart = new Chart(ctx, {
