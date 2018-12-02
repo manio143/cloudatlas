@@ -7,4 +7,4 @@
 # course. It is intended for internal use only.
 #
 
-java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.agent.CloudAtlasServer
+java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.agent.CloudAtlasServer utility/initial_zones

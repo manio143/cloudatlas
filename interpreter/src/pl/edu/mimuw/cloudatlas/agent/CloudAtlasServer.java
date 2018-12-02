@@ -12,7 +12,7 @@ public class CloudAtlasServer {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            CloutAtlasAgent object = new CloutAtlasAgent();
+            CloutAtlasAgent object = new CloutAtlasAgent(args[0]);
             CloudAtlasAPI stub =
                     (CloudAtlasAPI) UnicastRemoteObject.exportObject(object, 0);
             Registry registry = LocateRegistry.getRegistry();

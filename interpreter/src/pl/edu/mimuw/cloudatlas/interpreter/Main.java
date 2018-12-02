@@ -41,22 +41,7 @@ public class Main {
 		boolean printQueries = true;
 		if (args.length > 1) {
 			printQueries = false;
-			boolean rootSet = false;
-			TreeMap<String, AttributesMap> zoneMaps = ModelReader.readAttributes(args[1]);
-
-			for (Map.Entry<String, AttributesMap> zone : zoneMaps.entrySet()) {
-				ZMI son = new ZMI();
-				for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
-					son.getAttributes().addOrChange(entry.getKey(), entry.getValue());
-				}
-				PathName pathName = new PathName(zone.getKey());
-				if (!rootSet) {
-					root = son;
-					rootSet = true;
-				} else {
-					addSon(root, son, pathName.getComponents(), 0);
-				}
-			}
+			root = ModelReader.readZMI(args[1]);
 		} else {
 			root = createTestHierarchy();
 		}
@@ -77,28 +62,7 @@ public class Main {
 		scanner.close();
 
 		if (!printQueries) {
-			printZMI(root);
-		}
-	}
-
-	private static void printZMI(ZMI zmi) {
-		zmi.printAttributes(System.out);
-		for(ZMI son : zmi.getSons()) {
-			printZMI(son);
-		}
-	}
-
-	private static void addSon(ZMI parent, ZMI son, List<String> components, int which) {
-		if (which == components.size() - 1) {
-			parent.addSon(son);
-			son.setFather(parent);
-		} else {
-			for (ZMI parentSon : parent.getSons()) {
-				String name = ((ValueString)parentSon.getAttributes().get("name")).getValue();
-				if (name.equals(components.get(which))) {
-					addSon(parentSon, son, components, which + 1);
-				}
-			}
+			root.printAttributes(System.out);
 		}
 	}
 

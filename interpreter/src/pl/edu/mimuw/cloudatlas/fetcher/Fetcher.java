@@ -52,6 +52,7 @@ public class Fetcher implements Runnable {
             pr.waitFor();
 
             for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
+
                 for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
                     stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                 }

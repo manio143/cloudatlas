@@ -103,6 +103,16 @@ public class ClientServer implements Runnable {
         }
     }
 
+    private String valueJSON(Value val) {
+        if (val.isNull()) {
+            return "null";
+        } else if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
+            return val.toString();
+        } else {
+            return "\"" + val.toString() + "\"";
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static void parseQuery(String query, Map<String, String> parameters) throws UnsupportedEncodingException {
 
@@ -162,13 +172,7 @@ public class ClientServer implements Runnable {
                     response.append("\t\t\t\"" + zone.getKey() + "\" : {\n");
                     for (Map.Entry<Attribute, Value> attribute : zone.getValue()) {
                         Value val = attribute.getValue();
-                        response.append("\t\t\t\t\"" + attribute.getKey() + "\" : ");
-                        if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
-                            response.append(val.toString());
-                        } else {
-                            response.append("\"" + val.toString() + "\"");
-                        }
-                        response.append(",\n");
+                        response.append("\t\t\t\t\"" + attribute.getKey() + "\" : " + valueJSON(val) + ",\n");
                     }
                     response.replace(response.length() - 2, response.length() - 1, "");
                     response.append("\t\t\t},\n");
@@ -269,14 +273,7 @@ public class ClientServer implements Runnable {
                     for (Map.Entry<Attribute, Value> entry : attributes) {
                         Attribute attr = entry.getKey();
                         Value val = entry.getValue();
-                        response += "\t\"" + attr + "\": ";
-                        String value = "";
-                        if (val.getType().getPrimaryType() == INT) {
-                            value = val.toString();
-                        } else {
-                            value = "\"" + val.toString() + "\"";
-                        }
-                        response += value + ",\n";
+                        response += "\t\"" + attr + "\": " + valueJSON(val) + ",\n";
                     }
                     response = response.substring(0, response.length() - 2);
                     response += "\n}";

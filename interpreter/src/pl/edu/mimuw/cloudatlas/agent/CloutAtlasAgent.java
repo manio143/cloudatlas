@@ -10,6 +10,7 @@ import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -21,10 +22,13 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
 
     private Map<String, List<Attribute>> queryAttributes = new HashMap<String, List<Attribute>>();
 
-    public CloutAtlasAgent() {
-        root.getAttributes().add("cardinality", new ValueInt(0L));
-        root.getAttributes().add("level", new ValueInt(0L));
-        root.getAttributes().add("name", new ValueString(null));
+    public CloutAtlasAgent(String zonesFile) throws IOException {
+        try {
+            root = ModelReader.readZMI(zonesFile);
+        } catch (Exception e) {
+            System.out.println("Failed to read ZMIs");
+            throw e;
+        }
     }
 
     private String getName(ZMI zmi) {
@@ -205,7 +209,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {
-        ZMI zmi = reachZone(pathName, true);
+        ZMI zmi = reachZone(pathName, false);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }

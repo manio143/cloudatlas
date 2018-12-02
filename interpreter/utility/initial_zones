@@ -22,7 +22,7 @@
     has_ups : boolean = NULL
     some_names : list string = ["tola", "tosia"]
     expiry : duration = 1166400000
-/khaki31/uw
+/uw/khaki31 
     level : integer = 2
     name : string = "khaki31"
     owner : string = "/uw/khaki31"
@@ -36,7 +36,7 @@
     num_processes : integer = 124
     has_ups : boolean = false
     some_names : list string = ["agatka", "beatka", "celina"]
-    expiry : duration = -1029600000
+    expiry : duration = -1162800000
 /uw/khaki13
     level : integer = 2
     name : string = "khaki13"

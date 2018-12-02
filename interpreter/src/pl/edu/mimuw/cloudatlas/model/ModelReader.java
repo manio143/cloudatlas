@@ -1,7 +1,5 @@
 package pl.edu.mimuw.cloudatlas.model;
 
-import pl.edu.mimuw.cloudatlas.fetcher.Fetcher;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -40,15 +38,19 @@ public class ModelReader {
         return TypePrimitive.NULL;
     }
 
+    public static boolean isNull(String valueString) {
+        return (valueString.equals("NULL") || valueString.equals("null") || valueString.equals(""));
+    }
+
     public static Value createValue(String[] types, String valueString, int which) {
         switch(types[which]) {
             case "bool":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueBoolean(null);
                 }
                 return new ValueBoolean(Boolean.parseBoolean(valueString));
             case "contact":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueContact(null, null);
                 }
                 String[] parts = valueString.split(";");
@@ -64,12 +66,12 @@ public class ModelReader {
                     System.out.println(e.getMessage());
                 }
             case "double":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueDouble(null);
                 }
                 return new ValueDouble(Double.parseDouble(valueString));
             case "duration":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueDuration(0L);
                 }
                 if (valueString.matches("[0-9]+") || valueString.matches("-[0-9]+")) {
@@ -77,17 +79,17 @@ public class ModelReader {
                 }
                 return new ValueDuration(valueString);
             case "integer":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueInt(null);
                 }
                 return new ValueInt(Long.parseLong(valueString));
             case "string":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueString(null);
                 }
                 return new ValueString(valueString.substring(1, valueString.length() - 1));
             case "set":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueSet(null);
                 }
                 Set<Value> valuesSet = new HashSet<>();
@@ -98,7 +100,7 @@ public class ModelReader {
                 }
                 return new ValueSet(new HashSet<>(valuesSet), typeFromStrings(types, which + 1));
             case "list":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueList(null);
                 }
                 List<Value> valuesList = new ArrayList<>();
@@ -109,7 +111,7 @@ public class ModelReader {
                 }
                 return new ValueList(new ArrayList<>(valuesList), typeFromStrings(types, which + 1));
             case "time":
-                if (valueString.equals("NULL") || valueString.equals("null")) {
+                if (isNull(valueString)) {
                     return new ValueTime(0L);
                 }
                 if (valueString.matches("[0-9]+")) {
@@ -166,6 +168,43 @@ public class ModelReader {
         resMap.put(name, map);
 
         return resMap;
+    }
+
+    public static void addSon(ZMI parent, ZMI son, List<String> components, int which) {
+        if (which == components.size() - 1) {
+            parent.addSon(son);
+            son.setFather(parent);
+        } else {
+            for (ZMI parentSon : parent.getSons()) {
+                String name = ((ValueString)parentSon.getAttributes().get("name")).getValue();
+                if (name.equals(components.get(which))) {
+                    addSon(parentSon, son, components, which + 1);
+                }
+            }
+        }
+    }
+
+    public static ZMI readZMI(String file) throws IOException {
+        ZMI root = new ZMI();
+
+        TreeMap<String, AttributesMap> zoneMaps = ModelReader.readAttributes(file);
+
+        boolean rootSet = false;
+        for (Map.Entry<String, AttributesMap> zone : zoneMaps.entrySet()) {
+            ZMI son = new ZMI();
+            for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
+                son.getAttributes().addOrChange(entry.getKey(), entry.getValue());
+            }
+            PathName pathName = new PathName(zone.getKey());
+            if (!rootSet) {
+                root = son;
+                rootSet = true;
+            } else {
+                addSon(root, son, pathName.getComponents(), 0);
+            }
+        }
+
+        return root;
     }
 
     public static class Pair {
