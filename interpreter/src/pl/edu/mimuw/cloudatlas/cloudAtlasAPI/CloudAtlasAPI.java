@@ -8,8 +8,6 @@ import pl.edu.mimuw.cloudatlas.model.ValueSet;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
-import java.util.Set;
-
 
 public interface CloudAtlasAPI extends Remote {
     List<String> getZones() throws RemoteException;

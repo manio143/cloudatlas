@@ -3,10 +3,7 @@ package pl.edu.mimuw.cloudatlas.fetcher;
 import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;

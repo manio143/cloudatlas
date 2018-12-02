@@ -24,9 +24,6 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
-import pl.edu.mimuw.cloudatlas.model.Value;
-
-import java.io.IOException;
 import java.io.Serializable;
 
 /**
