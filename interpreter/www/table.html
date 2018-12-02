@@ -161,14 +161,15 @@
             var plots = toPlot.slice();
             for (var p of plots) {
                 var [zone, attr] = p.split(":");
+                let p2 = p;
                 $.ajax("/rmi/overtime?path=" + zone + "&attribute=" + attr)
                     .done((str) => {
                         var data = JSON.parse(str);
                         var graphData = data.Values;
-                        cache[p] = { name: p, data: graphData };
-                        if (toPlot.indexOf(p) < 0) return;
-                        graphNodes.splice(graphNodes.indexOf(cache[p]), 1);
-                        graphNodes.push(cache[p]);
+                        cache[p2] = { name: p2, data: graphData };
+                        if (toPlot.indexOf(p2) < 0) return;
+                        graphNodes.splice(graphNodes.indexOf(cache[p2]), 1);
+                        graphNodes.push(cache[p2]);
                         renderGraph();
                     });
             }
