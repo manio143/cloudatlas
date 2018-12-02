@@ -179,6 +179,7 @@ public class ModelReader {
                 String name = ((ValueString)parentSon.getAttributes().get("name")).getValue();
                 if (name.equals(components.get(which))) {
                     addSon(parentSon, son, components, which + 1);
+                    break;
                 }
             }
         }

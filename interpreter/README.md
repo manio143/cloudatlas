@@ -33,13 +33,17 @@ Standalone interpreter
 Tests for single query interpreter
 ----------------------------------
 
-Note: different syntax than regular interpreter!
+Note: 
+Different syntax than the regular standalone interpreter!
+No query names.
 
     ./run_tests
 
-Tests for multi query interpreter
+Tests for standalone interpreter
 --------------------------------
 
-Note: different syntax than regular interpreter!
+Note: 
+Different behaviour than the regular standalone interpreter!
+Printing query results after reading each line.
 
-    ./run_querysets_tests
+    ./run_standalone_tests

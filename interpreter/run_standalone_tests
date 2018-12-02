@@ -4,8 +4,8 @@ NUM_TESTS=19
 
 for i in `seq $NUM_TESTS`; do
 	echo "Running test $i..."
-	./run multiple < tests_querysets/$i.in > tmp.out
-	diff tmp.out tests_querysets/$i.out
+	./run standalone < tests_standalone/$i.in > tmp.out
+	diff tmp.out tests_standalone/$i.out
 	echo
 	rm tmp.out
 done
