@@ -174,15 +174,20 @@ public class ClientServer implements Runnable {
                         Value val = attribute.getValue();
                         response.append("\t\t\t\t\"" + attribute.getKey() + "\" : " + valueJSON(val) + ",\n");
                     }
-                    response.replace(response.length() - 2, response.length() - 1, "");
+                    if (response.charAt(response.length() - 2) == ',') {
+                        response.replace(response.length() - 2, response.length() - 1, "");
+                    }
                     response.append("\t\t\t},\n");
                 }
-                response.replace(response.length() - 2, response.length() - 1, "");
+                if (response.charAt(response.length() - 2) == ',') {
+                    response.replace(response.length() - 2, response.length() - 1, "");
+                }
                 response.append("\t\t}\n");
                 response.append("\t},\n");
             }
-            response.replace(response.length() - 2, response.length() - 1, "");
-
+            if (response.charAt(response.length() - 2) == ',') {
+                response.replace(response.length() - 2, response.length() - 1, "");
+            }
             response.append("}");
             return response.toString();
         }
@@ -251,7 +256,9 @@ public class ClientServer implements Runnable {
                 response = "Error: contacts not specified!";
             } else {
                 try {
-                    ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", "{" + parameters.get("set") + "}");
+                    ValueSet contacts =
+                            (ValueSet)ModelReader
+                                    .formValue("set contact", "{" + parameters.get("set") + "}");
                     stub.setFallbackContacts(contacts);
                     response = "Successfully set fallback contacts";
                 } catch (Exception e) {

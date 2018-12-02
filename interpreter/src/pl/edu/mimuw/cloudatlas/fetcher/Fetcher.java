@@ -13,14 +13,11 @@ import java.util.concurrent.TimeUnit;
 
 public class Fetcher implements Runnable {
     boolean set = false;
-    private String startFile;
     private String metricsFile;
-    private String pathName;
 
     private CloudAtlasAPI stub;
 
-    public Fetcher(String host, String startFile, String metricsFile) {
-        this.startFile = startFile;
+    public Fetcher(String host, String metricsFile) {
         this.metricsFile = metricsFile;
 
         if (System.getSecurityManager() == null) {
@@ -44,7 +41,7 @@ public class Fetcher implements Runnable {
     public void run(){
         try {
             Runtime rt = Runtime.getRuntime();
-            Process pr = rt.exec("./utility/fetch_metrics " + startFile + " " + metricsFile);
+            Process pr = rt.exec("./utility/fetch_metrics " + metricsFile);
 
             pr.waitFor();
 
@@ -69,7 +66,7 @@ public class Fetcher implements Runnable {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[1]));
             Long interval = Long.parseLong(prop.getProperty("collection_interval"));
-            Fetcher fetcher = new Fetcher(args[0], args[2], args[3]);
+            Fetcher fetcher = new Fetcher(args[0], args[2]);
             if (fetcher.isSet()) {
                 ScheduledExecutorService scheduler =
                         Executors.newScheduledThreadPool(1);

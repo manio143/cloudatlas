@@ -25,6 +25,8 @@
 package pl.edu.mimuw.cloudatlas.model;
 
 
+import static java.lang.Math.abs;
+
 /**
  * A class representing duration in milliseconds. The duration can be negative. This is a simple wrapper of a Java
  * <code>Long</code> object.
@@ -162,7 +164,8 @@ public class ValueDuration extends ValueSimple<Long> {
 		int seconds = (int) Math.floor(remaining / 1000);
 		remaining -= seconds * 1000;
 		int milliseconds = (int) remaining;
-		return String.format("%s%d %02d:%02d:%02d.%03d", getValue() > 0 ? "+" : "-", days, hours, minutes, seconds, milliseconds);
+		return String.format("%s%d %02d:%02d:%02d.%03d", getValue() > 0 ? "+" : "-"
+				, abs(days), abs(hours), abs(minutes), abs(seconds), abs(milliseconds));
 	}
 
 	@Override
