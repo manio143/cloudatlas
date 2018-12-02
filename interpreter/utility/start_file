@@ -1,9 +1,13 @@
 /uw/violet07
-members : set contact = {/UW1;10.1.1.38}
-creation : time = 2011/11/09 20:8:13.123
-cpu_usage : double = 0.9
-num_cores : integer = 3
-num_processes : integer = 131
-has_ups : boolean = NULL
-some_names : list string = ["tola", "tosia"]
-expiry : duration = 1166400000
+cpu_load : double = 1.49
+free_disk : integer = 115155816
+total_disk : integer = 336237864
+free_ram : integer = 298464
+total_ram : integer = 7925984
+free_swap : integer = 7029552
+total_swap : integer = 8143356
+num_processes : integer = 265
+num_cores : integer = 4
+kernel_ver : string = "4.15.0-39-generic"
+logged_users : integer = 1
+dns_name : set string = {}

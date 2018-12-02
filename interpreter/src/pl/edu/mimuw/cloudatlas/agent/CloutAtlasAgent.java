@@ -15,7 +15,7 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public class CloutAtlasAgent implements CloudAtlasAPI {
-    private ZMI root = new ZMI();
+    private ZMI root;
     private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
     private Map<String, Program> installedQueries = new HashMap<String, Program>();
@@ -33,14 +33,6 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
 
     private String getName(ZMI zmi) {
         return ((ValueString)zmi.getAttributes().get("name")).getValue();
-    }
-
-    private String getFullName(ZMI zmi) {
-        if (zmi == root) {
-            return "/";
-        }
-        String name = ((ValueString)zmi.getAttributes().get("name")).getValue();
-        return getFullName(zmi.getFather()) + "/" + name;
     }
 
     private void removeAttribute(ZMI zmi, Attribute attribute) {
@@ -105,41 +97,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         return res;
     }
 
-    private ZMI createZone(ZMI parent, String pathName, List<String> comp, int which) {
-        ZMI son = new ZMI(parent);
-        parent.addSon(son);
-
-        which++;
-
-        son.getAttributes().add("name", new ValueString(comp.get(which - 1)));
-        son.getAttributes().add("level", new ValueInt((long) which));
-        son.getAttributes().add("owner", new ValueString(pathName));
-        son.getAttributes().add("contacts", contacts);
-        son.getAttributes().add("cardinality", new ValueInt(1L));
-
-        ValueTime timestamp = new ValueTime(new Timestamp(System.currentTimeMillis()).getTime());
-        son.getAttributes().add("timestamp", timestamp);
-
-        if (which == comp.size()) {
-            return son;
-        } else {
-            return createZone(son, pathName, comp, which);
-        }
-    }
-
-    private boolean childZone(ZMI zmi) {
-        return (zmi.getSons().isEmpty() && zmi != root);
-    }
-
-    private void increaseCardinality(ZMI zmi) {
-        long card = ((ValueInt)zmi.getAttributes().get("cardinality")).getValue();
-        zmi.getAttributes().addOrChange("cardinality", new ValueInt(card + 1));
-        if (zmi.getFather() != null) {
-            increaseCardinality(zmi.getFather());
-        }
-    }
-
-    private ZMI reachZone(String pathName, boolean createIfNotFound) {
+    private ZMI reachZone(String pathName) {
         PathName pN = new PathName(pathName);
         List<String> comp = pN.getComponents();
 
@@ -159,12 +117,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
                 }
             }
             if (!found) {
-                if (createIfNotFound && !childZone(candidate)) {
-                    increaseCardinality(candidate);
-                    return createZone(candidate, pathName, comp, which);
-                } else {
-                    throw new ZoneNotFoundException(pathName);
-                }
+                throw new ZoneNotFoundException(pathName);
             }
         }
 
@@ -172,7 +125,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized AttributesMap getAttributes(String pathName) {
-        ZMI zmi = reachZone(pathName, false);
+        ZMI zmi = reachZone(pathName);
         return zmi.getAttributes();
     }
 
@@ -209,7 +162,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {
-        ZMI zmi = reachZone(pathName, false);
+        ZMI zmi = reachZone(pathName);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }

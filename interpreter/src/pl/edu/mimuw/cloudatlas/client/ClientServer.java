@@ -212,7 +212,9 @@ public class ClientServer implements Runnable {
                         }
                     }
                 }
-                response.replace(response.length() - 1, response.length(), "");
+                if (response.charAt(response.length() - 1) == ',') {
+                    response.replace(response.length() - 1, response.length(), "");
+                }
                 response.append("]\n");
             }
 

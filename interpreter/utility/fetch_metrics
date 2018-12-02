@@ -1,10 +1,10 @@
 #!/bin/bash
 
-metricsFile=$2
+metricsFile=$1
 
-rm -rf $2
+rm -rf ${metricsFile}
 
-cp $1 $2
+touch ${metricsFile}
 
 CPU_LOAD="$(uptime | awk '{for(i=NF;i>=1;i--) printf "%s ", $i;print ""}' | cut -f 3 -d ' ' | rev | cut -c 2- | rev | sed 's/,/./g')"
 FREE_DISK="$(df --total | grep total | sed 's/  */ /g' | cut -f 4 -d ' ')"
@@ -19,16 +19,16 @@ KERNEL_VER="$(uname -r)"
 LOGGED_USERS="$(users | wc -w)"
 DNS_NAME="$(dnsdomainname)"
 
-
-echo "cpu_load : double = ${CPU_LOAD}" >> $2
-echo "free_disk : integer = ${FREE_DISK}" >> $2
-echo "total_disk : integer = ${TOTAL_DISK}" >> $2
-echo "free_ram : integer = ${FREE_RAM}" >> $2
-echo "total_ram : integer = ${TOTAL_RAM}" >> $2
-echo "free_swap : integer = ${FREE_SWAP}" >> $2
-echo "total_swap : integer = ${TOTAL_SWAP}" >> $2
-echo "num_processes : integer = ${NUM_PROCESSES}" >> $2
-echo "num_cores : integer = ${NUM_CORES}" >> $2
-echo -e "kernel_ver : string = \"${KERNEL_VER}\"" >> $2
-echo "logged_users : integer = ${LOGGED_USERS}" >> $2
-echo "dns_name : set string = {${DNS_NAME}}" >> $2
+echo "/uw/violet07" > ${metricsFile}
+echo "cpu_load : double = ${CPU_LOAD}" >> ${metricsFile}
+echo "free_disk : integer = ${FREE_DISK}" >> ${metricsFile}
+echo "total_disk : integer = ${TOTAL_DISK}" >> ${metricsFile}
+echo "free_ram : integer = ${FREE_RAM}" >> ${metricsFile}
+echo "total_ram : integer = ${TOTAL_RAM}" >> ${metricsFile}
+echo "free_swap : integer = ${FREE_SWAP}" >> ${metricsFile}
+echo "total_swap : integer = ${TOTAL_SWAP}" >> ${metricsFile}
+echo "num_processes : integer = ${NUM_PROCESSES}" >> ${metricsFile}
+echo "num_cores : integer = ${NUM_CORES}" >> ${metricsFile}
+echo -e "kernel_ver : string = \"${KERNEL_VER}\"" >> ${metricsFile}
+echo "logged_users : integer = ${LOGGED_USERS}" >> ${metricsFile}
+echo "dns_name : set string = {${DNS_NAME}}" >> ${metricsFile}
