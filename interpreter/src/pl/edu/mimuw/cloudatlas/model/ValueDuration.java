@@ -24,7 +24,6 @@
 
 package pl.edu.mimuw.cloudatlas.model;
 
-
 import static java.lang.Math.abs;
 
 /**
@@ -119,25 +118,63 @@ public class ValueDuration extends ValueSimple<Long> {
 	}
 	
 	private static long parseDuration(String value) {
-		if(value == null || value.length() != 15) //format length
+		if(value == null) {
 			illegalParseFormat();
-		if (value.charAt(2) != ' ' || value.charAt(5) != ':' || value.charAt(8) != ':' || value.charAt(11) != '.')
-			illegalParseFormat();
-		int base = value.charAt(0) == '+' ? 1 : (value.charAt(0) == '-' ? -1 : illegalParseFormat());
-		int days = parseDigit(value, 1);
-		int hoursHigh = parseDigit(value, 3);
-		int hoursLow = parseDigit(value, 4);
-		int minutesHigh = parseDigit(value, 6);
-		int minutesLow = parseDigit(value, 7);
-		int secondsHigh = parseDigit(value, 9);
-		int secondsLow = parseDigit(value, 10);
-		int msecHigh = parseDigit(value, 12);
-		int msecMid = parseDigit(value, 13);
-		int msecLow = parseDigit(value, 14);
-		return base * ((((24l * days + (hoursHigh * 10 + hoursLow)) * 60l
-		                 + (minutesHigh * 10 + minutesLow)) * 60l
-					    + (secondsHigh * 10 + secondsLow)) * 1000l
-					   + (msecHigh * 100 + msecMid * 10 + msecLow));
+		}
+		value = value.trim();
+		int base = value.charAt(0) == '+' ? 1 : (value.charAt(0) == '-' ? -1 : illegalParseFormat("sign"));
+		String[] daysRest = value.substring(1, value.length()).split(" ");
+		int days = 0;
+		int hours = 0;
+		int minutes = 0;
+		int seconds = 0;
+		int miliseconds = 0;
+		try {
+			days = Integer.parseInt(daysRest[0]);
+			if (0 > days) {
+				illegalParseFormat("days");
+			}
+		} catch (Exception e) {
+			illegalParseFormat("days");
+		}
+		String rest = value.substring(daysRest[0].length() + 2, value.length());
+		String hoursMinutesRest[] = rest.split(":");
+		try {
+			hours = Integer.parseInt(hoursMinutesRest[0]);
+			if (0 > hours || hours > 23) {
+				illegalParseFormat("hours");
+			}
+		} catch (Exception e) {
+			illegalParseFormat("hours");
+		}
+		try {
+			minutes = Integer.parseInt(hoursMinutesRest[1]);
+			if (0 > minutes || minutes > 59) {
+				illegalParseFormat("minutes");
+			}
+		} catch (Exception e) {
+			illegalParseFormat("minutes");
+		}
+		rest = rest.substring(hoursMinutesRest[0].length() + hoursMinutesRest[1].length() + 2, rest.length());
+		String secondsRest[] = rest.split("\\.");
+		try {
+			seconds = Integer.parseInt(secondsRest[0]);
+			if (0 > seconds || seconds > 59) {
+				illegalParseFormat("seconds");
+			}
+		} catch (Exception e) {
+			illegalParseFormat("seconds");
+		}
+		rest = rest.substring(secondsRest[0].length() + 1, rest.length());
+		try {
+			miliseconds = Integer.parseInt(rest);
+			if (0 > miliseconds || miliseconds > 999) {
+				illegalParseFormat("miliseconds");
+			}
+		} catch (Exception e) {
+			illegalParseFormat("miliseconds");
+		}
+		return base * ((((24l * days + hours) * 60l + minutes) * 60l + seconds) * 1000 + miliseconds);
 	}
 
 	private static int parseDigit(String value, int index) {
@@ -147,7 +184,12 @@ public class ValueDuration extends ValueSimple<Long> {
 	private static int illegalParseFormat() {
 		throw new IllegalArgumentException("Value has to abide the following format: \"sd hh:mm:ss.lll\"");
 	}
-	
+
+	private static int illegalParseFormat(String illegalPart) {
+		throw new IllegalArgumentException("Failed to parse: " + illegalPart
+				+ ". Value has to abide the following format: \"sd hh:mm:ss.lll\"");
+	}
+
 	@Override
 	public String toString() {
 		if (getValue() == null)
@@ -155,6 +197,8 @@ public class ValueDuration extends ValueSimple<Long> {
 		if(getValue() == 0)
 			return "+0";
 		long remaining = getValue();
+		boolean positive = remaining > 0;
+		remaining = abs(remaining);
 		int days = (int) Math.floor(remaining / (1000 * 60 * 60 * 24));
 		remaining -= days * 24 * 60 * 60 * 1000;
 		int hours = (int) Math.floor(remaining / (1000 * 60 * 60));
@@ -164,8 +208,8 @@ public class ValueDuration extends ValueSimple<Long> {
 		int seconds = (int) Math.floor(remaining / 1000);
 		remaining -= seconds * 1000;
 		int milliseconds = (int) remaining;
-		return String.format("%s%d %02d:%02d:%02d.%03d", getValue() > 0 ? "+" : "-"
-				, abs(days), abs(hours), abs(minutes), abs(seconds), abs(milliseconds));
+		return String.format("%s%d %02d:%02d:%02d.%03d"
+				, positive ? "+" : "-", days, hours, minutes, seconds, milliseconds);
 	}
 
 	@Override
