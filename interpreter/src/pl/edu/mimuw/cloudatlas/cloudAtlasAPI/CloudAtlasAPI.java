@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.cloudAtlasAPI;
 
 import pl.edu.mimuw.cloudatlas.model.*;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -14,9 +15,9 @@ public interface CloudAtlasAPI extends Remote {
 
     Map<String, List<Attribute>> getQueries() throws RemoteException;
 
-    void installQueries(String queries) throws RemoteException;
+    void installQueries(SignedQueryRequest queries) throws RemoteException;
 
-    void uninstallQuery(String queryName) throws RemoteException;
+    void uninstallQuery(SignedQueryRequest queryName) throws RemoteException;
 
     void setAttribute(String pathName, String attr, Value val) throws RemoteException;
 
