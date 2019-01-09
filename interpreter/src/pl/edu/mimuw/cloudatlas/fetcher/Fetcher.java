@@ -65,7 +65,7 @@ public class Fetcher implements Runnable {
         try {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[1]));
-            Long interval = Long.parseLong(prop.getProperty("collection_interval"));
+            Long interval = Long.parseLong(prop.getProperty("fetchingInterval"));
             Fetcher fetcher = new Fetcher(args[0], args[2]);
             if (fetcher.isSet()) {
                 ScheduledExecutorService scheduler =

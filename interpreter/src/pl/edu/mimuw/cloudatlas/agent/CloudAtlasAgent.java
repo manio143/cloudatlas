@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.*;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
@@ -11,7 +12,6 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.*;
 
 public class CloudAtlasAgent implements CloudAtlasAPI {

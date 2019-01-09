@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar:lib/jackson.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.client.ClientServer localhost 8000 utility/fetcher.ini
+java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar:lib/jackson.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.client.ClientServer localhost 8000 utility/client.ini

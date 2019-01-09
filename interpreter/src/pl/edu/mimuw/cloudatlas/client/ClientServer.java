@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import pl.edu.mimuw.cloudatlas.agent.AgentException;
-import pl.edu.mimuw.cloudatlas.agent.ZoneNotFoundException;
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ZoneNotFoundException;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
 
@@ -28,8 +28,8 @@ import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 public class ClientServer implements Runnable {
     private CloudAtlasAPI stub;
 
-    final int MAX_SIZE = 100;
-    TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
+    private final int MAX_SIZE = 100;
+    private TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
 
     public ClientServer(String host, String port, Long interval) {
         if (System.getSecurityManager() == null) {
@@ -77,7 +77,7 @@ public class ClientServer implements Runnable {
         try {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[2]));
-            Long interval = Long.parseLong(prop.getProperty("collection_interval"));
+            Long interval = Long.parseLong(prop.getProperty("collectionInterval"));
             ClientServer server = new ClientServer(args[0], args[1], interval);
             ScheduledExecutorService scheduler =
                     Executors.newScheduledThreadPool(1);
@@ -386,7 +386,6 @@ public class ClientServer implements Runnable {
 
             try {
                 Map<String, List<Attribute>> queries = stub.getQueries();
-                System.out.println(queries);
 
                 for (Map.Entry<String, List<Attribute>> entry : queries.entrySet()) {
                     response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");
