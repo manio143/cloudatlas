@@ -1,14 +1,14 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import java.util.PriorityQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class TimerModule implements Runnable {
     private final MessageHandler handler;
-    private final ConcurrentLinkedQueue<ModuleMessage> messages;
+    private final LinkedBlockingQueue<ModuleMessage> messages;
     private final PriorityQueue<Event> events = new PriorityQueue<>();
 
-    public TimerModule(MessageHandler handler, ConcurrentLinkedQueue<ModuleMessage> messages) {
+    public TimerModule(MessageHandler handler, LinkedBlockingQueue<ModuleMessage> messages) {
         this.handler = handler;
         this.messages = messages;
     }
@@ -19,7 +19,11 @@ public class TimerModule implements Runnable {
 
     public void run() {
         while (true) {
-            message = messages.take();
+            try {
+                ModuleMessage message = messages.take();
+            } catch (Exception e) {
+
+            }
         }
     }
 

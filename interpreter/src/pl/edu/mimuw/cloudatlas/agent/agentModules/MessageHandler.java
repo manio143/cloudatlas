@@ -1,14 +1,14 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class MessageHandler {
-    ConcurrentLinkedQueue<ModuleMessage> timerQueue = new ConcurrentLinkedQueue<>();
-    ConcurrentLinkedQueue<ModuleMessage> communicationQueue = new ConcurrentLinkedQueue<>();
-    ConcurrentLinkedQueue<ModuleMessage> rmiQueue = new ConcurrentLinkedQueue<>();
+    LinkedBlockingQueue<ModuleMessage> timerQueue = new LinkedBlockingQueue<>();
+    LinkedBlockingQueue<ModuleMessage> communicationQueue = new LinkedBlockingQueue<>();
+    LinkedBlockingQueue<ModuleMessage> rmiQueue = new LinkedBlockingQueue<>();
 
-    public MessageHandler(List<ConcurrentLinkedQueue<ModuleMessage>> queues) {
+    public MessageHandler(List<LinkedBlockingQueue<ModuleMessage>> queues) {
         timerQueue = queues.get(0);
         communicationQueue = queues.get(1);
         rmiQueue = queues.get(2);
