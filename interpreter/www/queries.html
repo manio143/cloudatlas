@@ -15,9 +15,9 @@
 
     <link href="jquery.treetable.css" rel="stylesheet" type="text/css" />
     <link href="jquery.treetable.theme.default.css" rel="stylesheet" type="text/css" />
-    <script src="bootstrap.min.js"></script>
     <script src="jquery-3.3.1.min.js"></script>
     <script src="jquery.treetable.js"></script>
+    <script src="bootstrap.min.js"></script>
     <script>
         function installQuery() {
             var url = "/rmi/install?attribute=" + $("#installAttribute").val() + "&query=" + $("#query").val();
@@ -25,16 +25,55 @@
                 url: url ,
             }).done(function (dataS) {
                 alert(dataS);
+                getQueries();
             });
         }
-        function uninstallQuery() {
-            var url = "/rmi/uninstall?attribute=" + $("#uninstallAttribute").val();
+        function uninstallQuery(query) {
+            var url = "/rmi/uninstall?attribute=" + query;
             $.ajax({
                 url: url ,
             }).done(function (dataS) {
                 alert(dataS);
+                getQueries();
             });
         }
+        function uninstallQueryButton() {
+            uninstallQuery($("#uninstallAttribute").val());
+        }
+        function getQueries() {
+            var url = "/rmi/queries";
+            $.ajax({
+                url: url ,
+            }).done(function (dataS) {
+                let outer = document.getElementById("queryDiv");
+                while (outer.firstChild) {
+                    outer.removeChild(outer.firstChild);
+                }
+                let data = JSON.parse(dataS);
+                let queries = data.Queries;
+                for (var query of queries) {
+                    var button = "<button type='button' class='btn' style='margin:10px' "
+                        + "onclick='uninstallQuery(\"" + query.name + "\")'>" + query.name + "</button>";
+                    var line = "Columns: ";
+                    var first = true;
+                    for (var column of query.columns) {
+                        if (first) {
+                            line += column;
+                            first = false;
+                        } else {
+                            line += ", " + column;
+                        }
+                    }
+                    var div = "<div class='row' id='query_" + query.name + "'>" + button
+                        + "<p>" + line + "</p></div>";
+                    $("#queryDiv").append(div);
+                }
+            });
+        }
+
+        $("document").ready(function () {
+            getQueries();
+        });
     </script>
 </head>
 
@@ -85,7 +124,12 @@
             <label for="uninstallAttribute">Attribute:</label>
             <input type="text" class="form-control" id="uninstallAttribute">
         </div>
-        <button type="button" class="btn" onclick="uninstallQuery()">Uninstall</button>
+        <button type="button" class="btn" onclick="uninstallQueryButton()">Uninstall</button>
+    </div>
+    <div class="row" style="margin-top:20px">
+        <h5>Press button to uninstall queries with the specified name:</h5>
+    </div>
+    <div id="queryDiv">
     </div>
 </div>
 

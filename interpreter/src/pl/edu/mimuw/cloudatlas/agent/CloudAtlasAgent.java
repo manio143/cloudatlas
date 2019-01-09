@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
 
-public class CloutAtlasAgent implements CloudAtlasAPI {
+public class CloudAtlasAgent implements CloudAtlasAPI {
     private ZMI root;
     private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
@@ -22,7 +22,7 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
 
     private Map<String, List<Attribute>> queryAttributes = new HashMap<String, List<Attribute>>();
 
-    public CloutAtlasAgent(String zonesFile) throws IOException {
+    public CloudAtlasAgent(String zonesFile) throws IOException {
         try {
             root = ModelReader.readZMI(zonesFile);
         } catch (Exception e) {
@@ -54,24 +54,33 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
             try {
                 List<Attribute> columns = queryAttributes.get(attributeName);
                 List<QueryResult> result = interpreter.interpretProgram(program);
+
                 for(QueryResult r : result) {
                     zmi.getAttributes().addOrChange(r.getName(), r.getValue());
-                    columns.add(r.getName());
+                    if (zmi.getFather() == null) {
+                        columns.add(r.getName());
+                    }
                 }
-            } catch(InterpreterException exception) {}
+            } catch(InterpreterException exception) {
+                queryAttributes.remove(attributeName);
+                installedQueries.remove(attributeName);
+            }
         }
     }
 
     private void updateQueries(ZMI zmi) {
-        Interpreter interpreter = new Interpreter(zmi);
-        for (Map.Entry<String, Program> entry : installedQueries.entrySet()) {
-            Program program = entry.getValue();
-            try {
-                List<QueryResult> result = interpreter.interpretProgram(program);
-                for(QueryResult r : result) {
-                    zmi.getAttributes().addOrChange(r.getName(), r.getValue());
+        if(!zmi.getSons().isEmpty()) {
+            Interpreter interpreter = new Interpreter(zmi);
+            for (Map.Entry<String, Program> entry : installedQueries.entrySet()) {
+                Program program = entry.getValue();
+                try {
+                    List<QueryResult> result = interpreter.interpretProgram(program);
+                    for (QueryResult r : result) {
+                        zmi.getAttributes().addOrChange(r.getName(), r.getValue());
+                    }
+                } catch (InterpreterException exception) {
                 }
-            } catch(InterpreterException exception) {}
+            }
         }
 
         if (zmi.getFather() != null) {
@@ -129,21 +138,34 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         return zmi.getAttributes();
     }
 
+    public synchronized Map<String, List<Attribute>> getQueries() {
+        return queryAttributes;
+    }
+
     public synchronized void installQueries(String input) {
         String[] lines = input.substring(1).split("&");
         for (String line : lines) {
             String[] parts = line.split(":");
             String attributeName = parts[0];
-            queryAttributes.put(attributeName, new ArrayList<>());
-            String[] queries = parts[1].split(";");
-            for (String query : queries) {
-                Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
+            if (queryAttributes.containsKey(attributeName)) {
+                throw new AgentDuplicateQuery(attributeName);
+            } else {
+                queryAttributes.put(attributeName, new ArrayList<>());
+                String[] queries = parts[1].split(";");
                 try {
-                    Program program = (new parser(lex)).pProgram();
-                    installedQueries.put(attributeName, program);
-                    calculateQueries(root, attributeName);
+                    for (String query : queries) {
+                        Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
+                        try {
+                            Program program = (new parser(lex)).pProgram();
+                            installedQueries.put(attributeName, program);
+                            calculateQueries(root, attributeName);
+                        } catch (Exception e) {
+                            throw new AgentParserException(query);
+                        }
+                    }
                 } catch (Exception e) {
-                    throw new AgentParserException(query);
+                    queryAttributes.remove(attributeName);
+                    throw e;
                 }
             }
         }
@@ -157,8 +179,8 @@ public class CloutAtlasAgent implements CloudAtlasAPI {
         List<Attribute> attributes = queryAttributes.get(queryName);
         for (Attribute attribute : attributes) {
             removeAttribute(root, attribute);
-            queryAttributes.remove(attribute);
         }
+        queryAttributes.remove(queryName);
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {

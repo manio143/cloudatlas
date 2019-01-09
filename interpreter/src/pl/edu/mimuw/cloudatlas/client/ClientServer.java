@@ -52,6 +52,7 @@ public class ClientServer implements Runnable {
             server.createContext("/rmi/install", new InstallHandler());
             server.createContext("/rmi/uninstall", new UninstallHandler());
             server.createContext("/rmi/interval", new IntervalHandler(interval));
+            server.createContext("/rmi/queries", new QueriesHandler());
             server.createContext("/graph.js", new FileHandler("www/graph.js"));
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
@@ -212,7 +213,7 @@ public class ClientServer implements Runnable {
                         AttributesMap map = entry.getValue().get(path);
                         Value val = map.getOrNull(attribute);
                         if (val != null) {
-                            response.append("{\"timestamp\" : " + entry.getKey() + ", ");
+                            response.append("\n\t\t{\"timestamp\" : " + entry.getKey() + ", ");
                             response.append("\"value\" : " + val + "},");
                         }
                     }
@@ -220,10 +221,10 @@ public class ClientServer implements Runnable {
                 if (response.charAt(response.length() - 1) == ',') {
                     response.replace(response.length() - 1, response.length(), "");
                 }
-                response.append("]\n");
+                response.append("\n\t]");
             }
 
-            response.append("}");
+            response.append("\n}");
             return response.toString();
         }
     }
@@ -372,6 +373,46 @@ public class ClientServer implements Runnable {
                 }
             }
             return response;
+        }
+    }
+
+
+    class QueriesHandler extends RMIHandler {
+        @Override
+        public String prepareResponse(Map<String, String> parameters) {
+            StringBuilder response = new StringBuilder();
+            response.append("{\n");
+            response.append("\t\"Queries\" : [");
+
+            try {
+                Map<String, List<Attribute>> queries = stub.getQueries();
+                System.out.println(queries);
+
+                for (Map.Entry<String, List<Attribute>> entry : queries.entrySet()) {
+                    response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");
+                    response.append("\"columns\" : [");
+                    for (Attribute attr : entry.getValue()) {
+                        response.append("\"" + attr.toString() + "\", ");
+                    }
+                    if (response.charAt(response.length() - 2) == ',') {
+                        response.replace(response.length() - 2, response.length(), "");
+                    }
+                    response.append("]},");
+                }
+                if (response.charAt(response.length() - 1) == ',') {
+                    response.replace(response.length() - 1, response.length(), "");
+                }
+
+            } catch (AgentException e) {
+                return "AgentException: " + e.getMessage();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "Error: " + e.getMessage();
+            }
+
+            response.append("\n\t]");
+            response.append("\n}");
+            return response.toString();
         }
     }
 

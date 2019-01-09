@@ -12,12 +12,12 @@ public class CloudAtlasServer {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            CloutAtlasAgent object = new CloutAtlasAgent(args[0]);
+            CloudAtlasAgent object = new CloudAtlasAgent(args[0]);
             CloudAtlasAPI stub =
                     (CloudAtlasAPI) UnicastRemoteObject.exportObject(object, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind("CloudAtlasAPI", stub);
-            System.out.println("CloutAtlasAgent bound");
+            System.out.println("CloudAtlasAgent bound");
         } catch (Exception e) {
             System.err.println("Agent exception:");
             e.printStackTrace();
