@@ -41,11 +41,20 @@ class ResultSingle extends Result {
 	protected Result binaryOperationTyped(BinaryOperation operation, Result right) {
 		if(right.isSingle())
 			return new ResultSingle(operation.perform(value, right.getValue()));
-		return new ResultList(right.map(new Transform() {
-			public Value transform(Value v) {
-				return operation.perform(v, value);
-			}
-		}));
+		else if (right.isColumn()) {
+			return new ResultColumn(right.map(new Transform() {
+				public Value transform(Value v) {
+					return operation.perform(v, value);
+				}
+			}));
+		} else {
+			return new ResultList(right.map(new Transform() {
+				public Value transform(Value v) {
+					return operation.perform(v, value);
+				}
+
+			}));
+		}
 	}
 
 	@Override

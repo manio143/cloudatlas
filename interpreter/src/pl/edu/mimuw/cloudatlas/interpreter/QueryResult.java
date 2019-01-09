@@ -31,14 +31,16 @@ import pl.edu.mimuw.cloudatlas.model.Value;
 public class QueryResult {
 	private final Attribute name;
 	private final Value value;
+	private final boolean isAggregated;
 
-	public QueryResult(Attribute name, Value value) {
+	public QueryResult(Attribute name, Value value, boolean isAggregated) {
 		this.name = name;
 		this.value = value;
+		this.isAggregated = isAggregated;
 	}
 
-	public QueryResult(Value value) {
-		this(null, value);
+	public QueryResult(Value value, boolean isAggregated) {
+		this(null, value, isAggregated);
 	}
 
 	public Attribute getName() {
@@ -47,6 +49,10 @@ public class QueryResult {
 
 	public Value getValue() {
 		return value;
+	}
+
+	public boolean isAggregated() {
+		return isAggregated;
 	}
 
 	public String toString() {

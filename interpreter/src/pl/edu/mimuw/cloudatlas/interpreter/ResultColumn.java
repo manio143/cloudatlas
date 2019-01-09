@@ -108,6 +108,11 @@ class ResultColumn extends Result {
 	}
 
 	@Override
+	public boolean isColumn() {
+		return true;
+	}
+
+	@Override
 	public ResultSingle isNull() {
 		return new ResultSingle(new ValueBoolean(value == null));
 	}
