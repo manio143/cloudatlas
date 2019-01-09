@@ -266,10 +266,21 @@ abstract class Result {
 		return false;
 	}
 
+	public boolean isColumn() {
+		return false;
+	}
+
+	public static Result from(Value v) {
+		if (v instanceof ValueList)
+			return new ResultList((ValueList) v);
+		else
+			return new ResultSingle(v);
+	}
+
 	public abstract Type getType();
 
 	protected interface Transform {
-        Value transform(Value v);
+		Value transform(Value v);
     }
 
 	protected ValueList map(Transform t) {

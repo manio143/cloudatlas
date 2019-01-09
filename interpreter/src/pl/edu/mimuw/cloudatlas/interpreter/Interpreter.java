@@ -122,7 +122,7 @@ public class Interpreter {
 	}
 
 	public List<QueryResult> interpretStatement(Statement statement) {
-		return statement.accept(new StatementInterpreter(), zmi);
+		return statement.accept(new StatementInterpreter(true), zmi);
 	}
 
 	public class ProgramInterpreter implements Program.Visitor<List<QueryResult>, ZMI> {
@@ -130,7 +130,7 @@ public class Interpreter {
 			List<QueryResult> results = new ArrayList<QueryResult>();
 			for(Statement s : program.liststatement_) {
 				try {
-					List<QueryResult> l = s.accept(new StatementInterpreter(), zmi);
+					List<QueryResult> l = s.accept(new StatementInterpreter(true), zmi);
 					for(QueryResult qr : l)
 						if(qr.getName() == null)
 							throw new IllegalArgumentException("All items in top-level SELECT must be aliased.");
@@ -144,30 +144,41 @@ public class Interpreter {
 	}
 
 	public class StatementInterpreter implements Statement.Visitor<List<QueryResult>, ZMI> {
+		boolean topLevel;
+
+		public StatementInterpreter(boolean isTopLevel) {
+			topLevel = isTopLevel;
+		}
+
 		public List<QueryResult> visit(StatementC statement, ZMI zmi) {
 			Table table = new Table(zmi);
 			try {
 				table = statement.where_.accept(new WhereInterpreter(), table);
-			} catch(Exception exception) {
+			} catch (Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(statement.where_), exception);
 			}
 			try {
 				table = statement.orderby_.accept(new OrderByInterpreter(), table);
-			} catch(Exception exception) {
+			} catch (Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(statement.orderby_), exception);
 			}
 			List<QueryResult> ret = new ArrayList<QueryResult>();
 
-			for(SelItem selItem : statement.listselitem_) {
+			for (SelItem selItem : statement.listselitem_) {
 				try {
 					QueryResult qr = selItem.accept(new SelItemInterpreter(), table);
-					if(qr.getName() != null) {
-						for(QueryResult qrRet : ret)
-							if(qr.getName().getName().equals(qrRet.getName().getName()))
+					if (topLevel) {
+						if (!qr.isAggregated()) {
+							throw new IllegalArgumentException("All items in top-level SELECT must be aggregated.");
+						}
+					}
+					if (qr.getName() != null) {
+						for (QueryResult qrRet : ret)
+							if (qr.getName().getName().equals(qrRet.getName().getName()))
 								throw new IllegalArgumentException("Alias collision.");
 					}
 					ret.add(qr);
-				} catch(Exception exception) {
+				} catch (Exception exception) {
 					throw new InsideQueryException(PrettyPrinter.print(selItem), exception);
 				}
 			}
@@ -175,7 +186,7 @@ public class Interpreter {
 			return ret;
 		}
 	}
-
+	
 	public class WhereInterpreter implements Where.Visitor<Table, Table> {
 		public Table visit(NoWhereC where, Table table) {
 			return table;
@@ -283,14 +294,14 @@ public class Interpreter {
 			Environment env = table.collapse();
 			env.setSelect();
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
-			return new QueryResult(result.getValue());
+			return new QueryResult(result.getValue(), !result.isColumn());
 		}
 
 		public QueryResult visit(AliasedSelItemC selItem, Table table) {
 			Environment env = table.collapse();
 			env.setSelect();
 			Result result = selItem.condexpr_.accept(new CondExprInterpreter(), env);
-			return new QueryResult(new Attribute(selItem.qident_), result.getValue());
+			return new QueryResult(new Attribute(selItem.qident_), result.getValue(), !result.isColumn());
 		}
 	}
 
@@ -463,12 +474,12 @@ public class Interpreter {
 			return expr.condexpr_.accept(new CondExprInterpreter(), env);
 		}
 
-		public ResultSingle visit(EStmtC expr, Environment env) {
+		public Result visit(EStmtC expr, Environment env) {
 			try {
-				List<QueryResult> l = expr.statement_.accept(new StatementInterpreter(), zmi);
+				List<QueryResult> l = expr.statement_.accept(new StatementInterpreter(false), zmi);
 				if(l.size() != 1)
 					throw new IllegalArgumentException("Nested queries must SELECT exactly one item.");
-				return new ResultSingle(l.get(0).getValue());
+				return Result.from(l.get(0).getValue());
 			} catch(Exception exception) {
 				throw new InsideQueryException(PrettyPrinter.print(expr), exception);
 			}
