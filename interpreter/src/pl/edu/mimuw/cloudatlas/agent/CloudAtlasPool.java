@@ -52,7 +52,7 @@ public class CloudAtlasPool {
                 messageHandler.addMessage(message);
 
             }
-
+    
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(new TimerModule(messageHandler, timerQueue));
 
