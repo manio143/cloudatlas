@@ -2,10 +2,10 @@ package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentModules.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.ModuleMessage;
+import pl.edu.mimuw.cloudatlas.agent.agentModules.TesterModule;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.TimerModule;
 
 import java.io.*;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -30,44 +30,15 @@ public class CloudAtlasPool {
 
             MessageHandler messageHandler = new MessageHandler(queues);
 
-            int [] a = {4000, 2000};
+            ExecutorService timerExecutor = Executors.newSingleThreadExecutor();
+            timerExecutor.execute(new TimerModule(messageHandler, timerQueue));
 
-            for (int i = 0; i < a.length; i++) {
+            ExecutorService testExecutor = Executors.newSingleThreadExecutor();
+            testExecutor.execute(new TesterModule(messageHandler));
 
-                ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-                objectStream.writeLong(0);
-                objectStream.writeLong(a[i]);
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                System.out.println(timestamp);
-                objectStream.writeLong(timestamp.getTime());
-                objectStream.writeObject(new Test());
-
-                ModuleMessage message = new ModuleMessage(
-                        ModuleMessage.Module.TIMER,
-                        ModuleMessage.Module.TIMER,
-                        ModuleMessage.Operation.TIMER_SCHEDULE,
-                        byteStream.toByteArray());
-
-                messageHandler.addMessage(message);
-
-            }
-    
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(new TimerModule(messageHandler, timerQueue));
-
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("Agent exception:");
             e.printStackTrace();
-        }
-    }
-
-
-    public static class Test implements Runnable, Serializable {
-        @Override
-        public void run() {
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            System.out.println("Test " + timestamp);
         }
     }
 }

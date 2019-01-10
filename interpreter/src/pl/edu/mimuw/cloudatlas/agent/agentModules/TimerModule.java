@@ -142,8 +142,8 @@ public class TimerModule implements Runnable {
 
     private class Sleeper implements Runnable {
         private final QueueController controller;
-        private Event event;
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
+        private Event event;
 
         public Sleeper(QueueController controller) {
             this.controller = controller;
