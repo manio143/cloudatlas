@@ -20,13 +20,16 @@ import com.sun.net.httpserver.HttpServer;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ZoneNotFoundException;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
+import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.DOUBLE;
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 
 public class ClientServer implements Runnable {
-    private CloudAtlasAPI stub;
+    private CloudAtlasAPI cloudAtlas;
+    private SignerAPI signer;
 
     private final int MAX_SIZE = 100;
     private TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
@@ -37,7 +40,8 @@ public class ClientServer implements Runnable {
         }
         try {
             Registry registry = LocateRegistry.getRegistry(host);
-            stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
+            cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
+            signer = (SignerAPI) registry.lookup("SignerAPI");
             HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/queries", new FileHandler("www/queries.html"));
@@ -93,10 +97,10 @@ public class ClientServer implements Runnable {
             if (results.size() > MAX_SIZE) {
                 results.remove(results.firstKey());
             }
-            List<String> zones = stub.getZones();
+            List<String> zones = cloudAtlas.getZones();
             Map<String, AttributesMap> res = new HashMap<>();
             for (String zone : zones) {
-                res.put(zone, stub.getAttributes(zone));
+                res.put(zone, cloudAtlas.getAttributes(zone));
             }
             results.put(System.currentTimeMillis(), res);
         } catch (Exception e) {
@@ -235,7 +239,7 @@ public class ClientServer implements Runnable {
             String response = "{\n" +
                     "\t\"Zones\": [";
 
-            List<String> zones = stub.getZones();
+            List<String> zones = cloudAtlas.getZones();
 
             for (int i = 0; i < zones.size(); i++) {
                 if (i != 0) {
@@ -260,7 +264,7 @@ public class ClientServer implements Runnable {
                     ValueSet contacts =
                             (ValueSet)ModelReader
                                     .formValue("set contact", "{" + parameters.get("set") + "}");
-                    stub.setFallbackContacts(contacts);
+                    cloudAtlas.setFallbackContacts(contacts);
                     response = "Successfully set fallback contacts";
                 } catch (Exception e) {
                     response = "Error: " + e.getMessage();
@@ -279,7 +283,7 @@ public class ClientServer implements Runnable {
                 response = "Error: path not specified!";
             } else {
                 try {
-                    AttributesMap attributes = stub.getAttributes(parameters.get("path"));
+                    AttributesMap attributes = cloudAtlas.getAttributes(parameters.get("path"));
                     for (Map.Entry<Attribute, Value> entry : attributes) {
                         Attribute attr = entry.getKey();
                         Value val = entry.getValue();
@@ -316,7 +320,7 @@ public class ClientServer implements Runnable {
                                     .replace("<", "{")
                                     .replace(">", "}");
                     Value val = ModelReader.formValue(parameters.get("type"), valueString);
-                    stub.setAttribute(parameters.get("path"), parameters.get("name"), val);
+                    cloudAtlas.setAttribute(parameters.get("path"), parameters.get("name"), val);
                     response = "Attribute changed!";
                 } catch(AgentException e) {
                     response = e.getMessage();
@@ -336,7 +340,8 @@ public class ClientServer implements Runnable {
                 response = "Error: attribute not specified!";
             } else {
                 try {
-                    stub.uninstallQuery(parameters.get("attribute"));
+                    SignedQueryRequest sqr = signer.uninstallQueries(parameters.get("attribute"));
+                    cloudAtlas.uninstallQuery(sqr);
                     response = "Successful uninstall of " + parameters.get("attribute");
                 } catch (AgentException e) {
                     response = "AgentException: " + e.getMessage();
@@ -363,7 +368,8 @@ public class ClientServer implements Runnable {
                     String attribute = parameters.get("attribute");
                     String select = parameters.get("query");
                     String queries = "&" + attribute + ": " + select;
-                    stub.installQueries(queries);
+                    SignedQueryRequest sqr = signer.installQueries(queries);
+                    cloudAtlas.installQueries(sqr);
                     response = "Successful install of " + attribute;
                 } catch (AgentException e) {
                     response = "AgentException: " + e.getMessage();
@@ -385,7 +391,8 @@ public class ClientServer implements Runnable {
             response.append("\t\"Queries\" : [");
 
             try {
-                Map<String, List<Attribute>> queries = stub.getQueries();
+                Map<String, List<Attribute>> queries = cloudAtlas.getQueries();
+                System.out.println(queries);
 
                 for (Map.Entry<String, List<Attribute>> entry : queries.entrySet()) {
                     response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");

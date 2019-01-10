@@ -8,10 +8,13 @@ import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.interpreter.query.Yylex;
 import pl.edu.mimuw.cloudatlas.interpreter.query.parser;
 import pl.edu.mimuw.cloudatlas.model.*;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.security.PublicKey;
+import java.sql.Timestamp;
 import java.util.*;
 
 public class CloudAtlasAgent implements CloudAtlasAPI {
@@ -22,7 +25,10 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private Map<String, List<Attribute>> queryAttributes = new HashMap<String, List<Attribute>>();
 
-    public CloudAtlasAgent(String zonesFile) throws IOException {
+    private PublicKey publicKey;
+
+    public CloudAtlasAgent(String zonesFile, PublicKey signerKey) throws IOException {
+        publicKey = signerKey;
         try {
             root = ModelReader.readZMI(zonesFile);
         } catch (Exception e) {
@@ -142,7 +148,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return queryAttributes;
     }
 
-    public synchronized void installQueries(String input) {
+    public synchronized void installQueries(SignedQueryRequest sqr) {
+        if(!sqr.isValid(publicKey))
+            throw new IllegalArgumentException("Invalid request signature");
+
+        String input = sqr.getQuery();
         String[] lines = input.substring(1).split("&");
         for (String line : lines) {
             String[] parts = line.split(":");
@@ -171,7 +181,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public synchronized void uninstallQuery(String queryName) {
+    public synchronized void uninstallQuery(SignedQueryRequest sqr) {
+        if(!sqr.isValid(publicKey))
+            throw new IllegalArgumentException("Invalid request signature");
+
+        String queryName = sqr.getQuery();
         if (!installedQueries.containsKey(queryName)) {
             throw new QueryNotFoundException(queryName);
         }

@@ -17,7 +17,7 @@ public class SignedQueryRequest implements Serializable {
         this.signature = signature;
     }
 
-    public getQuery() {
+    public String getQuery() {
         return query;
     }
 
@@ -44,7 +44,7 @@ public class SignedQueryRequest implements Serializable {
         }
     }
 
-    public static create(String query, PrivateKey priv) {
+    public static SignedQueryRequest create(String query, PrivateKey priv) {
         try {
             MessageDigest digestGenerator = MessageDigest.getInstance("SHA-256");
             byte[] bytes = query.getBytes();
@@ -56,7 +56,7 @@ public class SignedQueryRequest implements Serializable {
 
             return new SignedQueryRequest(query, signature);
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 }

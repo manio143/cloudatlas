@@ -12,7 +12,7 @@ public class CloudAtlasServer {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            CloudAtlasAgent object = new CloudAtlasAgent(args[0]);
+            CloudAtlasAgent object = new CloudAtlasAgent(args[0], /*TODO load*/null);
             CloudAtlasAPI stub =
                     (CloudAtlasAPI) UnicastRemoteObject.exportObject(object, 0);
             Registry registry = LocateRegistry.getRegistry();
