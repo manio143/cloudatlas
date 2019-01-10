@@ -32,8 +32,8 @@ public class KeyGenerator {
             byte[] privBytes = privateKey.getEncoded();
             byte[] pubBytes = publicKey.getEncoded();
 
-            Files.write(new File(args[0]).toPath(), pubBytes, StandardOpenOption.WRITE);
-            Files.write(new File(args[1]).toPath(), privBytes, StandardOpenOption.WRITE);
+            Files.write(new File(args[0]).toPath(), pubBytes, StandardOpenOption.CREATE);
+            Files.write(new File(args[1]).toPath(), privBytes, StandardOpenOption.CREATE);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);

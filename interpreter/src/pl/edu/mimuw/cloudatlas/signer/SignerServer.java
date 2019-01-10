@@ -7,6 +7,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
@@ -18,7 +19,7 @@ public class SignerServer {
         }
         try {
             byte[] keyBytes = Files.readAllBytes(new File(args[0]).toPath());
-            X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
+            PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
             SignerAgent object = new SignerAgent(kf.generatePrivate(kspec));
