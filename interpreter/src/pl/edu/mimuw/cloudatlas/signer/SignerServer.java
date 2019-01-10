@@ -1,6 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent;
-
-import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
+package pl.edu.mimuw.cloudatlas.signer;
 
 import java.nio.file.Files;
 import java.io.File;
@@ -11,24 +9,26 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.X509EncodedKeySpec;
 
-public class CloudAtlasServer {
+import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
+
+public class SignerServer {
     public static void main(String[] args) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            byte[] keyBytes = Files.readAllBytes(new File(args[1]).toPath());
+            byte[] keyBytes = Files.readAllBytes(new File(args[0]).toPath());
             X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
-            CloudAtlasAgent object = new CloudAtlasAgent(args[0], kf.generatePublic(kspec));
-            CloudAtlasAPI stub =
-                    (CloudAtlasAPI) UnicastRemoteObject.exportObject(object, 0);
+            SignerAgent object = new SignerAgent(kf.generatePrivate(kspec));
+            SignerAPI stub =
+                    (SignerAPI) UnicastRemoteObject.exportObject(object, 0);
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind("CloudAtlasAPI", stub);
-            System.out.println("CloudAtlasAgent bound");
+            registry.rebind("SignerAPI", stub);
+            System.out.println("SignerAgent bound");
         } catch (Exception e) {
-            System.err.println("Agent exception:");
+            System.err.println("Signer exception:");
             e.printStackTrace();
         }
     }
