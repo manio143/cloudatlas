@@ -14,14 +14,14 @@ public class TesterModule implements Runnable {
     }
 
     public void run() {
-        int [] a = {4000, 2000};
+        int [] a = {4000, 2000, 3000, 6000};
 
-        for (int i = 0; i < a.length; i++) {
+        try {
+            for (int i = 0; i < a.length; i++) {
 
-            try {
                 ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
                 ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
-                objectStream.writeLong(0);
+                objectStream.writeLong(i);
                 objectStream.writeLong(a[i]);
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 System.out.println(timestamp);
@@ -29,15 +29,29 @@ public class TesterModule implements Runnable {
                 objectStream.writeObject(new Test());
 
                 ModuleMessage message = new ModuleMessage(
+                        ModuleMessage.Module.TESTER,
                         ModuleMessage.Module.TIMER,
-                        ModuleMessage.Module.TIMER,
-                        ModuleMessage.Operation.TIMER_SCHEDULE,
+                        ModuleMessage.Operation.TIMER_ADD_EVENT,
                         byteStream.toByteArray());
 
                 handler.addMessage(message);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+            objectStream.writeLong(2);
+            objectStream.writeObject(new Test());
+
+            ModuleMessage message = new ModuleMessage(
+                    ModuleMessage.Module.TESTER,
+                    ModuleMessage.Module.TIMER,
+                    ModuleMessage.Operation.TIMER_REMOVE_EVENT,
+                    byteStream.toByteArray());
+
+            handler.addMessage(message);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

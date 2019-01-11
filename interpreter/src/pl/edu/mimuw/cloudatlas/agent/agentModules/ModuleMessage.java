@@ -4,11 +4,11 @@ import java.io.Serializable;
 
 public class ModuleMessage implements Serializable {
     public enum Module {
-        TIMER, COMMUNICATION, RMI
+        TIMER, COMMUNICATION, RMI, TESTER
     }
 
     public enum Operation {
-        TIMER_SCHEDULE
+        TIMER_ADD_EVENT, TIMER_REMOVE_EVENT
     }
 
     public final Module src;

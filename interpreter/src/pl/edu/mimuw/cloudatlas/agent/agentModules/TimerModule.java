@@ -4,7 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.sql.Timestamp;
-import java.util.PriorityQueue;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -16,19 +17,14 @@ public class TimerModule implements Runnable {
     private final QueueController controller = new QueueController();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private final int LONG_SIZE = 8;
+
     public TimerModule(MessageHandler handler, LinkedBlockingQueue<ModuleMessage> messages) {
         this.handler = handler;
         this.messages = messages;
     }
 
     public void addEvent(ModuleMessage message) {
-        final int MIN_LEN = 3 * 4;
-        int len = message.contents.length;
-        if (len < MIN_LEN) {
-            System.out.println("addEvent message too short!");
-            return;
-        }
-
         ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
 
         try {
@@ -56,6 +52,35 @@ public class TimerModule implements Runnable {
         }
     }
 
+
+    public void removeEvent(ModuleMessage message) {
+        ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
+
+        try {
+            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+
+            long id = objectStream.readLong();
+
+            controller.removeEvent(id);
+
+        } catch (IOException e) {
+            System.out.println("IOException while reading message!");
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    private boolean checkMinLength(ModuleMessage message, int minLength) {
+        int len = message.contents.length;
+        System.out.println(len);
+        if (len < minLength) {
+            System.out.println("addEvent message too short!");
+            return true;
+        }
+        return false;
+    }
+
+
     @Override
     public void run() {
         executor.execute(new Sleeper(controller));
@@ -64,8 +89,11 @@ public class TimerModule implements Runnable {
             try {
                 ModuleMessage message = messages.take();
                 switch (message.operation) {
-                    case TIMER_SCHEDULE:
+                    case TIMER_ADD_EVENT:
                         addEvent(message);
+                        break;
+                    case TIMER_REMOVE_EVENT:
+                        removeEvent(message);
                         break;
                     default:
                         System.out.println("Incorrect message type for timer: " + message.operation);
@@ -97,6 +125,7 @@ public class TimerModule implements Runnable {
 
     private class QueueController {
         private final PriorityBlockingQueue<Event> events = new PriorityBlockingQueue<>();
+        private final Set<Long> toRemove = new HashSet<>();
 
         public synchronized void addEvent(Event event) {
             events.add(event);
@@ -120,6 +149,15 @@ public class TimerModule implements Runnable {
                 e.printStackTrace();
             }
             return event;
+        }
+
+
+        public void removeEvent(long id) {
+            toRemove.add(id);
+        }
+
+        public boolean isIdRemoved(long id) {
+            return toRemove.remove(id);
         }
 
         public synchronized void checkNearest(Event event, long difference) {
@@ -158,7 +196,9 @@ public class TimerModule implements Runnable {
                     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                     long difference = event.wakeUp - timestamp.getTime();
                     if (difference <= 0) {
-                        executor.execute(event.toRun);
+                        if (!controller.isIdRemoved(event.id)) {
+                            executor.execute(event.toRun);
+                        }
                         break;
                     }
                     controller.checkNearest(event, difference);
