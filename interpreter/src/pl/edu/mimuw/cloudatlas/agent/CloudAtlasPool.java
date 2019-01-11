@@ -1,9 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentModules.MessageHandler;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.ModuleMessage;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.TesterModule;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.TimerModule;
+import pl.edu.mimuw.cloudatlas.agent.agentModules.Message;
+import pl.edu.mimuw.cloudatlas.agent.agentModules.Tester;
+import pl.edu.mimuw.cloudatlas.agent.agentModules.Timer;
 
 import java.io.*;
 import java.util.*;
@@ -19,22 +19,24 @@ public class CloudAtlasPool {
             prop.load(new FileInputStream(args[1]));
             Long interval = Long.parseLong(prop.getProperty("computationInterval"));
 
-            LinkedBlockingQueue<ModuleMessage> timerQueue = new LinkedBlockingQueue<>();
-            LinkedBlockingQueue<ModuleMessage> communicationQueue = new LinkedBlockingQueue<>();
-            LinkedBlockingQueue<ModuleMessage> rmiQueue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> timerQueue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> communicationQueue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> rmiQueue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> testerQueue = new LinkedBlockingQueue<>();
 
-            List<LinkedBlockingQueue<ModuleMessage>> queues = new ArrayList<>();
+            List<LinkedBlockingQueue<Message>> queues = new ArrayList<>();
             queues.add(timerQueue);
             queues.add(communicationQueue);
             queues.add(rmiQueue);
+            queues.add(testerQueue);
 
             MessageHandler messageHandler = new MessageHandler(queues);
 
             ExecutorService timerExecutor = Executors.newSingleThreadExecutor();
-            timerExecutor.execute(new TimerModule(messageHandler, timerQueue));
+            timerExecutor.execute(new Timer(messageHandler, timerQueue));
 
             ExecutorService testExecutor = Executors.newSingleThreadExecutor();
-            testExecutor.execute(new TesterModule(messageHandler));
+            testExecutor.execute(new Tester(messageHandler, testerQueue));
 
         } catch (IOException e) {
             System.err.println("Agent exception:");

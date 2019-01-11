@@ -1,8 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
@@ -11,20 +10,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-public class TimerModule implements Runnable {
-    private final MessageHandler handler;
-    private final LinkedBlockingQueue<ModuleMessage> messages;
+import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Module.TIMER;
+import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Operation.TIMER_ADD_EVENT_ACK;
+import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Operation.TIMER_REMOVE_EVENT_ACK;
+
+public class Timer extends Module {
     private final QueueController controller = new QueueController();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final int LONG_SIZE = 8;
 
-    public TimerModule(MessageHandler handler, LinkedBlockingQueue<ModuleMessage> messages) {
-        this.handler = handler;
-        this.messages = messages;
+    public Timer(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
+        super(handler, messages);
     }
 
-    public void addEvent(ModuleMessage message) {
+    public void addEvent(Message message) {
         ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
 
         try {
@@ -38,9 +38,12 @@ public class TimerModule implements Runnable {
 
             long wakeUp = timestamp + delay;
 
-            Event toAdd = new Event(id, wakeUp, toRun);
+            Event toAdd = new Event(message.src, id, wakeUp, toRun);
 
             controller.addEvent(toAdd);
+
+            Message ack = new Message(TIMER, message.src, TIMER_ADD_EVENT_ACK, BigInteger.valueOf(id).toByteArray());
+            handler.addMessage(ack);
 
         } catch (IOException e) {
             System.out.println("IOException while reading message!");
@@ -53,7 +56,7 @@ public class TimerModule implements Runnable {
     }
 
 
-    public void removeEvent(ModuleMessage message) {
+    public void removeEvent(Message message) {
         ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
 
         try {
@@ -63,6 +66,9 @@ public class TimerModule implements Runnable {
 
             controller.removeEvent(id);
 
+            Message ack = new Message(TIMER, message.src, TIMER_REMOVE_EVENT_ACK, BigInteger.valueOf(id).toByteArray());
+            handler.addMessage(ack);
+
         } catch (IOException e) {
             System.out.println("IOException while reading message!");
             e.printStackTrace();
@@ -70,7 +76,7 @@ public class TimerModule implements Runnable {
         }
     }
 
-    private boolean checkMinLength(ModuleMessage message, int minLength) {
+    private boolean checkMinLength(Message message, int minLength) {
         int len = message.contents.length;
         System.out.println(len);
         if (len < minLength) {
@@ -87,7 +93,7 @@ public class TimerModule implements Runnable {
 
         while (true) {
             try {
-                ModuleMessage message = messages.take();
+                Message message = messages.take();
                 switch (message.operation) {
                     case TIMER_ADD_EVENT:
                         addEvent(message);
@@ -107,11 +113,13 @@ public class TimerModule implements Runnable {
     }
 
     private class Event implements Comparable<Event> {
+        public Message.Module src;
         public long id;
         public long wakeUp;
         public Runnable toRun;
 
-        public Event (long id, long wakeUp, Runnable toRun) {
+        public Event (Message.Module src, long id, long wakeUp, Runnable toRun) {
+            this.src = src;
             this.id = id;
             this.wakeUp = wakeUp;
             this.toRun = toRun;
