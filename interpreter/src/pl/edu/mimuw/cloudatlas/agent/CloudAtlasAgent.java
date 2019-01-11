@@ -14,7 +14,6 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.sql.Timestamp;
 import java.util.*;
 
 public class CloudAtlasAgent implements CloudAtlasAPI {

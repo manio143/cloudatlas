@@ -17,7 +17,7 @@ public class CloudAtlasServer {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            byte[] keyBytes = Files.readAllBytes(new File(args[1]).toPath());
+            byte[] keyBytes = Files.readAllBytes(new File(args[2]).toPath());
             X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
