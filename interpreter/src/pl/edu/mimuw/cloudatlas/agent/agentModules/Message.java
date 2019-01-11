@@ -8,7 +8,7 @@ public class Message implements Serializable {
     }
 
     public enum Operation {
-        TIMER_ADD_EVENT, TIMER_REMOVE_EVENT, TIMER_ADD_EVENT_ACK, TIMER_REMOVE_EVENT_ACK
+        TIMER_ADD_EVENT, TIMER_REMOVE_EVENT, TIMER_ADD_EVENT_ACK, TIMER_REMOVE_EVENT_ACK, COMMUNICATION_SEND
     }
 
     public final Module src;
@@ -23,12 +23,5 @@ public class Message implements Serializable {
         this.dest = dest;
         this.operation = operation;
         this.contents = arguments;
-    }
-
-    public Message(Message message) {
-        this.src = message.src;
-        this.dest = message.dest;
-        this.operation = message.operation;
-        this.contents = message.contents;
     }
 }

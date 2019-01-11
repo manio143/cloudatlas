@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import javax.sound.midi.SysexMessage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -58,20 +59,22 @@ public class Tester extends Module {
             while (true) {
                 try {
                     Message received = messages.take();
-                    long id = new BigInteger(received.contents).longValue();
                     String type = "";
-                    switch (message.operation) {
+                    long id = 0;
+                    switch (received.operation) {
                         case TIMER_ADD_EVENT_ACK:
-                            type = "Added event ";
+                            id = new BigInteger(received.contents).longValue();
+                            type = "Added event " + id;
                             break;
                         case TIMER_REMOVE_EVENT_ACK:
-                            type = "Removed event ";
+                            id = new BigInteger(received.contents).longValue();
+                            type = "Removed event " + id;
                             break;
                         default:
-                            type = "Unknown event ";
+                            type = "Unknown";
                             break;
                     }
-                    System.out.println("Received: " + message.operation + id);
+                    System.out.println("Received: " + type);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

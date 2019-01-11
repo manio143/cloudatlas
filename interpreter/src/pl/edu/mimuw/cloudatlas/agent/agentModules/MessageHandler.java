@@ -17,19 +17,18 @@ public class MessageHandler {
     }
 
     public synchronized void addMessage(Message message) {
-        Message copy = new Message(message);
-        switch (copy.dest) {
+        switch (message.dest) {
             case TIMER:
-                timerQueue.add(copy);
+                timerQueue.add(message);
                 break;
             case COMMUNICATION:
-                communicationQueue.add(copy);
+                communicationQueue.add(message);
                 break;
             case RMI:
-                rmiQueue.add(copy);
+                rmiQueue.add(message);
                 break;
             case TESTER:
-                testerQueue.add(copy);
+                testerQueue.add(message);
                 break;
             default:
         }
