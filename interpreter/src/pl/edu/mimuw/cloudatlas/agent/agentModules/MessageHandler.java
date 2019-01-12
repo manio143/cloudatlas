@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class MessageHandler {
-    LinkedBlockingQueue<Message> timerQueue = new LinkedBlockingQueue<>();
-    LinkedBlockingQueue<Message> communicationQueue = new LinkedBlockingQueue<>();
-    LinkedBlockingQueue<Message> rmiQueue = new LinkedBlockingQueue<>();
-    LinkedBlockingQueue<Message> testerQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<Message> timerQueue;
+    private LinkedBlockingQueue<Message> communicationQueue;
+    private LinkedBlockingQueue<Message> rmiQueue;
+    private LinkedBlockingQueue<Message> testerQueue;
 
     public MessageHandler(List<LinkedBlockingQueue<Message>> queues) {
         timerQueue = queues.get(0);

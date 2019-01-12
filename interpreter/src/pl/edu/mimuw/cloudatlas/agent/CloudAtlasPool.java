@@ -1,8 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
-import pl.edu.mimuw.cloudatlas.agent.agentModules.MessageHandler;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.Message;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.Tester;
+import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.Timer;
 
 import java.io.*;
@@ -32,11 +30,14 @@ public class CloudAtlasPool {
 
             MessageHandler messageHandler = new MessageHandler(queues);
 
-            ExecutorService timerExecutor = Executors.newSingleThreadExecutor();
-            timerExecutor.execute(new Timer(messageHandler, timerQueue));
+            ExecutorService timer = Executors.newSingleThreadExecutor();
+            timer.execute(new Timer(messageHandler, timerQueue));
 
-            ExecutorService testExecutor = Executors.newSingleThreadExecutor();
-            testExecutor.execute(new Tester(messageHandler, testerQueue));
+            ExecutorService tester = Executors.newSingleThreadExecutor();
+            tester.execute(new Tester(messageHandler, testerQueue));
+
+            ExecutorService communication = Executors.newSingleThreadExecutor();
+            communication.execute(new Communication(messageHandler, communicationQueue));
 
         } catch (IOException e) {
             System.err.println("Agent exception:");
