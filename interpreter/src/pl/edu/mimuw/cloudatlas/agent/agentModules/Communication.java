@@ -46,9 +46,7 @@ public class Communication extends Module {
             for (byte[] fragment : fragments) {
                 DatagramPacket packet = new DatagramPacket(
                         fragment, fragment.length, ip, UDP_PORT);
-
-                System.out.println(fragment.length);
-
+                
                 socket.send(packet);
             }
 
@@ -201,10 +199,6 @@ public class Communication extends Module {
 
         public void run() {
             try {
-//                for (int i = 0; i < UDP_METADATA; i++) {
-//                    System.out.println(data[i]);
-//                }
-
                 ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
 
                 DataInputStream dataStream = new DataInputStream(byteStream);
@@ -225,10 +219,7 @@ public class Communication extends Module {
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 MapValue value = new MapValue(timestamp.getTime());
 
-                System.out.println("Size: " + received.size());
-
                 if (received.containsKey(key)) {
-                    System.out.println("LK");
                     value = received.get(key);
                 }
 
@@ -244,27 +235,22 @@ public class Communication extends Module {
 
                 switch (marker) {
                     case 0:
-                        System.out.println("Hava.");
                         value.pieces = pieces;
                         value.fragments.put(0, content);
                         break;
                     case 1:
-                        System.out.println("Pa Hlava.");
                         value.fragments.put(pieces, content);
                         break;
                     default:
                         System.out.println("Unknown marker!");
                 }
 
-                System.out.println(value.fragments.size());
-                System.out.println(value.pieces);
-
                 if (value.pieces == value.fragments.size()) {
-                    System.out.println("Hava nagina!");
 
                     int lastLen = value.fragments.get(value.pieces - 1).length;
                     int totalLen = UDP_PACKET_SPACE * (value.pieces - 1) + lastLen;
                     byte[] messageBytes = new byte[totalLen];
+
                     for (int i = 0; i < value.pieces; i++) {
                         System.arraycopy(value.fragments.get(i), 0, messageBytes,
                                 UDP_PACKET_SPACE * i, value.fragments.get(i).length);
@@ -285,8 +271,6 @@ public class Communication extends Module {
                         e.printStackTrace();
                     }
                 } else {
-                    System.out.println("Rich man!");
-
                     received.put(key, value);
                 }
 
