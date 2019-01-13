@@ -19,9 +19,7 @@ import java.util.concurrent.SynchronousQueue;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_ATTRIBUTES;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_QUERIES;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_ZONES;
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.*;
 
 public class CloudAtlasRMI implements CloudAtlasAPI {
     private SynchronousQueue<MessageContent> rmi;
@@ -92,24 +90,24 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
     public synchronized void installQueries(SignedQueryRequest queries) {
         ZMIKeeperInstallQueries toKeeper = new ZMIKeeperInstallQueries();
 
-        handleMessages(toKeeper, RMI_QUERIES);
+        handleMessages(toKeeper, RMI_INSTALL_QUERY);
     }
 
     public synchronized void uninstallQuery(SignedQueryRequest queryName) {
         ZMIKeeperRemoveQueries toKeeper = new ZMIKeeperRemoveQueries();
 
-        handleMessages(toKeeper, RMI_QUERIES);
+        handleMessages(toKeeper, RMI_REMOVE_QUERY);
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {
         ZMIKeeperSetAttribute toKeeper = new ZMIKeeperSetAttribute();
 
-        handleMessages(toKeeper, RMI_QUERIES);
+        handleMessages(toKeeper, RMI_SET_ATTRIBUTE);
     }
 
     public synchronized void setFallbackContacts(ValueSet contacts) {
         ZMIKeeperFallbackContacts toKeeper = new ZMIKeeperFallbackContacts();
 
-        handleMessages(toKeeper, RMI_QUERIES);
+        handleMessages(toKeeper, RMI_FALLBACK_CONTACTS);
     }
 }

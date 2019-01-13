@@ -1,11 +1,20 @@
 package pl.edu.mimuw.cloudatlas.client;
 
+import pl.edu.mimuw.cloudatlas.agent.QueueKeeper;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.model.ValueInt;
+import pl.edu.mimuw.cloudatlas.model.ValueSet;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.util.List;
+
+import static pl.edu.mimuw.cloudatlas.model.TypePrimitive.CONTACT;
 
 public class TestClient {
     public static void main(String[] args) {
@@ -24,6 +33,22 @@ public class TestClient {
             for (String zone : zones) {
                 System.out.println(zone);
             }
+
+            cloudAtlas.getAttributes("/");
+            cloudAtlas.getQueries();
+            cloudAtlas.setAttribute("/", "a", new ValueInt(3L));
+
+            KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
+            keyGenerator.initialize(1024);
+            KeyPair keyPair = keyGenerator.generateKeyPair();
+            PrivateKey privateKey = keyPair.getPrivate();
+
+            SignedQueryRequest query = SignedQueryRequest.create("", privateKey);
+
+            cloudAtlas.installQueries(query);
+            cloudAtlas.uninstallQuery(query);
+
+            cloudAtlas.setFallbackContacts(new ValueSet(CONTACT));
 
 
         } catch (Exception e) {
