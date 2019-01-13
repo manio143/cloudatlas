@@ -4,43 +4,33 @@ import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.Timer;
 
-import java.io.*;
-import java.util.*;
 import java.util.concurrent.*;
 
 public class CloudAtlasPool {
-    public static void main(String[] args) {
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
-        try {
-            Properties prop = new Properties();
-            prop.load(new FileInputStream(args[1]));
-            Long computationInterval = Long.parseLong(prop.getProperty("computationInterval"));
-            String pathName = prop.getProperty("pathName");
+    private final CloudAtlasAgent agent;
 
-            QueueKeeper keeper = new QueueKeeper();
+    public CloudAtlasPool(CloudAtlasAgent agent) {
+        this.agent = agent;
+    }
 
-            MessageHandler messageHandler = new MessageHandler(keeper);
+    public void runModules() {
+        QueueKeeper keeper = new QueueKeeper();
 
-            ExecutorService timer = Executors.newSingleThreadExecutor();
-            timer.execute(new Timer(messageHandler, keeper.timerQueue));
+        MessageHandler messageHandler = new MessageHandler(keeper);
 
-            ExecutorService tester = Executors.newSingleThreadExecutor();
-            tester.execute(new Tester(messageHandler, keeper.testerQueue));
+        ExecutorService timer = Executors.newSingleThreadExecutor();
+        timer.execute(new Timer(messageHandler, keeper.timerQueue));
 
-            ExecutorService communication = Executors.newSingleThreadExecutor();
-            communication.execute(new Communication(messageHandler, keeper.communicationQueue));
+        ExecutorService tester = Executors.newSingleThreadExecutor();
+        tester.execute(new Tester(messageHandler, keeper.testerQueue));
 
-            ExecutorService rmi = Executors.newSingleThreadExecutor();
-            rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
+        ExecutorService communication = Executors.newSingleThreadExecutor();
+        communication.execute(new Communication(messageHandler, keeper.communicationQueue));
 
-            ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
-            zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue));
+        ExecutorService rmi = Executors.newSingleThreadExecutor();
+        rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
 
-        } catch (IOException e) {
-            System.err.println("Agent exception:");
-            e.printStackTrace();
-        }
+        ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
+        zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
     }
 }

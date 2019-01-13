@@ -88,25 +88,25 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
     }
 
     public synchronized void installQueries(SignedQueryRequest queries) {
-        ZMIKeeperInstallQueries toKeeper = new ZMIKeeperInstallQueries();
+        ZMIKeeperInstallQueries toKeeper = new ZMIKeeperInstallQueries(queries);
 
         handleMessages(toKeeper, RMI_INSTALL_QUERY);
     }
 
     public synchronized void uninstallQuery(SignedQueryRequest queryName) {
-        ZMIKeeperRemoveQueries toKeeper = new ZMIKeeperRemoveQueries();
+        ZMIKeeperRemoveQueries toKeeper = new ZMIKeeperRemoveQueries(queryName);
 
         handleMessages(toKeeper, RMI_REMOVE_QUERY);
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {
-        ZMIKeeperSetAttribute toKeeper = new ZMIKeeperSetAttribute();
+        ZMIKeeperSetAttribute toKeeper = new ZMIKeeperSetAttribute(pathName, attr, val);
 
         handleMessages(toKeeper, RMI_SET_ATTRIBUTE);
     }
 
     public synchronized void setFallbackContacts(ValueSet contacts) {
-        ZMIKeeperFallbackContacts toKeeper = new ZMIKeeperFallbackContacts();
+        ZMIKeeperFallbackContacts toKeeper = new ZMIKeeperFallbackContacts(contacts);
 
         handleMessages(toKeeper, RMI_FALLBACK_CONTACTS);
     }

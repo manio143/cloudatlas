@@ -36,17 +36,17 @@ public class TestClient {
 
             cloudAtlas.getAttributes("/");
             cloudAtlas.getQueries();
-            cloudAtlas.setAttribute("/", "a", new ValueInt(3L));
+            cloudAtlas.setAttribute("/uw/violet07", "wan", new ValueInt(3L));
 
             KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
             keyGenerator.initialize(1024);
             KeyPair keyPair = keyGenerator.generateKeyPair();
             PrivateKey privateKey = keyPair.getPrivate();
 
-            SignedQueryRequest query = SignedQueryRequest.create("", privateKey);
+//            SignedQueryRequest query = SignedQueryRequest.create("", privateKey);
 
-            cloudAtlas.installQueries(query);
-            cloudAtlas.uninstallQuery(query);
+//            cloudAtlas.installQueries(query);
+//            cloudAtlas.uninstallQuery(query);
 
             cloudAtlas.setFallbackContacts(new ValueSet(CONTACT));
 

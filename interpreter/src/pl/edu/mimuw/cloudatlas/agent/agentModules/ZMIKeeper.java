@@ -1,12 +1,11 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -15,8 +14,11 @@ import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEE
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
 
 public class ZMIKeeper extends Module {
-    public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
+    private CloudAtlasAgent agent;
+
+    public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages, CloudAtlasAgent agent) {
         super(handler, messages);
+        this.agent = agent;
     }
 
     private void handleMessage(MessageContent content) {
@@ -35,49 +37,69 @@ public class ZMIKeeper extends Module {
                 boolean correct = true;
                 MessageContent content = new RMIError(new ContentNotInitialized());
 
+                // TODO - add error detection
+
                 switch(message.content.operation) {
 
                     case ZMI_KEEPER_ZONES:
 
-                        List<String> zones = new LinkedList<>();
-
-                        zones.add("/");
-                        zones.add("/first");
-                        zones.add("/second");
+                        List<String> zones = agent.getZones();
 
                         content = new RMIZones(zones);
                         break;
 
                     case ZMI_KEEPER_ATTRIBUTES:
 
-                        AttributesMap map = new AttributesMap();
+                        ZMIKeeperAttributesMap zmiKeeperAttributesMap = (ZMIKeeperAttributesMap)message.content;
+
+                        AttributesMap map = agent.getAttributes(zmiKeeperAttributesMap.pathName);
 
                         content = new RMIAttributes(map);
                         break;
 
                     case ZMI_KEEPER_QUERIES:
 
-                        Map<String, List<Attribute>> queries = new HashMap<>();
+                        Map<String, List<Attribute>> queries = agent.getQueries();
 
                         content = new RMIQueries(queries);
                         break;
 
                     case ZMI_KEEPER_INSTALL_QUERY:
 
+                        ZMIKeeperInstallQueries zmiKeeperInstallQueries = (ZMIKeeperInstallQueries)message.content;
+
+                        agent.installQueries(zmiKeeperInstallQueries.query);
+
                         content = new RMIInstallQuery();
                         break;
 
                     case ZMI_KEEPER_REMOVE_QUERY:
+
+                        ZMIKeeperRemoveQueries zmiKeeperRemoveQueries = (ZMIKeeperRemoveQueries)message.content;
+
+                        agent.uninstallQuery(zmiKeeperRemoveQueries.query);
 
                         content = new RMIRemoveQuery();
                         break;
 
                     case ZMI_KEEPER_SET_ATTRIBUTE:
 
+                        ZMIKeeperSetAttribute zmiKeeperSetAttribute = (ZMIKeeperSetAttribute)message.content;
+
+                        agent.setAttribute(
+                                zmiKeeperSetAttribute.pathName,
+                                zmiKeeperSetAttribute.attribute,
+                                zmiKeeperSetAttribute.value
+                                );
+
                         content = new RMISetAttribute();
                         break;
 
                     case ZMI_KEEPER_FALLBACK_CONTACTS:
+
+                        ZMIKeeperFallbackContacts zmiKeeperFallbackContacts = (ZMIKeeperFallbackContacts)message.content;
+
+                        agent.setFallbackContacts(zmiKeeperFallbackContacts.contacts);
 
                         content = new RMIFallbackContacts();
                         break;
