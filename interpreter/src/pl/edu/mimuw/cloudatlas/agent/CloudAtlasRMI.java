@@ -2,10 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.RMIInterrupted;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.RMIError;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.RMIZones;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.RMI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
@@ -20,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_ZONES;
 
 public class CloudAtlasRMI implements CloudAtlasAPI {
@@ -34,8 +33,20 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
     }
 
     public synchronized List<String> getZones() {
+//        List<String> zones = new LinkedList<>();
+//
+//        zones.add("incorrect");
+//
+//        return zones;
+
         try {
             controller.waiting = true;
+
+            ZMIKeeperZones queryContent = new ZMIKeeperZones();
+
+            Message toKeeper = new Message(RMI, ZMI_KEEPER, queryContent);
+
+            handler.addMessage(toKeeper);
 
             MessageContent content = rmi.take();
 
@@ -44,8 +55,10 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
             switch(content.operation) {
                 case RMI_ZONES:
                     return ((RMIZones)content).zones;
+
                 case RMI_ERROR:
                     throw ((RMIError)content).error;
+
                 default:
                     throw new IncorrectMessageContent(RMI_ZONES, content.operation);
             }

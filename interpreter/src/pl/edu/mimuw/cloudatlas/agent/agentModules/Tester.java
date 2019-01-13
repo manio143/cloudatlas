@@ -3,7 +3,6 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;

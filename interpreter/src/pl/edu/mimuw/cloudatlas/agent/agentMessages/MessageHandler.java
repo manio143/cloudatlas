@@ -1,4 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.agentModules;
+package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
 import pl.edu.mimuw.cloudatlas.agent.QueueKeeper;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
@@ -14,6 +14,13 @@ public class MessageHandler {
     }
 
     public synchronized void addMessage(Message message) {
+
+        String log = "Handler has received message from " + message.src
+                + " to " + message.dest
+                + ", operation: " + message.content.operation;
+
+        System.out.println(log);
+
         switch (message.dest) {
             case TIMER:
                 keeper.timerQueue.add(message);

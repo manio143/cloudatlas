@@ -1,6 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.Timer;
 
@@ -36,7 +36,7 @@ public class CloudAtlasPool {
             rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
 
             ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
-            zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.rmiQueue));
+            zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue));
 
         } catch (IOException e) {
             System.err.println("Agent exception:");
