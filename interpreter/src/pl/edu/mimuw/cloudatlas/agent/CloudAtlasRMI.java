@@ -46,13 +46,13 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
 
             controller.waiting = false;
 
-            switch(content.operation) {
+            switch(received.operation) {
                 case RMI_ERROR:
-                    throw ((RMIError)content).error;
+                    throw ((RMIError)received).error;
 
                 default:
-                    if (content.operation != expected) {
-                        throw new IncorrectMessageContent(RMI_ZONES, content.operation);
+                    if (received.operation != expected) {
+                        throw new IncorrectMessageContent(expected, received.operation);
                     }
             }
 
