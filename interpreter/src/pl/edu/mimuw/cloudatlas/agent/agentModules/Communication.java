@@ -1,11 +1,12 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.math.BigInteger;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationSend;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
+
+import java.io.*;
 import java.net.*;
+import java.sql.Timestamp;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,73 +15,124 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
     private DatagramSocket socket;
+    private String pathName;
+    private Long sendCount;
+
+    private final Map<Key, MapValue> received = new HashMap<>();
 
     private static final int UDP_PORT = 31337;
     private static final int UDP_PACKET_SIZE = 508;
-    private static final int UDP_METADATA = 5;
+    private static final int LONG_LENGTH = 8;
+    private static final int INT_LENGTH = 4;
+    private static final int BYTE_LENGTH = 1;
+    private static final int UDP_METADATA = BYTE_LENGTH + INT_LENGTH + LONG_LENGTH;
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
-    private static final int MESSAGE_METADATA = 4;
+    private static final int TIMEOUT = 5 * 1000;
 
-    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
+    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages, String pathName) {
         super(handler, messages);
+        this.pathName = pathName;
+        sendCount = 0L;
     }
 
     private void sendMessage(Message message) {
 
-        byte [] ipBytes = new byte[4];
-
-        System.arraycopy(message.contents, 0, ipBytes, 0, 4);
-
         try {
-            InetAddress address = InetAddress.getByAddress(ipBytes);
+            CommunicationSend content = (CommunicationSend) message.content;
 
-            System.out.println(address);
+            InetAddress ip = content.ip;
 
-            byte[][] fragments = fragmentate(message.contents);
+            List<byte[]> fragments = fragmentate(content);
 
             for (byte[] fragment : fragments) {
                 DatagramPacket packet = new DatagramPacket(
-                        fragment, message.contents.length, address, 5757);
+                        fragment, fragment.length, ip, UDP_PORT);
+
+                System.out.println(fragment.length);
 
                 socket.send(packet);
             }
-        } catch (UnknownHostException e) {
+
+            sendCount++;
+
+        } catch (ClassCastException e) {
+            System.out.println("Cast exception in Communication!");
             e.printStackTrace();
         } catch (IOException e) {
+            // TODO - check socket
             e.printStackTrace();
         }
     }
 
-    private byte[][] fragmentate(byte[] contents) {
-        int fragmentsCount = (contents.length + UDP_PACKET_SPACE - 1 - MESSAGE_METADATA) / UDP_PACKET_SPACE;
+    private List<byte[]> fragmentate(CommunicationSend contents) {
+        List<byte[]> fragments = new LinkedList<>();
 
-        byte[][] fragments = new byte[fragmentsCount][UDP_PACKET_SIZE];
+        byte[] pathBytes = pathName.getBytes();
 
-        fragments[0][0] = 0;
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
-        fragments[0][1] = (byte)(fragmentsCount >> 24);
-        fragments[0][2] = (byte)(fragmentsCount >> 16);
-        fragments[0][3] = (byte)(fragmentsCount >> 8);
-        fragments[0][4] = (byte)(fragmentsCount);
+        try {
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
 
-        int len = Integer.min(contents.length - MESSAGE_METADATA, UDP_PACKET_SPACE);
+            objectStream.writeObject(contents);
 
-        System.arraycopy(contents, MESSAGE_METADATA, fragments[0], UDP_METADATA, len);
+            byte[] contentBytes = byteStream.toByteArray();
 
-        for (int i = 1; i < fragmentsCount; i++) {
-            System.out.println("a!");
+//            int times = 100;
+//
+//            byte[] bytes = new byte[times * contentBytes.length];
+//
+//            for (int i = 0; i < times; i++) {
+//                System.arraycopy(contentBytes, 0, bytes, contentBytes.length * i, contentBytes.length);
+//            }
+//
+//            fragments.add(bytes);
 
-            fragments[i][0] = 1;
-            fragments[i][1] = (byte)(i >> 24);
-            fragments[i][2] = (byte)(i >> 16);
-            fragments[i][3] = (byte)(i >> 8);
-            fragments[i][4] = (byte)(i);
+            int contentLen = contentBytes.length;
 
-            int srcStartPos = MESSAGE_METADATA + i * UDP_PACKET_SPACE;
+            int fragmentsCount = (contentLen + (UDP_PACKET_SPACE - 1)) / UDP_PACKET_SPACE;
 
-            len = Integer.min(contents.length - srcStartPos, UDP_PACKET_SPACE);
+            int len = Integer.min(contentLen + UDP_METADATA, UDP_PACKET_SPACE);
 
-            System.arraycopy(contents, srcStartPos, fragments[i], UDP_METADATA, len);
+            byte [] fragment = new byte[len + UDP_METADATA];
+
+            fragment[0] = 0;
+
+            for (int i = 0; i < 4; i++) {
+                fragment[i + 1] = (byte)(fragmentsCount >> (24 - 3*i));
+            }
+
+            for (int i = 0; i < 8; i++) {
+                fragment[i + 1 + 4] = (byte)(sendCount >> (56 - 3*i));
+            }
+
+            System.arraycopy(contentBytes, 0, fragment, UDP_METADATA, len);
+
+            fragments.add(fragment);
+
+            for (int j = 1; j < fragmentsCount; j++) {
+
+                len = Integer.min(contentLen - j * UDP_PACKET_SPACE, UDP_PACKET_SPACE);
+
+                fragment = new byte[len + UDP_METADATA];
+
+                fragment[0] = 1;
+
+                for (int i = 0; i < 4; i++) {
+                    fragment[i + 1] = (byte)(i >> (24 - 3*i));
+                }
+
+                for (int i = 0; i < 8; i++) {
+                    fragment[i + 1 + 4] = (byte)(sendCount >> (56 - 3*i));
+                }
+
+                System.arraycopy(contentBytes, j * UDP_PACKET_SPACE, fragment, UDP_METADATA, len);
+
+                fragments.add(fragment);
+            }
+
+        } catch (IOException e) {
+            System.out.println("Fragments IOException!");
         }
 
         return fragments;
@@ -88,7 +140,7 @@ public class Communication extends Module {
 
     @Override
     public void run() {
-        listener.execute(new Listener());
+        listener.execute(new Listener(handler));
 
         try {
             socket = new DatagramSocket();
@@ -97,7 +149,7 @@ public class Communication extends Module {
                 try {
                     Message message = messages.take();
                     System.out.println("New message to send from module " + message.src);
-                    switch (message.operation) {
+                    switch (message.content.operation) {
                         case COMMUNICATION_SEND:
                             sendMessage(message);
                             break;
@@ -115,38 +167,30 @@ public class Communication extends Module {
     }
 
     private class Listener implements Runnable {
+        private final ExecutorService collector = Executors.newSingleThreadExecutor();
+        private MessageHandler handler;
         private DatagramSocket listeningSocket;
 
-        private Listener () {
-
+        private Listener (MessageHandler handler) {
+            this.handler = handler;
         }
-
 
         public void run() {
             try {
                 listeningSocket = new DatagramSocket(UDP_PORT);
 
-                byte[] receiveData = new byte[UDP_PACKET_SIZE];
-
-                DatagramPacket receivePacket = new DatagramPacket(receiveData,
-                        receiveData.length);
-
                 while (true) {
                     try {
+                        byte[] receiveData = new byte[UDP_PACKET_SIZE];
+
+                        System.out.println("Received a message!");
+
+                        DatagramPacket receivePacket = new DatagramPacket(receiveData,
+                                receiveData.length);
+
                         listeningSocket.receive(receivePacket);
 
-                        ByteArrayInputStream byteStream = new ByteArrayInputStream(receivePacket.getData());
-
-                        try {
-                            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
-
-
-                        } catch (IOException e) {
-                            System.out.println("IOException while reading message!");
-                            e.printStackTrace();
-                            return;
-                        }
-
+                        collector.execute(new Collector(handler, receiveData, receivePacket.getAddress()));
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -157,5 +201,100 @@ public class Communication extends Module {
                 e.printStackTrace();
             }
         };
+    }
+
+    private class Collector implements Runnable {
+        private final MessageHandler handler;
+        private byte[] data;
+        private final InetAddress ip;
+
+        private Collector(MessageHandler handler, byte[] data, InetAddress ip) {
+            this.handler = handler;
+            this.data = data;
+            this.ip = ip;
+        }
+
+        public void run() {
+            try {
+                for (int i = 0; i < UDP_METADATA; i++) {
+                    System.out.println(data[i]);
+                }
+
+                ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
+
+                DataInputStream dataStream = new DataInputStream(byteStream);
+
+                byte marker;
+                int pieces;
+                long id;
+
+                marker = dataStream.readByte();
+                pieces = dataStream.readInt();
+                id = dataStream.readLong();
+
+                System.out.println("Processing a message from " + ip.getHostAddress()
+                        + ", id: " + id + ", part: " + pieces);
+
+                Key key = new Key(ip, id);
+
+                MapValue value = new MapValue();
+
+                if (received.containsKey(key)) {
+                    value = received.get(key);
+                } else {
+                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                    value.timestamp = timestamp.getTime();
+                    received.put(key, value);
+                }
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+                if (timestamp.getTime() - value.timestamp > TIMEOUT) {
+                    return;
+                }
+
+                byte [] content = new byte[UDP_PACKET_SPACE];
+
+                System.arraycopy(data, UDP_METADATA, content, 0, UDP_PACKET_SPACE);
+
+                switch (marker) {
+                    case 0:
+                        value.pieces = pieces;
+                        value.fragments.put(0, content);
+                        break;
+                    case 1:
+                        value.fragments.put(pieces, content);
+                        break;
+                }
+
+
+                if (value.pieces == value.fragments.size()) {
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class Key {
+        public InetAddress ip;
+        public long id;
+
+        private Key(InetAddress ip, long id) {
+            this.ip = ip;
+            this.id = id;
+        }
+    }
+
+    private class MapValue {
+        long timestamp;
+        Map<Integer, byte[]> fragments = new TreeMap<>();
+        int pieces = -1;
+
+        private MapValue() {
+
+        }
     }
 }

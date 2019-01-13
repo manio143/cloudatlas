@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 abstract public class Module implements Runnable {

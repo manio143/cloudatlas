@@ -1,7 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import java.io.*;
-import java.math.BigInteger;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
+
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,82 +10,55 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Module.TIMER;
-import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Operation.TIMER_ADD_EVENT_ACK;
-import static pl.edu.mimuw.cloudatlas.agent.agentModules.Message.Operation.TIMER_REMOVE_EVENT_ACK;
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.TIMER;
 
 public class Timer extends Module {
     private final QueueController controller = new QueueController();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    private final int LONG_SIZE = 8;
 
     public Timer(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
     }
 
     public void addEvent(Message message) {
-        ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
-
         try {
-            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+            TimerAddEvent content = (TimerAddEvent) message.content;
 
-            long id = objectStream.readLong();
-            long delay = objectStream.readLong();
-            long timestamp = objectStream.readLong();
+            long wakeUp = content.timestamp + content.delay;
 
-            Runnable toRun = (Runnable)objectStream.readObject();
-
-            long wakeUp = timestamp + delay;
-
-            Event toAdd = new Event(message.src, id, wakeUp, toRun);
+            Event toAdd = new Event(content.id, wakeUp, content.toRun);
 
             controller.addEvent(toAdd);
 
-            Message ack = new Message(TIMER, message.src, TIMER_ADD_EVENT_ACK, BigInteger.valueOf(id).toByteArray());
+            TimerAddEventAck ackContent = new TimerAddEventAck(content.id);
+
+            Message ack = new Message(TIMER, message.src, ackContent);
             handler.addMessage(ack);
 
-        } catch (IOException e) {
-            System.out.println("IOException while reading message!");
+        } catch (ClassCastException e) {
+            System.out.println("Invalid cast to TimerAddEvent!");
             e.printStackTrace();
-            return;
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return;
         }
     }
 
 
     public void removeEvent(Message message) {
-        ByteArrayInputStream byteStream = new ByteArrayInputStream(message.contents);
-
         try {
-            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+            TimerRemoveEvent content = (TimerRemoveEvent) message.content;
 
-            long id = objectStream.readLong();
+            controller.removeEvent(content.id);
 
-            controller.removeEvent(id);
+            TimerRemoveEventAck ackContent = new TimerRemoveEventAck(content.id);
 
-            Message ack = new Message(TIMER, message.src, TIMER_REMOVE_EVENT_ACK, BigInteger.valueOf(id).toByteArray());
+            Message ack = new Message(TIMER, message.src, ackContent);
+
             handler.addMessage(ack);
 
-        } catch (IOException e) {
-            System.out.println("IOException while reading message!");
+        } catch (ClassCastException e) {
+            System.out.println("Invalid cast to TimerAddEvent!");
             e.printStackTrace();
-            return;
         }
     }
-
-    private boolean checkMinLength(Message message, int minLength) {
-        int len = message.contents.length;
-        System.out.println(len);
-        if (len < minLength) {
-            System.out.println("addEvent message too short!");
-            return true;
-        }
-        return false;
-    }
-
 
     @Override
     public void run() {
@@ -94,7 +67,7 @@ public class Timer extends Module {
         while (true) {
             try {
                 Message message = messages.take();
-                switch (message.operation) {
+                switch (message.content.operation) {
                     case TIMER_ADD_EVENT:
                         addEvent(message);
                         break;
@@ -102,7 +75,7 @@ public class Timer extends Module {
                         removeEvent(message);
                         break;
                     default:
-                        System.out.println("Incorrect message type for timer: " + message.operation);
+                        System.out.println("Incorrect message type for timer: " + message.content.operation);
                 }
 
             } catch (InterruptedException e) {
@@ -113,13 +86,11 @@ public class Timer extends Module {
     }
 
     private class Event implements Comparable<Event> {
-        public Message.Module src;
         public long id;
         public long wakeUp;
         public Runnable toRun;
 
-        public Event (Message.Module src, long id, long wakeUp, Runnable toRun) {
-            this.src = src;
+        public Event (long id, long wakeUp, Runnable toRun) {
             this.id = id;
             this.wakeUp = wakeUp;
             this.toRun = toRun;
