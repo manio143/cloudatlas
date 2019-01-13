@@ -39,7 +39,7 @@ public class CloudAtlasPool {
             tester.execute(new Tester(messageHandler, testerQueue));
 
             ExecutorService communication = Executors.newSingleThreadExecutor();
-            communication.execute(new Communication(messageHandler, communicationQueue, pathName));
+            communication.execute(new Communication(messageHandler, communicationQueue));
 
         } catch (IOException e) {
             System.err.println("Agent exception:");

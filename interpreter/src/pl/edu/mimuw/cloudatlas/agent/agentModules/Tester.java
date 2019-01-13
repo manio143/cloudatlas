@@ -19,7 +19,7 @@ public class Tester extends Module {
     public void run() {
         int [] delays = {4000, 2000, 3000, 6000};
 
-        int messagesCount = 5;
+        int messagesCount = 6;
 
         for (int i = 0; i < delays.length; i++) {
 

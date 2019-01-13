@@ -11,14 +11,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.COMMUNICATION;
+
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
     private DatagramSocket socket;
-    private String pathName;
-    private Long sendCount;
+    private Long sendCount = 0L;
 
-    private final Map<Key, MapValue> received = new HashMap<>();
+    private final Map<Key, MapValue> received = new TreeMap<>();
 
     private static final int UDP_PORT = 31337;
     private static final int UDP_PACKET_SIZE = 508;
@@ -29,10 +30,8 @@ public class Communication extends Module {
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
     private static final int TIMEOUT = 5 * 1000;
 
-    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages, String pathName) {
+    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
-        this.pathName = pathName;
-        sendCount = 0L;
     }
 
     private void sendMessage(Message message) {
@@ -42,7 +41,7 @@ public class Communication extends Module {
 
             InetAddress ip = content.ip;
 
-            List<byte[]> fragments = fragmentate(content);
+            List<byte[]> fragments = fragmentate(content.message);
 
             for (byte[] fragment : fragments) {
                 DatagramPacket packet = new DatagramPacket(
@@ -64,29 +63,17 @@ public class Communication extends Module {
         }
     }
 
-    private List<byte[]> fragmentate(CommunicationSend contents) {
+    private List<byte[]> fragmentate(Message message) {
         List<byte[]> fragments = new LinkedList<>();
-
-        byte[] pathBytes = pathName.getBytes();
 
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 
         try {
             ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
 
-            objectStream.writeObject(contents);
+            objectStream.writeObject(message);
 
             byte[] contentBytes = byteStream.toByteArray();
-
-//            int times = 100;
-//
-//            byte[] bytes = new byte[times * contentBytes.length];
-//
-//            for (int i = 0; i < times; i++) {
-//                System.arraycopy(contentBytes, 0, bytes, contentBytes.length * i, contentBytes.length);
-//            }
-//
-//            fragments.add(bytes);
 
             int contentLen = contentBytes.length;
 
@@ -96,16 +83,15 @@ public class Communication extends Module {
 
             byte [] fragment = new byte[len + UDP_METADATA];
 
-            fragment[0] = 0;
+            byteStream = new ByteArrayOutputStream();
 
-            for (int i = 0; i < 4; i++) {
-                fragment[i + 1] = (byte)(fragmentsCount >> (24 - 3*i));
-            }
+            DataOutputStream dataStream = new DataOutputStream(byteStream);
 
-            for (int i = 0; i < 8; i++) {
-                fragment[i + 1 + 4] = (byte)(sendCount >> (56 - 3*i));
-            }
+            dataStream.writeByte(0);
+            dataStream.writeInt(fragmentsCount);
+            dataStream.writeLong(sendCount);
 
+            System.arraycopy(byteStream.toByteArray(), 0, fragment, 0, UDP_METADATA);
             System.arraycopy(contentBytes, 0, fragment, UDP_METADATA, len);
 
             fragments.add(fragment);
@@ -116,16 +102,15 @@ public class Communication extends Module {
 
                 fragment = new byte[len + UDP_METADATA];
 
-                fragment[0] = 1;
+                byteStream = new ByteArrayOutputStream();
 
-                for (int i = 0; i < 4; i++) {
-                    fragment[i + 1] = (byte)(i >> (24 - 3*i));
-                }
+                dataStream = new DataOutputStream(byteStream);
 
-                for (int i = 0; i < 8; i++) {
-                    fragment[i + 1 + 4] = (byte)(sendCount >> (56 - 3*i));
-                }
+                dataStream.writeByte(1);
+                dataStream.writeInt(j);
+                dataStream.writeLong(sendCount);
 
+                System.arraycopy(byteStream.toByteArray(), 0, fragment, 0, UDP_METADATA);
                 System.arraycopy(contentBytes, j * UDP_PACKET_SPACE, fragment, UDP_METADATA, len);
 
                 fragments.add(fragment);
@@ -216,9 +201,9 @@ public class Communication extends Module {
 
         public void run() {
             try {
-                for (int i = 0; i < UDP_METADATA; i++) {
-                    System.out.println(data[i]);
-                }
+//                for (int i = 0; i < UDP_METADATA; i++) {
+//                    System.out.println(data[i]);
+//                }
 
                 ByteArrayInputStream byteStream = new ByteArrayInputStream(data);
 
@@ -233,21 +218,21 @@ public class Communication extends Module {
                 id = dataStream.readLong();
 
                 System.out.println("Processing a message from " + ip.getHostAddress()
-                        + ", id: " + id + ", part: " + pieces);
+                        + ", id: " + id + ", part: " + (marker == 0 ? 0 : pieces));
 
                 Key key = new Key(ip, id);
 
-                MapValue value = new MapValue();
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                MapValue value = new MapValue(timestamp.getTime());
+
+                System.out.println("Size: " + received.size());
 
                 if (received.containsKey(key)) {
+                    System.out.println("LK");
                     value = received.get(key);
-                } else {
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    value.timestamp = timestamp.getTime();
-                    received.put(key, value);
                 }
 
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                // TODO: schedule regular cleaning
 
                 if (timestamp.getTime() - value.timestamp > TIMEOUT) {
                     return;
@@ -259,17 +244,50 @@ public class Communication extends Module {
 
                 switch (marker) {
                     case 0:
+                        System.out.println("Hava.");
                         value.pieces = pieces;
                         value.fragments.put(0, content);
                         break;
                     case 1:
+                        System.out.println("Pa Hlava.");
                         value.fragments.put(pieces, content);
                         break;
+                    default:
+                        System.out.println("Unknown marker!");
                 }
 
+                System.out.println(value.fragments.size());
+                System.out.println(value.pieces);
 
                 if (value.pieces == value.fragments.size()) {
+                    System.out.println("Hava nagina!");
 
+                    int lastLen = value.fragments.get(value.pieces - 1).length;
+                    int totalLen = UDP_PACKET_SPACE * (value.pieces - 1) + lastLen;
+                    byte[] messageBytes = new byte[totalLen];
+                    for (int i = 0; i < value.pieces; i++) {
+                        System.arraycopy(value.fragments.get(i), 0, messageBytes,
+                                UDP_PACKET_SPACE * i, value.fragments.get(i).length);
+                    }
+
+                    received.remove(key);
+
+                    byteStream = new ByteArrayInputStream(messageBytes);
+
+                    ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+
+                    try {
+                        Message message = (Message) objectStream.readObject();
+
+                        handler.addMessage(message);
+
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.out.println("Rich man!");
+
+                    received.put(key, value);
                 }
 
             } catch (IOException e) {
@@ -278,13 +296,22 @@ public class Communication extends Module {
         }
     }
 
-    private class Key {
+    private class Key implements Comparable<Key> {
         public InetAddress ip;
         public long id;
 
         private Key(InetAddress ip, long id) {
             this.ip = ip;
             this.id = id;
+        }
+
+        @Override
+        public int compareTo(Key other) {
+            int ipCompare = ip.toString().compareTo(other.ip.toString());
+            if (ipCompare != 0) {
+                return ipCompare;
+            }
+            return Long.compare(id, other.id);
         }
     }
 
@@ -293,8 +320,8 @@ public class Communication extends Module {
         Map<Integer, byte[]> fragments = new TreeMap<>();
         int pieces = -1;
 
-        private MapValue() {
-
+        private MapValue(long timestamp) {
+            this.timestamp = timestamp;
         }
     }
 }
