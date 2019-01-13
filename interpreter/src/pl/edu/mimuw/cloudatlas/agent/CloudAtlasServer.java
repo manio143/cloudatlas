@@ -1,15 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
-import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
-
 import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.io.File;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.security.KeyFactory;
-import java.security.PrivateKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Properties;
 
