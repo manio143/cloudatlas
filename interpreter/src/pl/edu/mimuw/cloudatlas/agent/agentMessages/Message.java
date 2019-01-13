@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     public enum Module {
-        TIMER, COMMUNICATION, RMI, TESTER
+        TIMER, COMMUNICATION, RMI, ZMI_KEEPER, TESTER
     }
 
     public final Module src;

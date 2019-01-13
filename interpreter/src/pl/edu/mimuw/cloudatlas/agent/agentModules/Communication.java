@@ -11,9 +11,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.COMMUNICATION;
-
-
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
     private DatagramSocket socket;
@@ -46,7 +43,7 @@ public class Communication extends Module {
             for (byte[] fragment : fragments) {
                 DatagramPacket packet = new DatagramPacket(
                         fragment, fragment.length, ip, UDP_PORT);
-                
+
                 socket.send(packet);
             }
 

@@ -17,6 +17,10 @@ public class Tester extends Module {
     }
 
     public void run() {
+        test();
+    }
+
+    public void test() {
         int [] delays = {4000, 2000, 3000, 6000};
 
         int messagesCount = 6;
@@ -24,6 +28,7 @@ public class Tester extends Module {
         for (int i = 0; i < delays.length; i++) {
 
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            System.out.println("Timestamp of message: " + timestamp);
             TimerAddEvent content = new TimerAddEvent(i, delays[i], timestamp.getTime(), new Test());
 
             Message message = new Message(TESTER, TIMER, content);

@@ -19,27 +19,24 @@ public class CloudAtlasPool {
             Long computationInterval = Long.parseLong(prop.getProperty("computationInterval"));
             String pathName = prop.getProperty("pathName");
 
-            LinkedBlockingQueue<Message> timerQueue = new LinkedBlockingQueue<Message>();
-            LinkedBlockingQueue<Message> communicationQueue = new LinkedBlockingQueue<>();
-            LinkedBlockingQueue<Message> rmiQueue = new LinkedBlockingQueue<>();
-            LinkedBlockingQueue<Message> testerQueue = new LinkedBlockingQueue<>();
+            QueueKeeper keeper = new QueueKeeper();
 
-            List<LinkedBlockingQueue<Message>> queues = new ArrayList<>();
-            queues.add(timerQueue);
-            queues.add(communicationQueue);
-            queues.add(rmiQueue);
-            queues.add(testerQueue);
-
-            MessageHandler messageHandler = new MessageHandler(queues);
+            MessageHandler messageHandler = new MessageHandler(keeper);
 
             ExecutorService timer = Executors.newSingleThreadExecutor();
-            timer.execute(new Timer(messageHandler, timerQueue));
+            timer.execute(new Timer(messageHandler, keeper.timerQueue));
 
             ExecutorService tester = Executors.newSingleThreadExecutor();
-            tester.execute(new Tester(messageHandler, testerQueue));
+            tester.execute(new Tester(messageHandler, keeper.testerQueue));
 
             ExecutorService communication = Executors.newSingleThreadExecutor();
-            communication.execute(new Communication(messageHandler, communicationQueue));
+            communication.execute(new Communication(messageHandler, keeper.communicationQueue));
+
+            ExecutorService rmi = Executors.newSingleThreadExecutor();
+            rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
+
+            ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
+            zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.rmiQueue));
 
         } catch (IOException e) {
             System.err.println("Agent exception:");
