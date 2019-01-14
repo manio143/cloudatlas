@@ -3,15 +3,16 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
-import pl.edu.mimuw.cloudatlas.model.Attribute;
-import pl.edu.mimuw.cloudatlas.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.GOSSIP;
 
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;
@@ -56,6 +57,16 @@ public class ZMIKeeper extends Module {
 
                         content = new RMIAttributes(map);
                         break;
+
+                    case ZMI_KEEPER_SIBLINGS:
+
+                        ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
+                            
+                        Map<PathName, List<ValueContact>> data = agent.siblings(zmiKeeperSiblings.level,
+                                zmiKeeperSiblings.pathName);
+
+                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblings(data)));
+                        continue;
 
                     case ZMI_KEEPER_QUERIES:
 
@@ -103,6 +114,15 @@ public class ZMIKeeper extends Module {
 
                         content = new RMIFallbackContacts();
                         break;
+
+                    case ZMI_KEEPER_FALLBACK_CONTACTS_GOSSIP:
+                    
+                        ValueSet contacts = agent.getFallbackContacts();
+                        List<ValueContact> lvc = new ArrayList<>();
+                        for(Value v : contacts)
+                            lvc.add((ValueContact) v);
+                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipContacts(lvc)));
+                        continue;
 
                     default:
                         System.out.println("Incorrect message type in ZMI Keeper: " + message.content.operation);

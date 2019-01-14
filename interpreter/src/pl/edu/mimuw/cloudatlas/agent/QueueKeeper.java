@@ -10,4 +10,6 @@ public class QueueKeeper {
     public final LinkedBlockingQueue<Message> rmiQueue = new LinkedBlockingQueue<>();
     public final LinkedBlockingQueue<Message> zmiKeeperQueue = new LinkedBlockingQueue<>();
     public final LinkedBlockingQueue<Message> testerQueue = new LinkedBlockingQueue<>();
+    public final LinkedBlockingQueue<Message> gossipQueue = new LinkedBlockingQueue<>();
+    public final LinkedBlockingQueue<Message> gossipStrategyQueue = new LinkedBlockingQueue<>();
 }

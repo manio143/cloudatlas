@@ -1,8 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipStrategyNext;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.Timer;
+import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.RRCFGossipStrategy;
 
 import java.util.concurrent.*;
 
@@ -32,5 +33,11 @@ public class CloudAtlasPool {
 
         ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
         zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
+
+        ExecutorService gossip = Executors.newSingleThreadExecutor();
+        zmiKeeper.execute(new Gossip(messageHandler, keeper.gossipQueue, /*TODO*/null));
+
+        ExecutorService gossipStrategy = Executors.newSingleThreadExecutor();
+        zmiKeeper.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(/*TODO*/null, /*TODO*/5000)));
     }
 }

@@ -37,11 +37,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private String getName(ZMI zmi) {
-        return ((ValueString)zmi.getAttributes().get("name")).getValue();
+        return ((ValueString) zmi.getAttributes().get("name")).getValue();
     }
 
     private void removeAttribute(ZMI zmi, Attribute attribute) {
-        if(!zmi.getSons().isEmpty()) {
+        if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
                 removeAttribute(son, attribute);
             }
@@ -50,7 +50,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private void calculateQueries(ZMI zmi, String attributeName) {
-        if(!zmi.getSons().isEmpty()) {
+        if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
                 calculateQueries(son, attributeName);
             }
@@ -60,13 +60,13 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 List<Attribute> columns = queryAttributes.get(attributeName);
                 List<QueryResult> result = interpreter.interpretProgram(program);
 
-                for(QueryResult r : result) {
+                for (QueryResult r : result) {
                     zmi.getAttributes().addOrChange(r.getName(), r.getValue());
                     if (zmi.getFather() == null) {
                         columns.add(r.getName());
                     }
                 }
-            } catch(InterpreterException exception) {
+            } catch (InterpreterException exception) {
                 queryAttributes.remove(attributeName);
                 installedQueries.remove(attributeName);
             }
@@ -74,7 +74,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private void updateQueries(ZMI zmi) {
-        if(!zmi.getSons().isEmpty()) {
+        if (!zmi.getSons().isEmpty()) {
             Interpreter interpreter = new Interpreter(zmi);
             for (Map.Entry<String, Program> entry : installedQueries.entrySet()) {
                 Program program = entry.getValue();
@@ -97,7 +97,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         String name = getName(zmi);
         String zone = fatherPath + "/" + name;
         set.add(zone);
-        for(ZMI son : zmi.getSons()) {
+        for (ZMI son : zmi.getSons()) {
             collectZones(son, set, zone);
         }
     }
@@ -111,7 +111,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return res;
     }
 
-    private ZMI reachZone(String pathName) {
+    private ZMI reachZone(String pathName, Integer depthLimit) {
         PathName pN = new PathName(pathName);
         List<String> comp = pN.getComponents();
 
@@ -120,7 +120,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         int which = 0;
         boolean found;
 
-        while (which != comp.size()) {
+        while (which != comp.size() && (depthLimit == null || which != depthLimit)) {
             found = false;
             for (ZMI son : candidate.getSons()) {
                 if (getName(son).equals(comp.get(which))) {
@@ -139,8 +139,25 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized AttributesMap getAttributes(String pathName) {
-        ZMI zmi = reachZone(pathName);
+        ZMI zmi = reachZone(pathName, null);
         return zmi.getAttributes();
+    }
+
+    public synchronized Map<PathName, List<ValueContact>> siblings(int level, String pathName) {
+        ZMI zmi = reachZone(pathName, level);
+        Map<PathName, List<ValueContact>> res = new HashMap<PathName, List<ValueContact>>();
+        for (ZMI z : zmi.getFather().getSons()) {
+            String name = getName(z);
+            String zone = getName(zmi) + "/" + name;
+            if (!pathName.startsWith(zone)) {
+                ValueSet contacts = (ValueSet) zmi.getAttributes().get("contacts");
+                List<ValueContact> lvc = new ArrayList<>();
+                for(Value v : contacts)
+                    lvc.add((ValueContact) v);
+                res.put(new PathName(zone), lvc);
+            }
+        }
+        return res;
     }
 
     public synchronized Map<String, List<Attribute>> getQueries() {
@@ -148,7 +165,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void installQueries(SignedQueryRequest sqr) {
-        if(!sqr.isValid(publicKey))
+        if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
         String input = sqr.getQuery();
@@ -181,7 +198,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void uninstallQuery(SignedQueryRequest sqr) {
-        if(!sqr.isValid(publicKey))
+        if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
         String queryName = sqr.getQuery();
@@ -197,7 +214,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void setAttribute(String pathName, String attr, Value val) {
-        ZMI zmi = reachZone(pathName);
+        ZMI zmi = reachZone(pathName, null);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
@@ -207,5 +224,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     public synchronized void setFallbackContacts(ValueSet contacts) {
         this.contacts = contacts;
+    }
+
+    public synchronized ValueSet getFallbackContacts() {
+        return contacts;
     }
 }
