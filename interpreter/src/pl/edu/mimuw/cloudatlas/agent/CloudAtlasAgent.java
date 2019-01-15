@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipSiblings;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
@@ -143,18 +144,19 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return zmi.getAttributes();
     }
 
-    public synchronized Map<PathName, List<ValueContact>> siblings(int level, String pathName) {
+    public synchronized List<GossipSiblings.Sibling> siblings(int level, String pathName) {
         ZMI zmi = reachZone(pathName, level);
-        Map<PathName, List<ValueContact>> res = new HashMap<PathName, List<ValueContact>>();
+        List<GossipSiblings.Sibling> res = new ArrayList<>();
         for (ZMI z : zmi.getFather().getSons()) {
             String name = getName(z);
             String zone = getName(zmi) + "/" + name;
             if (!pathName.startsWith(zone)) {
                 ValueSet contacts = (ValueSet) zmi.getAttributes().get("contacts");
+                ValueTime timestamp = (ValueTime) zmi.getAttributes().get("timestamp");
                 List<ValueContact> lvc = new ArrayList<>();
                 for(Value v : contacts)
                     lvc.add((ValueContact) v);
-                res.put(new PathName(zone), lvc);
+                res.add(new GossipSiblings.Sibling(new PathName(zone), lvc, timestamp));
             }
         }
         return res;

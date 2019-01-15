@@ -62,7 +62,7 @@ public class ZMIKeeper extends Module {
 
                         ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
                             
-                        Map<PathName, List<ValueContact>> data = agent.siblings(zmiKeeperSiblings.level,
+                        List<GossipSiblings.Sibling> data = agent.siblings(zmiKeeperSiblings.level,
                                 zmiKeeperSiblings.pathName);
 
                         handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblings(data)));
@@ -122,6 +122,18 @@ public class ZMIKeeper extends Module {
                         for(Value v : contacts)
                             lvc.add((ValueContact) v);
                         handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipContacts(lvc)));
+                        continue;
+
+                    case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
+
+                        ZMIKeeperSiblingsForGossip zmiksfg = (ZMIKeeperSiblingsForGossip)message.content;
+                        List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
+                        for(GossipInterFreshness.Node node : zmiksfg.msg.nodes)
+                        {
+                            AttributesMap m = agent.getAttributes(node.pathName.toString());
+                            myNodes.add(new GossipInterFreshness.Node(node.pathName, (ValueTime)m.get("timestamp")));
+                        }
+                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblingsFreshness(zmiksfg.msg, myNodes)));
                         continue;
 
                     default:

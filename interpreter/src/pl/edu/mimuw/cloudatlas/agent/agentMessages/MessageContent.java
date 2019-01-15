@@ -26,10 +26,14 @@ public abstract class MessageContent implements Serializable {
         ZMI_KEEPER_FALLBACK_CONTACTS,
         ZMI_KEEPER_FALLBACK_CONTACTS_GOSSIP,
         ZMI_KEEPER_SET_ATTRIBUTE,
+        ZMI_KEEPER_SIBLINGS_FOR_GOSSIP,
         GOSSIP_NEXT,
         GOSSIP_SIBLINGS,
         GOSSIP_CONTACTS,
-        GOSSIP_STRATEGY_NEXT
+        GOSSIP_STRATEGY_NEXT,
+        GOSSIP_INTER_FRESHNESS_START,
+        GOSSIP_SIBLINGS_FRESHNESS,
+        GOSSIP_INTER_FRESHNESS_RESPONSE
     }
 
     public Operation operation;
