@@ -39,8 +39,10 @@ public class MessageHandler {
                 break;
             case GOSSIP:
                 keeper.gossipQueue.add(message);
+                break;
             case GOSSIP_STRATEGY:
                 keeper.gossipStrategyQueue.add(message);
+                break;
             default:
         }
     }
