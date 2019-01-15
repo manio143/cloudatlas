@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import java.io.Serializable;
 import java.util.List;
 
 import pl.edu.mimuw.cloudatlas.model.PathName;
@@ -9,7 +10,7 @@ import pl.edu.mimuw.cloudatlas.model.ValueTime;
 public class GossipSiblings extends MessageContent {
     public final List<Sibling> siblings;
 
-    public static class Sibling {
+    public static class Sibling implements Serializable {
         public final PathName pathName;
         public final List<ValueContact> contacts;
         public final ValueTime timestamp;

@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.List;
 
@@ -11,7 +12,7 @@ public class GossipInterFreshness extends MessageContent {
     public final InetAddress responseAddress;
     public final int level;
     //TODO?GTP timestamps
-    public static class Node {
+    public static class Node implements Serializable {
         public final PathName pathName;
         public final ValueTime freshness;
         public Node(PathName pathName, ValueTime freshness) {

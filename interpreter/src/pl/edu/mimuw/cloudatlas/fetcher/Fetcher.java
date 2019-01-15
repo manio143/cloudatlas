@@ -28,7 +28,7 @@ public class Fetcher implements Runnable {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
 
-            ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", "{/uw/khaki;10.1.1.38}");
+            ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", "{/uw/khaki;127.0.0.1}");
             stub.setFallbackContacts(contacts);
             this.set = true;
 

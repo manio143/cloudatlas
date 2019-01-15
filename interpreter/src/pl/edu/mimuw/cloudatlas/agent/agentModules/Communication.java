@@ -114,6 +114,7 @@ public class Communication extends Module {
 
         } catch (IOException e) {
             System.out.println("Fragments IOException!");
+            e.printStackTrace();
         }
 
         return fragments;
