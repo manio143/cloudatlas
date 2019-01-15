@@ -1,6 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentExceptions;
 
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation;
 
 public class IncorrectMessageContent extends AgentException {
     public IncorrectMessageContent(Operation expected, Operation received) {

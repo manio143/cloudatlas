@@ -1,8 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_ATTRIBUTES;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.RMI_ATTRIBUTES;
 
 public class RMIAttributes extends MessageContent {
     public AttributesMap attributesMap;

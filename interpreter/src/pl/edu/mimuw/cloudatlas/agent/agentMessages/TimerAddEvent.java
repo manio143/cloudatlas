@@ -1,6 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.TIMER_ADD_EVENT;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.TIMER_ADD_EVENT;
 
 public class TimerAddEvent extends MessageContent {
     public long id;

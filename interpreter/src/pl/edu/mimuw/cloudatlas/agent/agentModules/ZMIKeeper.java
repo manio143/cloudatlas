@@ -1,6 +1,10 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
+import pl.edu.mimuw.cloudatlas.agent.Message;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.model.*;
@@ -11,9 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.GOSSIP;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.ZMI_KEEPER;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
 
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;
@@ -39,123 +43,128 @@ public class ZMIKeeper extends Module {
                 boolean correct = true;
                 MessageContent content = new RMIError(new ContentNotInitialized());
 
-                // TODO - add error detection
+                try {
 
-                switch(message.content.operation) {
+                    switch (message.content.operation) {
 
-                    case ZMI_KEEPER_ZONES:
+                        case ZMI_KEEPER_ZONES:
 
-                        List<String> zones = agent.getZones();
+                            List<String> zones = agent.getZones();
 
-                        content = new RMIZones(zones);
-                        break;
+                            content = new RMIZones(zones);
+                            break;
 
-                    case ZMI_KEEPER_ATTRIBUTES:
+                        case ZMI_KEEPER_ATTRIBUTES:
 
-                        ZMIKeeperAttributesMap zmiKeeperAttributesMap = (ZMIKeeperAttributesMap)message.content;
+                            ZMIKeeperAttributesMap zmiKeeperAttributesMap = (ZMIKeeperAttributesMap) message.content;
 
-                        AttributesMap map = agent.getAttributes(zmiKeeperAttributesMap.pathName);
+                            AttributesMap map = agent.getAttributes(zmiKeeperAttributesMap.pathName);
 
-                        content = new RMIAttributes(map);
-                        break;
+                            content = new RMIAttributes(map);
+                            break;
 
-                    case ZMI_KEEPER_SIBLINGS:
+                        case ZMI_KEEPER_SIBLINGS:
 
-                        ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
-                            
-                        List<GossipSiblings.Sibling> data = agent.siblings(zmiKeeperSiblings.level,
-                                zmiKeeperSiblings.pathName);
+                            ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
 
-                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblings(data)));
-                        continue;
+                            List<GossipSiblings.Sibling> data = agent.siblings(zmiKeeperSiblings.level,
+                                    zmiKeeperSiblings.pathName);
 
-                    case ZMI_KEEPER_QUERIES:
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblings(data)));
+                            continue;
 
-                        Map<String, List<Attribute>> queries = agent.getQueries();
+                        case ZMI_KEEPER_QUERIES:
 
-                        content = new RMIQueries(queries);
-                        break;
+                            Map<String, List<Attribute>> queries = agent.getQueries();
 
-                    case ZMI_KEEPER_INSTALL_QUERY:
+                            content = new RMIQueries(queries);
+                            break;
 
-                        ZMIKeeperInstallQueries zmiKeeperInstallQueries = (ZMIKeeperInstallQueries)message.content;
+                        case ZMI_KEEPER_INSTALL_QUERY:
 
-                        agent.installQueries(zmiKeeperInstallQueries.query);
+                            ZMIKeeperInstallQueries zmiKeeperInstallQueries = (ZMIKeeperInstallQueries) message.content;
 
-                        content = new RMIInstallQuery();
-                        break;
+                            agent.installQueries(zmiKeeperInstallQueries.query);
 
-                    case ZMI_KEEPER_REMOVE_QUERY:
+                            content = new RMIInstallQuery();
+                            break;
 
-                        ZMIKeeperRemoveQueries zmiKeeperRemoveQueries = (ZMIKeeperRemoveQueries)message.content;
+                        case ZMI_KEEPER_REMOVE_QUERY:
 
-                        agent.uninstallQuery(zmiKeeperRemoveQueries.query);
+                            ZMIKeeperRemoveQueries zmiKeeperRemoveQueries = (ZMIKeeperRemoveQueries) message.content;
 
-                        content = new RMIRemoveQuery();
-                        break;
+                            agent.uninstallQuery(zmiKeeperRemoveQueries.query);
 
-                    case ZMI_KEEPER_SET_ATTRIBUTE:
+                            content = new RMIRemoveQuery();
+                            break;
 
-                        ZMIKeeperSetAttribute zmiKeeperSetAttribute = (ZMIKeeperSetAttribute)message.content;
+                        case ZMI_KEEPER_SET_ATTRIBUTE:
 
-                        agent.setAttribute(
-                                zmiKeeperSetAttribute.pathName,
-                                zmiKeeperSetAttribute.attribute,
-                                zmiKeeperSetAttribute.value
-                                );
+                            ZMIKeeperSetAttribute zmiKeeperSetAttribute = (ZMIKeeperSetAttribute) message.content;
 
-                        content = new RMISetAttribute();
-                        break;
+                            agent.setAttribute(
+                                    zmiKeeperSetAttribute.pathName,
+                                    zmiKeeperSetAttribute.attribute,
+                                    zmiKeeperSetAttribute.value
+                            );
 
-                    case ZMI_KEEPER_FALLBACK_CONTACTS:
+                            content = new RMISetAttribute();
+                            break;
 
-                        ZMIKeeperFallbackContacts zmiKeeperFallbackContacts = (ZMIKeeperFallbackContacts)message.content;
+                        case ZMI_KEEPER_FALLBACK_CONTACTS:
 
-                        agent.setFallbackContacts(zmiKeeperFallbackContacts.contacts);
+                            ZMIKeeperFallbackContacts zmiKeeperFallbackContacts = (ZMIKeeperFallbackContacts) message.content;
 
-                        content = new RMIFallbackContacts();
-                        break;
+                            agent.setFallbackContacts(zmiKeeperFallbackContacts.contacts);
 
-                    case ZMI_KEEPER_FALLBACK_CONTACTS_GOSSIP:
-                    
-                        ValueSet contacts = agent.getFallbackContacts();
-                        List<ValueContact> lvc = new ArrayList<>();
-                        for(Value v : contacts)
-                            lvc.add((ValueContact) v);
-                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipContacts(lvc)));
-                        continue;
+                            content = new RMIFallbackContacts();
+                            break;
 
-                    case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
+                        case ZMI_KEEPER_FALLBACK_CONTACTS_GOSSIP:
 
-                        ZMIKeeperSiblingsForGossip zmiksfg = (ZMIKeeperSiblingsForGossip)message.content;
-                        List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
-                        for(GossipInterFreshness.Node node : zmiksfg.msg.nodes)
-                        {
-                            AttributesMap m = agent.getAttributes(node.pathName.toString());
-                            myNodes.add(new GossipInterFreshness.Node(node.pathName, (ValueTime)m.get("timestamp")));
-                        }
-                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblingsFreshness(zmiksfg.msg, myNodes)));
-                        continue;
+                            ValueSet contacts = agent.getFallbackContacts();
+                            List<ValueContact> lvc = new ArrayList<>();
+                            for (Value v : contacts)
+                                lvc.add((ValueContact) v);
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipContacts(lvc)));
+                            continue;
 
-                    case ZMI_KEEPER_PROVIDE_DETAILS:
+                        case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
 
-                        ZMIKeeperProvideDetails zmikpd = (ZMIKeeperProvideDetails) message.content;
-                        Map<PathName, AttributesMap> details = new HashMap<>();
-                        for(PathName pn : zmikpd.msg.nodes)
-                            details.put(pn, agent.getAttributes(pn.toString()));
-                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipProvideDetails(zmikpd.msg, details)));
-                        continue;
+                            ZMIKeeperSiblingsForGossip zmiKeeperSiblingsForGossip = (ZMIKeeperSiblingsForGossip) message.content;
+                            List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
+                            for (GossipInterFreshness.Node node : zmiKeeperSiblingsForGossip.msg.nodes) {
+                                AttributesMap m = agent.getAttributes(node.pathName.toString());
+                                myNodes.add(new GossipInterFreshness.Node(node.pathName, (ValueTime) m.get("timestamp")));
+                            }
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
+                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, myNodes)));
+                            continue;
 
-                    case ZMI_KEEPER_UPDATE_ZMI:
+                        case ZMI_KEEPER_PROVIDE_DETAILS:
 
-                        ZMIKeeperUpdateZMI zmikuz = (ZMIKeeperUpdateZMI) message.content;
-                        for(Map.Entry<PathName, AttributesMap> entry : zmikuz.details.entrySet())
-                            agent.setAttributes(entry.getKey().toString(), entry.getValue());
-                        continue;
+                            ZMIKeeperProvideDetails zmiKeeperProvideDetails = (ZMIKeeperProvideDetails) message.content;
+                            Map<PathName, AttributesMap> details = new HashMap<>();
+                            for (PathName pn : zmiKeeperProvideDetails.msg.nodes)
+                                details.put(pn, agent.getAttributes(pn.toString()));
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
+                                    new GossipProvideDetails(zmiKeeperProvideDetails.msg, details)));
+                            continue;
 
-                    default:
-                        System.out.println("Incorrect message type in ZMI Keeper: " + message.content.operation);
-                        correct = false;
+                        case ZMI_KEEPER_UPDATE_ZMI:
+
+                            ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
+                            for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet())
+                                agent.setAttributes(entry.getKey().toString(), entry.getValue());
+                            continue;
+
+                        default:
+                            System.out.println("Incorrect message type in ZMI Keeper: " + message.content.operation);
+                            correct = false;
+                    }
+
+                } catch (AgentException e) {
+                    content = new RMIError(e);
                 }
 
                 if (correct) {

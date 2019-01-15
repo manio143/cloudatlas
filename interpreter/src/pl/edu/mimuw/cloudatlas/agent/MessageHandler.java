@@ -1,10 +1,4 @@
-package pl.edu.mimuw.cloudatlas.agent.agentMessages;
-
-import pl.edu.mimuw.cloudatlas.agent.QueueKeeper;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
-
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+package pl.edu.mimuw.cloudatlas.agent;
 
 public class MessageHandler {
     private final QueueKeeper keeper;

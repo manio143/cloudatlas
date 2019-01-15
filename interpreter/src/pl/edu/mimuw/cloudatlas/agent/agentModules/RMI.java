@@ -1,9 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import pl.edu.mimuw.cloudatlas.agent.CloudAtlasRMI;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.Message;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.rmi.RemoteException;
@@ -13,7 +13,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.ZMI_KEEPER;
 
 public class RMI extends Module {
     private SynchronousQueue<MessageContent> rmi = new SynchronousQueue<>();

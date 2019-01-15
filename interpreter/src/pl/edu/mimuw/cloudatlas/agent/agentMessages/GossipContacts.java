@@ -2,7 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
 import java.util.List;
 
-import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 
 public class GossipContacts extends MessageContent {

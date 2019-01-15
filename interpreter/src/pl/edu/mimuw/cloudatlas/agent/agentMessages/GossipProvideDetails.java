@@ -1,9 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 
-import java.util.List;
 import java.util.Map;
 
 public class GossipProvideDetails extends MessageContent {

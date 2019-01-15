@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
 import java.util.List;
 
 public class GossipSiblingsFreshness extends MessageContent {

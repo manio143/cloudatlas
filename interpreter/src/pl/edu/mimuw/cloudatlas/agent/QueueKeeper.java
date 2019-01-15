@@ -1,7 +1,5 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
-
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueueKeeper {

@@ -1,8 +1,11 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.Message;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
 import java.net.InetAddress;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.COMMUNICATION_SEND;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.COMMUNICATION_SEND;
 
 public class CommunicationSend extends MessageContent {
     public InetAddress ip;

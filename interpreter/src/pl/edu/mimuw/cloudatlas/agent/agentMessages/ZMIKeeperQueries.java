@@ -1,6 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.ZMI_KEEPER_QUERIES;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.ZMI_KEEPER_QUERIES;
 
 public class ZMIKeeperQueries extends MessageContent {
     public ZMIKeeperQueries() {

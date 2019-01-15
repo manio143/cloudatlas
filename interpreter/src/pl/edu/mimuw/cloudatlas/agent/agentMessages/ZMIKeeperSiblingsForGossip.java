@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
 public class ZMIKeeperSiblingsForGossip extends MessageContent {
     public final GossipInterFreshness msg;
 

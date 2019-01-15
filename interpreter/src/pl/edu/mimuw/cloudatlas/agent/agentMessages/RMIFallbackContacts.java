@@ -1,6 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.RMI_FALLBACK_CONTACTS;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.RMI_FALLBACK_CONTACTS;
 
 public class RMIFallbackContacts extends MessageContent {
     public RMIFallbackContacts() {

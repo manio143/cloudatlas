@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
+
 public class ZMIKeeperSiblings extends MessageContent {
     public final String pathName;
     public final int level;

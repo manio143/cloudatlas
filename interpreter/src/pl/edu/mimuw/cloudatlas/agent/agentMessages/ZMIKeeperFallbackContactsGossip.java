@@ -1,8 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
-import pl.edu.mimuw.cloudatlas.model.ValueSet;
-
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 
 public class ZMIKeeperFallbackContactsGossip extends MessageContent {
     public ZMIKeeperFallbackContactsGossip() {

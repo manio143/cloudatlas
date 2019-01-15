@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 import java.io.Serializable;
 import java.util.List;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;

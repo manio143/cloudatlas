@@ -3,12 +3,13 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import java.net.InetAddress;
 import java.util.*;
 
+import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipContacts;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipNext;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipSiblings;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipStrategyNext;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.Message;
+import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.ZMIKeeperSiblings;
@@ -18,7 +19,7 @@ import pl.edu.mimuw.cloudatlas.model.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
 
 public class Gossip extends Module {
     private final String nodePath;
@@ -79,13 +80,17 @@ public class Gossip extends Module {
             //local
             case GOSSIP_CONTACTS:
                 GossipContacts gossipContacts = (GossipContacts) message.content;
-                int idx = rand.nextInt(gossipContacts.contacts.size());
-                ValueContact chosen = gossipContacts.contacts.get(idx);
-                List<GossipInterFreshness.Node> freshnessNodes = new ArrayList<>();
-                for(GossipSiblings.Sibling s : siblings.get(currentOutGossipLevel))
-                    freshnessNodes.add(new GossipInterFreshness.Node(s.pathName,s.timestamp));
-                message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(freshnessNodes, ip, currentOutGossipLevel));
-                handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(chosen.getAddress(), message)));
+                try {
+                    int idx = rand.nextInt(gossipContacts.contacts.size());
+                    ValueContact chosen = gossipContacts.contacts.get(idx);
+                    List<GossipInterFreshness.Node> freshnessNodes = new ArrayList<>();
+                    for (GossipSiblings.Sibling s : siblings.get(currentOutGossipLevel))
+                        freshnessNodes.add(new GossipInterFreshness.Node(s.pathName, s.timestamp));
+                    message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(freshnessNodes, ip, currentOutGossipLevel));
+                    handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(chosen.getAddress(), message)));
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Gossip: No contacts found!");
+                }
                 break;
 
             //foreign

@@ -3,7 +3,6 @@ package pl.edu.mimuw.cloudatlas.agent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.RMIInterrupted;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
-import pl.edu.mimuw.cloudatlas.agent.agentModules.Module;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.RMI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
@@ -16,10 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.RMI;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.ZMI_KEEPER;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation;
-import static pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageContent.Operation.*;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.ZMI_KEEPER;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.*;
 
 public class CloudAtlasRMI implements CloudAtlasAPI {
     private SynchronousQueue<MessageContent> rmi;
