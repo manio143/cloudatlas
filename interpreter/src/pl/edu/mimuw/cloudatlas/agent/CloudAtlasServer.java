@@ -15,8 +15,6 @@ public class CloudAtlasServer {
         try {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[1]));
-            Long computationInterval = Long.parseLong(prop.getProperty("computationInterval"));
-            String pathName = prop.getProperty("pathName");
 
             byte[] keyBytes = Files.readAllBytes(new File(args[2]).toPath());
             X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
@@ -24,7 +22,7 @@ public class CloudAtlasServer {
 
             CloudAtlasAgent agent = new CloudAtlasAgent(args[0], kf.generatePublic(kspec));
 
-            CloudAtlasPool threadPool = new CloudAtlasPool(agent);
+            CloudAtlasPool threadPool = new CloudAtlasPool(agent, prop);
 
             threadPool.runModules();
 

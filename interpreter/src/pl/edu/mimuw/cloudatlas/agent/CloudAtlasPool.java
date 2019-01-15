@@ -5,16 +5,22 @@ import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.RRCFGossipStrategy;
 
+import java.util.Properties;
 import java.util.concurrent.*;
 
 public class CloudAtlasPool {
     private final CloudAtlasAgent agent;
+    private final Properties properties;
 
-    public CloudAtlasPool(CloudAtlasAgent agent) {
+    public CloudAtlasPool(CloudAtlasAgent agent, Properties properties) {
+        this.properties = properties;
         this.agent = agent;
     }
 
     public void runModules() {
+        Long computationInterval = Long.parseLong(properties.getProperty("computationInterval"));
+        String pathName = properties.getProperty("pathName");
+
         QueueKeeper keeper = new QueueKeeper();
 
         MessageHandler messageHandler = new MessageHandler(keeper);
@@ -35,9 +41,9 @@ public class CloudAtlasPool {
         zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
 
         ExecutorService gossip = Executors.newSingleThreadExecutor();
-        zmiKeeper.execute(new Gossip(messageHandler, keeper.gossipQueue, /*TODO*/null));
+        gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, /*TODO*/null));
 
         ExecutorService gossipStrategy = Executors.newSingleThreadExecutor();
-        zmiKeeper.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(/*TODO*/null, /*TODO*/5000)));
+        gossipStrategy.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(/*TODO*/null, /*TODO*/5000)));
     }
 }
