@@ -4,7 +4,11 @@ import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipStrategyNext;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.RRCFGossipStrategy;
+import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.model.ValueContact;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.concurrent.*;
 
@@ -17,7 +21,7 @@ public class CloudAtlasPool {
         this.agent = agent;
     }
 
-    public void runModules() {
+    public void runModules() throws UnknownHostException {
         Long computationInterval = Long.parseLong(properties.getProperty("computationInterval"));
         String pathName = properties.getProperty("pathName");
 
@@ -40,10 +44,16 @@ public class CloudAtlasPool {
         ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
         zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
 
+        InetAddress ip = InetAddress.getByName(properties.getProperty("ip"));
+        ValueContact thisMachine = new ValueContact(new PathName(pathName), ip);
+
         ExecutorService gossip = Executors.newSingleThreadExecutor();
-        gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, /*TODO*/null));
+        gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine));
+
+        int gossipFrequency = Integer.parseInt(properties.getProperty("gossipFrequency"));
+        String strategy = properties.getProperty("peerSelectionStrategy"); //TODO implement other strategies
 
         ExecutorService gossipStrategy = Executors.newSingleThreadExecutor();
-        gossipStrategy.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(/*TODO*/null, /*TODO*/5000)));
+        gossipStrategy.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(pathName, gossipFrequency)));
     }
 }

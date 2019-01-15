@@ -44,6 +44,9 @@ public class GossipStrategyProvider extends Module {
                 }
             } catch (InterruptedException iex) {
                 continue;
+            } catch (IncorrectMessageSource ims) {
+                ims.printStackTrace();
+                continue;
             }
         }
     }

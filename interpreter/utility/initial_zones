@@ -4,9 +4,11 @@
 /uw
     level : integer = 1
     name : string = "uw"
+    timestamp : time = 2013/01/01 01:00:00.000
 /pjwstk
     level : integer = 1
     name : string = "pjwstk"
+    timestamp : time = 2013/01/01 01:00:00.000
 /uw/violet07
     level : integer = 2
     name : string = "violet07"

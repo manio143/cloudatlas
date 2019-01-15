@@ -21,12 +21,12 @@ import java.util.stream.Collectors;
 import static pl.edu.mimuw.cloudatlas.agent.agentMessages.Message.Module.*;
 
 public class Gossip extends Module {
-    String nodePath;
-    InetAddress ip;
+    private final String nodePath;
+    private final InetAddress ip;
 
-    Random rand = new Random();
-    int currentOutGossipLevel;
-    Map<Integer, List<GossipSiblings.Sibling>> siblings;
+    private final Random rand = new Random();
+    private int currentOutGossipLevel;
+    private final Map<Integer, List<GossipSiblings.Sibling>> siblings = new HashMap<>();
 
     public Gossip(MessageHandler handler, LinkedBlockingQueue<Message> messages, ValueContact currentNode) {
         super(handler, messages);
@@ -55,6 +55,7 @@ public class Gossip extends Module {
             case GOSSIP_NEXT:
                 GossipNext gossipNext = (GossipNext) message.content;
                 currentOutGossipLevel = gossipNext.level;
+                System.out.println("Initiating gossip at level:  "+currentOutGossipLevel);
                 handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperSiblings(currentOutGossipLevel, nodePath)));
                 break;
 

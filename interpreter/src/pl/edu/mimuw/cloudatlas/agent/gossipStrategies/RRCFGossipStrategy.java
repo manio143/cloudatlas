@@ -20,17 +20,18 @@ public class RRCFGossipStrategy extends GossipStrategy {
         }
     }
 
-    private Deque<LevelWithTimestamp> queue = new ArrayDeque<>();
+    private final Deque<LevelWithTimestamp> queue = new ArrayDeque<>();
 
     public RRCFGossipStrategy(String nodePath, int frequency) {
-        currentLevel = new PathName(nodePath).getComponents().size() - 1;
+        currentLevel = new PathName(nodePath).getComponents().size();
         this.frequency = frequency;
         long now = Instant.now().toEpochMilli();
         for (int i = 1; i < currentLevel; i++)
-            queue.addFirst(new LevelWithTimestamp(i, now));
+            queue.addLast(new LevelWithTimestamp(i, now));
+        System.out.println("Strategy init: level = "+currentLevel + ", queueSize = "+ queue.size());
     }
 
-    public int nextLevel() throws InterruptedException {
+    public synchronized int nextLevel() throws InterruptedException {
         LevelWithTimestamp first = queue.removeFirst();
         long smallest = first.timestamp;
         long now = Instant.now().toEpochMilli();

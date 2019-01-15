@@ -42,6 +42,17 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return ((ValueString) zmi.getAttributes().get("name")).getValue();
     }
 
+    private String getFullName(ZMI zmi) {
+        Stack<String> names = new Stack<>();
+        while(zmi != null) {
+            String name = getName(zmi);
+            if(name != null)
+                names.push(name);
+            zmi = zmi.getFather();
+        }
+        return new PathName(names).toString();
+    }
+
     private void removeAttribute(ZMI zmi, Attribute attribute) {
         if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
@@ -152,15 +163,19 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     public synchronized List<GossipSiblings.Sibling> siblings(int level, String pathName) {
         ZMI zmi = reachZone(pathName, level);
         List<GossipSiblings.Sibling> res = new ArrayList<>();
+        String fatherName = getFullName(zmi.getFather());
+        if(fatherName.equals("/"))
+            fatherName = "";
         for (ZMI z : zmi.getFather().getSons()) {
             String name = getName(z);
-            String zone = getName(zmi) + "/" + name;
+            String zone = fatherName + "/" + name;
             if (!pathName.startsWith(zone)) {
-                ValueSet contacts = (ValueSet) zmi.getAttributes().get("contacts");
+                ValueSet contacts = (ValueSet) zmi.getAttributes().getOrNull("contacts");
                 ValueTime timestamp = (ValueTime) zmi.getAttributes().get("timestamp");
                 List<ValueContact> lvc = new ArrayList<>();
-                for(Value v : contacts)
-                    lvc.add((ValueContact) v);
+                if(contacts != null)
+                    for(Value v : contacts)
+                        lvc.add((ValueContact) v);
                 res.add(new GossipSiblings.Sibling(new PathName(zone), lvc, timestamp));
             }
         }
@@ -226,6 +241,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             throw new NotSingletonZoneException(pathName);
         }
         zmi.getAttributes().addOrChange(attr, val);
+        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
         updateQueries(zmi);
     }
 
@@ -235,6 +251,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             throw new NotSingletonZoneException(pathName);
         }
         zmi.getAttributes().addOrChange(attrs);
+        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
         updateQueries(zmi);
     }
 
