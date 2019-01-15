@@ -9,6 +9,7 @@ import java.util.List;
 public class GossipInterFreshness extends MessageContent {
     public final List<Node> nodes;
     public final InetAddress responseAddress;
+    public final int level;
     //TODO?GTP timestamps
     public static class Node {
         public final PathName pathName;
@@ -19,18 +20,19 @@ public class GossipInterFreshness extends MessageContent {
         }
     }
 
-    private GossipInterFreshness(List<Node> nodes, InetAddress responseAddress, Operation operation) {
+    private GossipInterFreshness(List<Node> nodes, InetAddress responseAddress, int level, Operation operation) {
         this.nodes = nodes;
         this.responseAddress = responseAddress;
+        this.level = level;
 
         this.operation = operation;
     }
 
-    public static GossipInterFreshness Start(List<Node> nodes, InetAddress responseAddress){
-        return new GossipInterFreshness(nodes, responseAddress, Operation.GOSSIP_INTER_FRESHNESS_START);
+    public static GossipInterFreshness Start(List<Node> nodes, InetAddress responseAddress, int level){
+        return new GossipInterFreshness(nodes, responseAddress, level, Operation.GOSSIP_INTER_FRESHNESS_START);
     }
 
-    public static GossipInterFreshness Response(List<Node> nodes, InetAddress responseAddress){
-        return new GossipInterFreshness(nodes, responseAddress, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE);
+    public static GossipInterFreshness Response(List<Node> nodes, InetAddress responseAddress, int level){
+        return new GossipInterFreshness(nodes, responseAddress, level, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE);
     }
 }

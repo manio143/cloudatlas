@@ -15,6 +15,7 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.*;
 
 public class CloudAtlasAgent implements CloudAtlasAPI {
@@ -67,6 +68,8 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                         columns.add(r.getName());
                     }
                 }
+                if(result.size() > 0)
+                    zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
             } catch (InterpreterException exception) {
                 queryAttributes.remove(attributeName);
                 installedQueries.remove(attributeName);
@@ -84,6 +87,8 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     for (QueryResult r : result) {
                         zmi.getAttributes().addOrChange(r.getName(), r.getValue());
                     }
+                    if(result.size() > 0)
+                        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
                 } catch (InterpreterException exception) {
                 }
             }
@@ -221,6 +226,15 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             throw new NotSingletonZoneException(pathName);
         }
         zmi.getAttributes().addOrChange(attr, val);
+        updateQueries(zmi);
+    }
+
+    public synchronized void setAttributes(String pathName, AttributesMap attrs) {
+        ZMI zmi = reachZone(pathName, null);
+        if (!zmi.getSons().isEmpty()) {
+            throw new NotSingletonZoneException(pathName);
+        }
+        zmi.getAttributes().addOrChange(attrs);
         updateQueries(zmi);
     }
 

@@ -6,6 +6,7 @@ import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.model.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -134,6 +135,22 @@ public class ZMIKeeper extends Module {
                             myNodes.add(new GossipInterFreshness.Node(node.pathName, (ValueTime)m.get("timestamp")));
                         }
                         handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblingsFreshness(zmiksfg.msg, myNodes)));
+                        continue;
+
+                    case ZMI_KEEPER_PROVIDE_DETAILS:
+
+                        ZMIKeeperProvideDetails zmikpd = (ZMIKeeperProvideDetails) message.content;
+                        Map<PathName, AttributesMap> details = new HashMap<>();
+                        for(PathName pn : zmikpd.msg.nodes)
+                            details.put(pn, agent.getAttributes(pn.toString()));
+                        handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipProvideDetails(zmikpd.msg, details)));
+                        continue;
+
+                    case ZMI_KEEPER_UPDATE_ZMI:
+
+                        ZMIKeeperUpdateZMI zmikuz = (ZMIKeeperUpdateZMI) message.content;
+                        for(Map.Entry<PathName, AttributesMap> entry : zmikuz.details.entrySet())
+                            agent.setAttributes(entry.getKey().toString(), entry.getValue());
                         continue;
 
                     default:
