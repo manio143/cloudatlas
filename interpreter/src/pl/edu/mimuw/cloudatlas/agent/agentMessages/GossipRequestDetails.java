@@ -6,7 +6,7 @@ import pl.edu.mimuw.cloudatlas.model.PathName;
 import java.net.InetAddress;
 import java.util.List;
 
-public class GossipRequestDetails extends MessageContent {
+public class GossipRequestDetails extends TimedGossipMessage {
     public final List<PathName> nodes;
     public final InetAddress responseAddress;
 

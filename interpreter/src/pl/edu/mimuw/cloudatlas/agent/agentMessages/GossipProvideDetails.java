@@ -6,7 +6,7 @@ import pl.edu.mimuw.cloudatlas.model.PathName;
 
 import java.util.Map;
 
-public class GossipProvideDetails extends MessageContent {
+public class GossipProvideDetails extends TimedGossipMessage {
     public final GossipRequestDetails sourceMsg;
     public final Map<PathName, AttributesMap> details;
 

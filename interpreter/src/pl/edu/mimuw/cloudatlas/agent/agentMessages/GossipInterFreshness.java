@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.List;
 
-public class GossipInterFreshness extends MessageContent {
+public class GossipInterFreshness extends TimedGossipMessage {
     public final List<Node> nodes;
     public final ValueContact responseContact;
     public final int level;

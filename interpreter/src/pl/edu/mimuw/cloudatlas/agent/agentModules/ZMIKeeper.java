@@ -156,7 +156,13 @@ public class ZMIKeeper extends Module {
                             ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet())
                                 try {
-                                    agent.setAttributes(entry.getKey().toString(), entry.getValue());
+                                    AttributesMap map1 = entry.getValue();
+                                    ValueTime timestamp = (ValueTime) map1.getOrNull("timestamp");
+                                    if(timestamp == null)
+                                        continue;
+                                    timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
+                                    map1.addOrChange("timestamp", timestamp);
+                                    agent.setAttributes(entry.getKey().toString(), map1);
                                 } catch (NotSingletonZoneException nsze) {
                                     continue;
                                 }

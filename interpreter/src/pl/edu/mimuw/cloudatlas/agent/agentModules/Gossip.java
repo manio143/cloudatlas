@@ -33,6 +33,7 @@ public class Gossip extends Module {
     private final Random rand = new Random();
     private int currentOutGossipLevel;
     private final Map<String, List<GossipInterFreshness.Node>> freshness = new HashMap<>();
+    private final Map<String, Long> delay = new HashMap<>();
 
     public Gossip(MessageHandler handler, LinkedBlockingQueue<Message> messages,
                   ValueContact currentNode, GossipStrategy strategy, long gossipFrequency) {
@@ -122,7 +123,9 @@ public class Gossip extends Module {
                     //foreign
                     case GOSSIP_SIBLINGS_FRESHNESS:
                         GossipSiblingsFreshness gossipSiblingsFreshness = (GossipSiblingsFreshness) message.content;
-                        message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode, gossipSiblingsFreshness.sourceMsg.level));
+                        GossipInterFreshness response = GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode, gossipSiblingsFreshness.sourceMsg.level);
+                        response.addTimestamps(gossipSiblingsFreshness.sourceMsg.timestamps);
+                        message = new Message(GOSSIP, GOSSIP, response);
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gossipSiblingsFreshness.sourceMsg.responseContact.getAddress(), message)));
                         compareFreshness(gossipSiblingsFreshness.localData, gossipSiblingsFreshness.sourceMsg.nodes, gossipSiblingsFreshness.sourceMsg.responseContact.getAddress());
                         break;
@@ -130,6 +133,7 @@ public class Gossip extends Module {
                     //local
                     case GOSSIP_INTER_FRESHNESS_RESPONSE:
                         GossipInterFreshness gifr = (GossipInterFreshness) message.content;
+                        recordDelay(gifr.responseContact, gifr.timestamps);
                         compareFreshness(freshness.get(gifr.responseContact.getName().toString()), gifr.nodes, gifr.responseContact.getAddress());
                         break;
 
@@ -142,14 +146,17 @@ public class Gossip extends Module {
                     //foreign
                     case GOSSIP_PROVIDE_DETAILS:
                         GossipProvideDetails gpd = (GossipProvideDetails) message.content;
-                        message = new Message(GOSSIP, GOSSIP, new GossipUpdate(gpd.details));
+                        GossipUpdate up = new GossipUpdate(gpd.details, currentNode);
+                        up.addTimestamps(gpd.sourceMsg.timestamps);
+                        message = new Message(GOSSIP, GOSSIP, up);
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gpd.sourceMsg.responseAddress, message)));
                         break;
 
                     //local
                     case GOSSIP_UPDATE:
                         GossipUpdate update = (GossipUpdate) message.content;
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details)));
+                        recordDelay(update.responseContact, update.timestamps);
+                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, delay.get(update.responseContact.getName().toString()))));
                         break;
 
                     case TIMER_ADD_EVENT_ACK:
@@ -162,6 +169,25 @@ public class Gossip extends Module {
                 logger.errLog("Interrupted exception!");
             }
         }
+    }
+
+    private void recordDelay(ValueContact contact, List<Long> timestamps) {
+        if(timestamps.size() != 4) {
+            logger.errLog("Invalid number of timestamps to record delay.");
+            return;
+        }
+        long t1a = timestamps.get(0);
+        long t1b = timestamps.get(1);
+        long t2b = timestamps.get(2);
+        long t2a = timestamps.get(3);
+
+        long rtd = (t2a - t1a) - (t2b - t1b);
+
+        long dT = t2b + (long)(0.5 * rtd) - t2a;
+
+        delay.put(contact.getName().toString(), dT);
+
+        logger.log("Recorded delay "+dT+"ms to node "+contact.getName());
     }
 
     private void compareFreshness(List<GossipInterFreshness.Node> local, List<GossipInterFreshness.Node> remote, InetAddress target) {
@@ -178,6 +204,10 @@ public class Gossip extends Module {
             if (!found)
                 myUpdates.add(n.pathName);
         }
+
+        if(myUpdates.size() == 0)
+            return; //do not send any requests
+
         String updates = myUpdates.stream().map(Object::toString).collect(Collectors.joining(", "));
         logger.log("Foreign node has updates for:" + updates);
         Message message = new Message(GOSSIP, GOSSIP, new GossipRequestDetails(myUpdates, ip));

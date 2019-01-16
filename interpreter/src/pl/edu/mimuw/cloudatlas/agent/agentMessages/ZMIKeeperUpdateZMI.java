@@ -8,10 +8,12 @@ import java.util.Map;
 
 public class ZMIKeeperUpdateZMI extends MessageContent {
     public final Map<PathName, AttributesMap> details;
+    public final long delay;
 
-    public ZMIKeeperUpdateZMI(Map<PathName, AttributesMap> details)
+    public ZMIKeeperUpdateZMI(Map<PathName, AttributesMap> details, long delay)
     {
         this.details = details;
+        this.delay = delay;
 
         this.operation = Operation.ZMI_KEEPER_UPDATE_ZMI;
     }

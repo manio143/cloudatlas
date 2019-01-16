@@ -45,4 +45,6 @@ public abstract class MessageContent implements Serializable {
     }
 
     public Operation operation;
+
+    public boolean isTimed() { return false; }
 }

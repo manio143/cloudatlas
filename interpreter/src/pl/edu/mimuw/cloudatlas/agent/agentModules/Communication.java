@@ -8,6 +8,7 @@ import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import java.io.*;
 import java.net.*;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +50,13 @@ public class Communication extends Module {
             CommunicationSend content = (CommunicationSend) message.content;
 
             InetAddress ip = content.ip;
+
+            if(content.message.content.isTimed()) {
+                logger.log("Recorded timestamp before send");
+                TimedGossipMessage tgm = (TimedGossipMessage) content.message.content;
+                tgm.addTimestamp(Instant.now().toEpochMilli());
+
+            }
 
             List<byte[]> fragments = fragmentate(content.message);
 
@@ -351,6 +359,12 @@ public class Communication extends Module {
 
                     try {
                         Message message = (Message) objectStream.readObject();
+
+                        if(message.content.isTimed()) {
+                            TimedGossipMessage tgm = (TimedGossipMessage) message.content;
+                            tgm.addTimestamp(Instant.now().toEpochMilli());
+                            logger.log("Recorded timestamp after read");
+                        }
 
                         handler.addMessage(message);
 
