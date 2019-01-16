@@ -19,7 +19,9 @@ public class RMI extends Module {
     private SynchronousQueue<MessageContent> rmi = new SynchronousQueue<>();
     private RMIController controller = new RMIController();
 
-    public RMI(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
+    public RMI(MessageHandler handler, LinkedBlockingQueue<Message> messages)
+    {
+        
         super(handler, messages);
     }
 

@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import pl.edu.mimuw.cloudatlas.agent.Logger;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationSend;
 import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
@@ -11,6 +12,8 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
@@ -30,6 +33,7 @@ public class Communication extends Module {
 
     public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
+        this.logger = new Logger(COMMUNICATION);
     }
 
     private void sendMessage(Message message) {
@@ -51,7 +55,7 @@ public class Communication extends Module {
             sendCount++;
 
         } catch (ClassCastException e) {
-            System.out.println("Cast exception in Communication!");
+            logger.errLog("Cast exception in Communication!");
             e.printStackTrace();
         } catch (IOException e) {
             // TODO - check socket
@@ -113,7 +117,7 @@ public class Communication extends Module {
             }
 
         } catch (IOException e) {
-            System.out.println("Fragments IOException!");
+            logger.errLog("Fragments IOException!");
             e.printStackTrace();
         }
 
@@ -130,7 +134,7 @@ public class Communication extends Module {
             while (true) {
                 try {
                     Message message = messages.take();
-                    System.out.println("New message to send from module " + message.src);
+                    logger.log("New message to send from module " + message.src);
                     switch (message.content.operation) {
                         case COMMUNICATION_SEND:
                             sendMessage(message);
@@ -165,7 +169,7 @@ public class Communication extends Module {
                     try {
                         byte[] receiveData = new byte[UDP_PACKET_SIZE];
 
-                        System.out.println("Received a message!");
+                        logger.log("Received a message!");
 
                         DatagramPacket receivePacket = new DatagramPacket(receiveData,
                                 receiveData.length);
@@ -210,7 +214,7 @@ public class Communication extends Module {
                 pieces = dataStream.readInt();
                 id = dataStream.readLong();
 
-                System.out.println("Processing a message from " + ip.getHostAddress()
+                logger.log("Processing a message from " + ip.getHostAddress()
                         + ", id: " + id + ", part: " + (marker == 0 ? 0 : pieces));
 
                 Key key = new Key(ip, id);
@@ -241,7 +245,7 @@ public class Communication extends Module {
                         value.fragments.put(pieces, content);
                         break;
                     default:
-                        System.out.println("Unknown marker!");
+                        logger.errLog("Unknown marker!");
                 }
 
                 if (value.pieces == value.fragments.size()) {

@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.sql.Timestamp;
 import java.util.*;
 
+import pl.edu.mimuw.cloudatlas.agent.Logger;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipContacts;
@@ -39,6 +40,8 @@ public class Gossip extends Module {
         this.ip = currentNode.getAddress();
         this.strategy = strategy;
         this.gossipFrequency = gossipFrequency;
+
+        this.logger = new Logger(GOSSIP);
     }
 
     public void run() {
@@ -56,14 +59,14 @@ public class Gossip extends Module {
             try {
                 Message message = messages.take();
 
-                System.out.println("Gossip received a message from: " + message.src);
+                logger.log("Gossip received a message from: " + message.src);
 
                 switch (message.content.operation) {
 
                     //local
                     case GOSSIP_NEXT:
                         currentOutGossipLevel = strategy.nextLevel();
-                        System.out.println("Initiating gossip at level:  " + currentOutGossipLevel);
+                        logger.log("Initiating gossip at level:  " + currentOutGossipLevel);
                         handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperSiblings(currentOutGossipLevel, nodePath)));
                         break;
 
@@ -96,7 +99,7 @@ public class Gossip extends Module {
                             message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(freshnessNodes, ip, currentOutGossipLevel));
                             handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(chosen.getAddress(), message)));
                         } catch (IllegalArgumentException e) {
-                            System.out.println("Gossip: No contacts found!");
+                            logger.errLog("Gossip: No contacts found!");
                         }
                         break;
 
@@ -129,7 +132,8 @@ public class Gossip extends Module {
                             if (!found)
                                 myUpdates.add(n.pathName);
                         }
-                        System.out.println("Foreign node has updates for:" + myUpdates.stream().map(Object::toString).collect(Collectors.joining(", ")));
+                        String updates = myUpdates.stream().map(Object::toString).collect(Collectors.joining(", "));
+                        logger.log("Foreign node has updates for:" + updates);
                         message = new Message(GOSSIP, GOSSIP, new GossipRequestDetails(myUpdates, ip));
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gifr.responseAddress, message)));
                         break;
@@ -160,7 +164,7 @@ public class Gossip extends Module {
                         throw new IncorrectMessageContent(null, message.content.operation);
                 }
             } catch (InterruptedException iex) {
-                System.out.println("Interrupted exception in Gossip!");
+                logger.errLog("Interrupted exception in Gossip!");
             }
         }
     }
