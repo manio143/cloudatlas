@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipInterFreshness;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipSiblings;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
@@ -171,7 +172,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             String zone = fatherName + "/" + name;
             if (!pathName.startsWith(zone)) {
                 ValueSet contacts = (ValueSet) zmi.getAttributes().getOrNull("contacts");
-                ValueTime timestamp = (ValueTime) zmi.getAttributes().get("timestamp");
+                ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("timestamp");
                 List<ValueContact> lvc = new ArrayList<>();
                 if(contacts != null)
                     for(Value v : contacts)
@@ -180,6 +181,16 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             }
         }
         return res;
+    }
+
+    public synchronized List<GossipInterFreshness.Node> interestingNodes(ValueContact contact) {
+        int levels = contact.getName().getComponents().size();
+        String pathName = contact.getName().toString();
+        List<GossipInterFreshness.Node> nodes = new ArrayList<>();
+        for(int l = 1; l <= levels; l++)
+            for(GossipSiblings.Sibling sib : siblings(l, pathName))
+                nodes.add(new GossipInterFreshness.Node(sib.pathName, sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+        return nodes;
     }
 
     public synchronized Map<String, List<Attribute>> getQueries() {

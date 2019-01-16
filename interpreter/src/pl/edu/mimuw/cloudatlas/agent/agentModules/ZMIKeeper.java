@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import pl.edu.mimuw.cloudatlas.agent.*;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.NotSingletonZoneException;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.model.*;
 
@@ -130,26 +131,14 @@ public class ZMIKeeper extends Module {
                         case ZMI_KEEPER_FRESHNESS_FOR_CONTACT:
 
                             ZMIKeeperFreshnessForContact zmiKeeperFreshnessForContact = (ZMIKeeperFreshnessForContact) message.content;
-                            List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
-                            List<String> zones_ = agent.getZones();
-                            for(String zone : zones_) {
-                                ValueTime timestamp = (ValueTime) agent.getAttributes(zone).getOrNull("timestamp");
-                                myNodes.add(new GossipInterFreshness.Node(new PathName(zone),  timestamp != null? timestamp : new ValueTime(0L)));                                ;
-                            }
-                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact, myNodes)));
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact, agent.interestingNodes(zmiKeeperFreshnessForContact.contact))));
                             continue;
 
                         case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
 
                             ZMIKeeperSiblingsForGossip zmiKeeperSiblingsForGossip = (ZMIKeeperSiblingsForGossip) message.content;
-                            List<GossipInterFreshness.Node> myNodes_ = new ArrayList<>();
-                            List<String> zones__ = agent.getZones();
-                            for(String zone : zones__) {
-                                ValueTime timestamp = (ValueTime) agent.getAttributes(zone).getOrNull("timestamp");
-                                myNodes_.add(new GossipInterFreshness.Node(new PathName(zone),  timestamp != null? timestamp : new ValueTime(0L)));                                ;
-                            }
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
-                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, myNodes_)));
+                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, agent.interestingNodes(zmiKeeperSiblingsForGossip.msg.responseContact))));
                             continue;
 
                         case ZMI_KEEPER_PROVIDE_DETAILS:
@@ -166,7 +155,11 @@ public class ZMIKeeper extends Module {
 
                             ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet())
-                                agent.setAttributes(entry.getKey().toString(), entry.getValue());
+                                try {
+                                    agent.setAttributes(entry.getKey().toString(), entry.getValue());
+                                } catch (NotSingletonZoneException nsze) {
+                                    continue;
+                                }
                             continue;
 
                         default:
