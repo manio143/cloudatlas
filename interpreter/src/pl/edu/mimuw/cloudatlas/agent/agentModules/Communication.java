@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import pl.edu.mimuw.cloudatlas.agent.Logger;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationReviveSocket;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationSend;
 import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
@@ -20,7 +21,8 @@ import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
-    private DatagramSocket socket;
+    private DatagramSocket sendingSocket;
+    private DatagramSocket listeningSocket;
     private Long sendCount = 0L;
 
     private final Map<Key, MapValue> received = new TreeMap<>();
@@ -42,15 +44,37 @@ public class Communication extends Module {
         this.logger = new Logger(COMMUNICATION);
     }
 
-    private void scheduleReviveSocket() {
+    private void scheduleReviveSocket(boolean listening) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         long time = timestamp.getTime();
 
-        Gossip.Announcer announcer = new Gossip.Announcer(handler, time, DELAY);
+        SocketReviver reviver = new SocketReviver(handler, listening);
 
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, DELAY, time, announcer);
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, DELAY, time, reviver);
 
         handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+    }
+
+    private void tryReviveSocket(boolean listening) {
+        if (listening) {
+            if (listeningSocket.isClosed()) {
+                try {
+                    listeningSocket = new DatagramSocket(UDP_PORT);
+                } catch (SocketException e) {
+                    logger.errLog("Listening socket not revived!");
+                    scheduleReviveSocket(true);
+                }
+            }
+        } else {
+            if (sendingSocket.isClosed()) {
+                try {
+                    sendingSocket = new DatagramSocket();
+                } catch (SocketException e) {
+                    logger.errLog("Sending socket not revived!");
+                    scheduleReviveSocket(false);
+                }
+            }
+        }
     }
 
     private void sendMessage(Message message) {
@@ -66,7 +90,7 @@ public class Communication extends Module {
                 DatagramPacket packet = new DatagramPacket(
                         fragment, fragment.length, ip, UDP_PORT);
 
-                socket.send(packet);
+                sendingSocket.send(packet);
             }
 
             sendCount++;
@@ -74,8 +98,10 @@ public class Communication extends Module {
         } catch (ClassCastException e) {
             logger.errLog("Cast exception!");
             e.printStackTrace();
+        } catch (SocketException e) {
+            logger.errLog("Socket down!");
+            tryReviveSocket(false);
         } catch (IOException e) {
-
             e.printStackTrace();
         }
     }
@@ -143,29 +169,43 @@ public class Communication extends Module {
 
     @Override
     public void run() {
-        listener.execute(new Listener(handler));
+        try {
+            listeningSocket = new DatagramSocket(UDP_PORT);
+        } catch (SocketException e) {
+            logger.errLog("Listening socket not opened!");
+            e.printStackTrace();
+            scheduleReviveSocket(true);
+        }
 
         try {
-            socket = new DatagramSocket();
-
-            while (true) {
-                try {
-                    Message message = messages.take();
-                    logger.log("New message to send from module " + message.src);
-                    switch (message.content.operation) {
-                        case COMMUNICATION_SEND:
-                            sendMessage(message);
-                            break;
-                        default:
-                    }
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    return;
-                }
-            }
+            sendingSocket = new DatagramSocket();
         } catch (SocketException e) {
+            logger.errLog("Sending socket not opened!");
             e.printStackTrace();
+            scheduleReviveSocket(false);
+        }
+
+        listener.execute(new Listener(handler, listeningSocket));
+
+        while (true) {
+            try {
+                Message message = messages.take();
+                logger.log("New message to send from module " + message.src);
+                switch (message.content.operation) {
+                    case COMMUNICATION_SEND:
+                        sendMessage(message);
+                        break;
+                    case COMMUNICATION_REVIVE_SOCKET:
+                        CommunicationReviveSocket content = (CommunicationReviveSocket)message.content;
+                        tryReviveSocket(content.listening);
+                        break;
+                    default:
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
         }
     }
 
@@ -174,34 +214,31 @@ public class Communication extends Module {
         private MessageHandler handler;
         private DatagramSocket listeningSocket;
 
-        private Listener (MessageHandler handler) {
+        private Listener (MessageHandler handler, DatagramSocket listeningSocket) {
             this.handler = handler;
+            this.listeningSocket = listeningSocket;
         }
 
         public void run() {
-            try {
-                listeningSocket = new DatagramSocket(UDP_PORT);
+            while (true) {
+                try {
+                    byte[] receiveData = new byte[UDP_PACKET_SIZE];
 
-                while (true) {
-                    try {
-                        byte[] receiveData = new byte[UDP_PACKET_SIZE];
+                    logger.log("Received a message!");
 
-                        logger.log("Received a message!");
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData,
+                            receiveData.length);
 
-                        DatagramPacket receivePacket = new DatagramPacket(receiveData,
-                                receiveData.length);
+                    listeningSocket.receive(receivePacket);
 
-                        listeningSocket.receive(receivePacket);
+                    collector.execute(new Collector(handler, receiveData, receivePacket.getAddress()));
 
-                        collector.execute(new Collector(handler, receiveData, receivePacket.getAddress()));
+                } catch (SocketException e) {
+                    tryReviveSocket(true);
 
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-
-            } catch (SocketException e) {
-                e.printStackTrace();
             }
         };
     }
@@ -297,6 +334,21 @@ public class Communication extends Module {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static class SocketReviver implements Runnable, Serializable {
+        private MessageHandler handler;
+        private boolean listening;
+
+        private SocketReviver(MessageHandler handler, boolean listening) {
+            this.handler = handler;
+            this.listening = listening;
+        }
+
+        public void run() {
+            CommunicationReviveSocket content = new CommunicationReviveSocket(listening);
+            handler.addMessage(new Message(TIMER, COMMUNICATION, content));
         }
     }
 
