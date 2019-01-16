@@ -4,6 +4,7 @@ services:
         image:  cloudatlas
         networks:
             - cloud
+        ports: ["8001:8000"]
         volumes:
             - ${PWD}/test_config/i1/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i1/fetch_metrics:/cloudatlas/utility/fetch_metrics
@@ -14,6 +15,7 @@ services:
         image:  cloudatlas
         networks:
             - cloud
+        ports: ["8002:8000"]
         volumes:
             - ${PWD}/test_config/i2/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i2/fetch_metrics:/cloudatlas/utility/fetch_metrics
@@ -24,6 +26,7 @@ services:
         image:  cloudatlas
         networks:
             - cloud
+        ports: ["8003:8000"]
         volumes:
             - ${PWD}/test_config/i3/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i3/fetch_metrics:/cloudatlas/utility/fetch_metrics

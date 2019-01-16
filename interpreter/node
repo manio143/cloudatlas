@@ -6,6 +6,11 @@ cd ..
 ./server > server.log 2>&1 & 
 echo "server started"
 sleep 3s
-echo "fetcher started"
 ./fetcher > fetcher.log 2>&1 &
+echo "fetcher started"
+./signer &
+echo "signer started"
+sleep 3s
+./client &
+echo "client started"
 sleep 1h
