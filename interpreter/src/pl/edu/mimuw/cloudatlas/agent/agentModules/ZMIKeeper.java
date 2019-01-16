@@ -6,22 +6,26 @@ import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.model.*;
 
+import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.ZMI_KEEPER;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.RMI;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;
+    private long computationInterval;
 
-    public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages, CloudAtlasAgent agent) {
+    public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages,
+                     CloudAtlasAgent agent, long computationInterval) {
         super(handler, messages);
         this.agent = agent;
+        this.computationInterval = computationInterval;
         this.logger = new Logger(ZMI_KEEPER);
     }
 
@@ -31,14 +35,27 @@ public class ZMIKeeper extends Module {
         handler.addMessage(toRMI);
     }
 
+    private void scheduleQueryUpdates() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long time = timestamp.getTime();
+
+        QueriesUpdate updater = new QueriesUpdate(handler, time, computationInterval);
+
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, computationInterval, time, updater);
+
+        handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
+    }
+
     public void run() {
+        scheduleQueryUpdates();
+
         try {
             while (true) {
                 Message message = messages.take();
 
                 logger.log("Received a message from: " + message.src);
 
-                boolean correct = true;
+                boolean resend = true;
                 MessageContent content = new RMIError(new ContentNotInitialized());
 
                 try {
@@ -169,21 +186,52 @@ public class ZMIKeeper extends Module {
                                 agent.setAttributes(entry.getKey().toString(), entry.getValue());
                             continue;
 
+                        case ZMI_KEEPER_RECOMPUTE_QUERIES:
+                            agent.recomputeQueries();
+                            break;
+
+                        case TIMER_ADD_EVENT_ACK:
+                            resend = false;
+                            break;
+
                         default:
-                            logger.log("Incorrect message type: " + message.content.operation);
-                            correct = false;
+                            logger.errLog("Incorrect message type: " + message.content.operation);
+                            resend = false;
                     }
 
                 } catch (AgentException e) {
                     content = new RMIError(e);
                 }
 
-                if (correct) {
+                if (resend) {
                     handleMessage(content);
                 }
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static class QueriesUpdate implements Runnable, Serializable {
+        MessageHandler handler;
+        long timestamp;
+        long delay;
+
+        public QueriesUpdate(MessageHandler handler, long timestamp, long delay) {
+            this.handler = handler;
+            this.timestamp = timestamp;
+            this.delay = delay;
+        }
+
+        public void run() {
+            handler.addMessage(new Message(TIMER, ZMI_KEEPER, new ZMIKeeperRecomputeQueries()));
+
+            long newTimestamp = timestamp + delay;
+
+            QueriesUpdate update = new QueriesUpdate(handler, newTimestamp, delay);
+            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, update);
+
+            handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
         }
     }
 }

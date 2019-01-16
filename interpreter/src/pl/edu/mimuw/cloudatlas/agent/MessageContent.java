@@ -32,6 +32,7 @@ public abstract class MessageContent implements Serializable {
         ZMI_KEEPER_SIBLINGS_FOR_GOSSIP,
         ZMI_KEEPER_PROVIDE_DETAILS,
         ZMI_KEEPER_UPDATE_ZMI,
+        ZMI_KEEPER_RECOMPUTE_QUERIES,
         GOSSIP_NEXT,
         GOSSIP_SIBLINGS,
         GOSSIP_CONTACTS,

@@ -50,7 +50,7 @@ public class CloudAtlasPool {
         rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
 
         ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
-        zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
+        zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent, computationInterval));
 
         ExecutorService gossip = Executors.newSingleThreadExecutor();
         gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine, strategy, gossipFrequency));
