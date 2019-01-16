@@ -14,7 +14,7 @@ public class RRVFGossipStrategy extends GossipStrategy {
 
     public int nextLevel() {
         if(exponentialCounter == 0) {
-            if (currentLevel == 0) {
+            if (currentLevel == 1) {
                 currentLevel = levels;
             } else {
                 currentLevel--;

@@ -10,6 +10,6 @@ public class RCPGossipStrategy extends GossipStrategy {
     }
 
     public int nextLevel() {
-        return rand.nextInt(levels + 1);
+        return rand.nextInt(levels) + 1;
     }
 }

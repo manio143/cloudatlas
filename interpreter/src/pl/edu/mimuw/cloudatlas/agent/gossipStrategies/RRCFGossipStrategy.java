@@ -11,7 +11,7 @@ public class RRCFGossipStrategy extends GossipStrategy {
     }
 
     public int nextLevel() {
-        if (currentLevel == -1) {
+        if (currentLevel == 0) {
             currentLevel = levels;
         }
         return currentLevel--;

@@ -4,6 +4,7 @@ import pl.edu.mimuw.cloudatlas.agent.Logger;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationSend;
 import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.TimerAddEvent;
 
 import java.io.*;
 import java.net.*;
@@ -14,6 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
@@ -29,11 +32,25 @@ public class Communication extends Module {
     private static final int BYTE_LENGTH = 1;
     private static final int UDP_METADATA = BYTE_LENGTH + INT_LENGTH + LONG_LENGTH;
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
-    private static final int TIMEOUT = 5 * 1000;
+
+    private static final int MILISECONDS = 1000;
+    private static final int TIMEOUT = 10 * MILISECONDS;
+    private static final int DELAY = 3 * MILISECONDS;
 
     public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
         this.logger = new Logger(COMMUNICATION);
+    }
+
+    private void scheduleReviveSocket() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long time = timestamp.getTime();
+
+        Gossip.Announcer announcer = new Gossip.Announcer(handler, time, DELAY);
+
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, DELAY, time, announcer);
+
+        handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
     }
 
     private void sendMessage(Message message) {
@@ -58,7 +75,7 @@ public class Communication extends Module {
             logger.errLog("Cast exception!");
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO - check socket
+
             e.printStackTrace();
         }
     }
