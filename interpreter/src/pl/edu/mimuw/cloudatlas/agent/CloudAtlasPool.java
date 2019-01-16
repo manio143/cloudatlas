@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
+import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.GossipStrategy;
 import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.RRCFGossipStrategy;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
@@ -14,17 +15,26 @@ public class CloudAtlasPool {
     private final CloudAtlasAgent agent;
     private final Properties properties;
 
+    private final int MILISECONDS = 1000;
+
     public CloudAtlasPool(CloudAtlasAgent agent, Properties properties) {
         this.properties = properties;
         this.agent = agent;
     }
 
     public void runModules() throws UnknownHostException {
-        Long computationInterval = Long.parseLong(properties.getProperty("computationInterval"));
+
+        long computationInterval = MILISECONDS * Long.parseLong(properties.getProperty("computationInterval"));
+        long gossipFrequency = MILISECONDS * Integer.parseInt(properties.getProperty("gossipFrequency"));
+
         String pathName = properties.getProperty("pathName");
+        String strategyName = properties.getProperty("peerSelectionStrategy");
+        InetAddress ip = InetAddress.getByName(properties.getProperty("ip"));
+
+        ValueContact thisMachine = new ValueContact(new PathName(pathName), ip);
+        GossipStrategy strategy = GossipStrategy.fromName(strategyName, pathName);
 
         QueueKeeper keeper = new QueueKeeper();
-
         MessageHandler messageHandler = new MessageHandler(keeper);
 
         ExecutorService timer = Executors.newSingleThreadExecutor();
@@ -42,16 +52,7 @@ public class CloudAtlasPool {
         ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
         zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent));
 
-        InetAddress ip = InetAddress.getByName(properties.getProperty("ip"));
-        ValueContact thisMachine = new ValueContact(new PathName(pathName), ip);
-
         ExecutorService gossip = Executors.newSingleThreadExecutor();
-        gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine));
-
-        int gossipFrequency = Integer.parseInt(properties.getProperty("gossipFrequency"));
-        String strategy = properties.getProperty("peerSelectionStrategy"); //TODO implement other strategies
-
-        ExecutorService gossipStrategy = Executors.newSingleThreadExecutor();
-        gossipStrategy.execute(new GossipStrategyProvider(messageHandler, keeper.gossipStrategyQueue, new RRCFGossipStrategy(pathName, gossipFrequency)));
+        gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine, strategy, gossipFrequency));
     }
 }
