@@ -127,16 +127,29 @@ public class ZMIKeeper extends Module {
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipContacts(lvc)));
                             continue;
 
+                        case ZMI_KEEPER_FRESHNESS_FOR_CONTACT:
+
+                            ZMIKeeperFreshnessForContact zmiKeeperFreshnessForContact = (ZMIKeeperFreshnessForContact) message.content;
+                            List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
+                            List<String> zones_ = agent.getZones();
+                            for(String zone : zones_) {
+                                ValueTime timestamp = (ValueTime) agent.getAttributes(zone).getOrNull("timestamp");
+                                myNodes.add(new GossipInterFreshness.Node(new PathName(zone),  timestamp != null? timestamp : new ValueTime(0L)));                                ;
+                            }
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact, myNodes)));
+                            continue;
+
                         case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
 
                             ZMIKeeperSiblingsForGossip zmiKeeperSiblingsForGossip = (ZMIKeeperSiblingsForGossip) message.content;
-                            List<GossipInterFreshness.Node> myNodes = new ArrayList<>();
-                            for (GossipInterFreshness.Node node : zmiKeeperSiblingsForGossip.msg.nodes) {
-                                AttributesMap m = agent.getAttributes(node.pathName.toString());
-                                myNodes.add(new GossipInterFreshness.Node(node.pathName, (ValueTime) m.get("timestamp")));
+                            List<GossipInterFreshness.Node> myNodes_ = new ArrayList<>();
+                            List<String> zones__ = agent.getZones();
+                            for(String zone : zones__) {
+                                ValueTime timestamp = (ValueTime) agent.getAttributes(zone).getOrNull("timestamp");
+                                myNodes_.add(new GossipInterFreshness.Node(new PathName(zone),  timestamp != null? timestamp : new ValueTime(0L)));                                ;
                             }
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
-                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, myNodes)));
+                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, myNodes_)));
                             continue;
 
                         case ZMI_KEEPER_PROVIDE_DETAILS:

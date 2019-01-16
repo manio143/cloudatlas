@@ -246,13 +246,49 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public synchronized void setAttributes(String pathName, AttributesMap attrs) {
-        ZMI zmi = reachZone(pathName, null);
+        ZMI zmi;
+        try {
+            zmi = reachZone(pathName, null);
+        } catch (ZoneNotFoundException zex){
+            zmi = addZMI(pathName);
+        }
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
         zmi.getAttributes().addOrChange(attrs);
+        zmi.printAttributes(System.out);
         zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
         updateQueries(zmi);
+    }
+
+    private synchronized ZMI addZMI(String pathName) {
+        PathName pN = new PathName(pathName);
+        List<String> comp = pN.getComponents();
+
+        ZMI candidate = root;
+
+        int which = 0;
+        boolean found;
+
+        while (which != comp.size()) {
+            found = false;
+            for (ZMI son : candidate.getSons()) {
+                if (getName(son).equals(comp.get(which))) {
+                    candidate = son;
+                    which++;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                ZMI z = new ZMI(candidate);
+                candidate.addSon(z);
+                z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
+                candidate = z;
+                which++;
+            }
+        }
+        return candidate;
     }
 
     public synchronized void setFallbackContacts(ValueSet contacts) {

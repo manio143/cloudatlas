@@ -2,6 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
 import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.model.ValueContact;
 import pl.edu.mimuw.cloudatlas.model.ValueTime;
 
 import java.io.Serializable;
@@ -10,9 +11,10 @@ import java.util.List;
 
 public class GossipInterFreshness extends MessageContent {
     public final List<Node> nodes;
-    public final InetAddress responseAddress;
+    public final ValueContact responseContact;
     public final int level;
     //TODO?GTP timestamps
+    
     public static class Node implements Serializable {
         public final PathName pathName;
         public final ValueTime freshness;
@@ -22,19 +24,19 @@ public class GossipInterFreshness extends MessageContent {
         }
     }
 
-    private GossipInterFreshness(List<Node> nodes, InetAddress responseAddress, int level, Operation operation) {
+    private GossipInterFreshness(List<Node> nodes, ValueContact responseContact, int level, Operation operation) {
         this.nodes = nodes;
-        this.responseAddress = responseAddress;
+        this.responseContact = responseContact;
         this.level = level;
 
         this.operation = operation;
     }
 
-    public static GossipInterFreshness Start(List<Node> nodes, InetAddress responseAddress, int level){
-        return new GossipInterFreshness(nodes, responseAddress, level, Operation.GOSSIP_INTER_FRESHNESS_START);
+    public static GossipInterFreshness Start(List<Node> nodes, ValueContact responseContact, int level){
+        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_START);
     }
 
-    public static GossipInterFreshness Response(List<Node> nodes, InetAddress responseAddress, int level){
-        return new GossipInterFreshness(nodes, responseAddress, level, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE);
+    public static GossipInterFreshness Response(List<Node> nodes, ValueContact responseContact, int level){
+        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE);
     }
 }

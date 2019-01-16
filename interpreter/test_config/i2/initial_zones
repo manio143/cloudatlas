@@ -21,8 +21,3 @@
     timestamp : time = 2012/11/09 20:03:00.000
     contacts : set contact = {/test/i1;i1}
     creation : time = 2011/11/09 20:12:13.123
-/probe/i3
-    level : integer = 2
-    name : string = "i3"
-    timestamp : time = 2012/11/09 21:03:00.000
-    contacts : set contact = {/test/i2;i2, /test/i1;i1}
