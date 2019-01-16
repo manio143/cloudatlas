@@ -28,6 +28,7 @@ public class Communication extends Module {
     private final Map<Key, MapValue> received = new TreeMap<>();
 
     private static final int UDP_PORT = 31337;
+
     private static final int UDP_PACKET_SIZE = 508;
     private static final int LONG_LENGTH = 8;
     private static final int INT_LENGTH = 4;
@@ -149,7 +150,7 @@ public class Communication extends Module {
 
         TimerAddEvent timerAddEvent = new TimerAddEvent(0, TIMEOUT, time, announcer);
 
-        handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+        handler.addMessage(new Message(COMMUNICATION, TIMER, timerAddEvent));
     }
 
     private void flushOld() {

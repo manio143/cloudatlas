@@ -80,8 +80,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                         columns.add(r.getName());
                     }
                 }
-                if(result.size() > 0)
-                    zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+                if (result.size() > 0) {
+                    updateTimestamp(zmi);
+                }
             } catch (InterpreterException exception) {
                 queryAttributes.remove(attributeName);
                 installedQueries.remove(attributeName);
@@ -89,7 +90,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    private void updateQueries(ZMI zmi) {
+    private void updateQueries(ZMI zmi, boolean propagateUp) {
         if (!zmi.getSons().isEmpty()) {
             Interpreter interpreter = new Interpreter(zmi);
             for (Map.Entry<String, Program> entry : installedQueries.entrySet()) {
@@ -99,15 +100,28 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     for (QueryResult r : result) {
                         zmi.getAttributes().addOrChange(r.getName(), r.getValue());
                     }
-                    if(result.size() > 0)
-                        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+                    if(result.size() > 0) {
+                        updateTimestamp(zmi);
+                    }
                 } catch (InterpreterException exception) {
                 }
             }
         }
+        if (propagateUp && zmi.getFather() != null) {
+            updateQueries(zmi.getFather(), propagateUp);
+        }
+    }
 
-        if (zmi.getFather() != null) {
-            updateQueries(zmi.getFather());
+    public void recomputeQueries() {
+        recomputeQueries(root);
+    }
+
+    public void recomputeQueries(ZMI zmi) {
+        if (!zmi.getSons().isEmpty()) {
+            for (ZMI son : zmi.getSons()) {
+                recomputeQueries(son);
+            }
+            updateQueries(zmi, false);
         }
     }
 
@@ -120,7 +134,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public synchronized List<String> getZones() {
+    public List<String> getZones() {
         List<String> res = new ArrayList<String>();
         res.add("/");
         for (ZMI zmi : root.getSons()) {
@@ -156,12 +170,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return candidate;
     }
 
-    public synchronized AttributesMap getAttributes(String pathName) {
+    public AttributesMap getAttributes(String pathName) {
         ZMI zmi = reachZone(pathName, null);
         return zmi.getAttributes();
     }
 
-    public synchronized List<GossipSiblings.Sibling> siblings(int level, String pathName) {
+    public List<GossipSiblings.Sibling> siblings(int level, String pathName) {
         ZMI zmi = reachZone(pathName, level);
         List<GossipSiblings.Sibling> res = new ArrayList<>();
         String fatherName = getFullName(zmi.getFather());
@@ -183,7 +197,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return res;
     }
 
-    public synchronized List<GossipInterFreshness.Node> interestingNodes(ValueContact contact) {
+    public List<GossipInterFreshness.Node> interestingNodes(ValueContact contact) {
         int levels = contact.getName().getComponents().size();
         String pathName = contact.getName().toString();
         List<GossipInterFreshness.Node> nodes = new ArrayList<>();
@@ -193,11 +207,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return nodes;
     }
 
-    public synchronized Map<String, List<Attribute>> getQueries() {
+    public Map<String, List<Attribute>> getQueries() {
         return queryAttributes;
     }
 
-    public synchronized void installQueries(SignedQueryRequest sqr) {
+    public void installQueries(SignedQueryRequest sqr) {
         if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
@@ -230,7 +244,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    public synchronized void uninstallQuery(SignedQueryRequest sqr) {
+    public void uninstallQuery(SignedQueryRequest sqr) {
         if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
@@ -246,17 +260,17 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         queryAttributes.remove(queryName);
     }
 
-    public synchronized void setAttribute(String pathName, String attr, Value val) {
+    public void setAttribute(String pathName, String attr, Value val) {
         ZMI zmi = reachZone(pathName, null);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
         zmi.getAttributes().addOrChange(attr, val);
-        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
-        updateQueries(zmi);
+        updateTimestamp(zmi);
+//        updateQueries(zmi, true);
     }
 
-    public synchronized void setAttributes(String pathName, AttributesMap attrs) {
+    public void setAttributes(String pathName, AttributesMap attrs) {
         ZMI zmi;
         try {
             zmi = reachZone(pathName, null);
@@ -268,11 +282,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
         zmi.getAttributes().addOrChange(attrs);
         zmi.printAttributes(System.out);
-        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
-        updateQueries(zmi);
+        updateTimestamp(zmi);
+//        updateQueries(zmi, true);
     }
 
-    private synchronized ZMI addZMI(String pathName) {
+    private ZMI addZMI(String pathName) {
         PathName pN = new PathName(pathName);
         List<String> comp = pN.getComponents();
 
@@ -302,11 +316,15 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return candidate;
     }
 
-    public synchronized void setFallbackContacts(ValueSet contacts) {
+    public void setFallbackContacts(ValueSet contacts) {
         this.contacts = contacts;
     }
 
-    public synchronized ValueSet getFallbackContacts() {
+    public ValueSet getFallbackContacts() {
         return contacts;
+    }
+
+    private void updateTimestamp(ZMI zmi) {
+        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
     }
 }
