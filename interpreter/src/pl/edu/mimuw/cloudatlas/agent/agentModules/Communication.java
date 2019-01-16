@@ -22,7 +22,6 @@ public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
     private final SynchronizationController controller = new SynchronizationController();
     private DatagramSocket sendingSocket;
-    private DatagramSocket listeningSocket;
     private Long sendCount = 0L;
 
     private final Map<Key, MapValue> received = new TreeMap<>();
@@ -42,51 +41,6 @@ public class Communication extends Module {
     public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
         this.logger = new Logger(COMMUNICATION);
-    }
-
-    private void scheduleReviveSocket(boolean listening) {
-        logger.log("Scheduling socket revival");
-
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long time = timestamp.getTime();
-
-        SocketReviver reviver = new SocketReviver(handler, listening);
-
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, REVIVE_DELAY, time, reviver);
-
-        handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
-
-        try {
-            sleep(REVIVE_DELAY);
-            logger.log("Woke up from sleep to revive socket");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void tryReviveSocket(boolean listening) {
-        if (listening) {
-//            if (listeningSocket.isClosed()) {
-                try {
-                    listeningSocket = new DatagramSocket(UDP_PORT);
-                    System.out.println(listeningSocket);
-                    logger.log("Managed to revive the listening socket.");
-                } catch (SocketException e) {
-                    logger.errLog("Listening socket not revived!");
-                    scheduleReviveSocket(true);
-                }
-//            }
-        } else {
-//            if (sendingSocket.isClosed()) {
-                try {
-                    sendingSocket = new DatagramSocket();
-                    logger.log("Managed to revive the sending socket.");
-                } catch (SocketException e) {
-                    logger.errLog("Sending socket not revived!");
-                    scheduleReviveSocket(false);
-                }
-//            }
-        }
     }
 
     private void sendMessage(Message message) {
@@ -112,7 +66,7 @@ public class Communication extends Module {
             e.printStackTrace();
         } catch (SocketException e) {
             logger.errLog("Sending socket went down!");
-            tryReviveSocket(false);
+            startSendingSocket();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -210,35 +164,33 @@ public class Communication extends Module {
 
         controller.release();
     }
-    
+
+    public void startSendingSocket() {
+        while (true) {
+            try {
+                sendingSocket = new DatagramSocket();
+                logger.log("Open the sending socket");
+                break;
+            } catch (SocketException e) {
+                logger.errLog("Sending socket not opened!");
+                e.printStackTrace();
+                try {
+                    sleep(REVIVE_DELAY);
+                    logger.log("Woke up to open the sending socket");
+                }  catch (InterruptedException ie) {
+
+                }
+            }
+        }
+    }
 
     @Override
     public void run() {
-        while (true) {
-            try {
-                listeningSocket = new DatagramSocket(UDP_PORT);
-
-                break;
-            } catch (SocketException e) {
-                logger.errLog("Listening socket not opened!");
-                e.printStackTrace();
-                scheduleReviveSocket(true);
-            }
-        }
-
-        try {
-            sendingSocket = new DatagramSocket();
-        } catch (SocketException e) {
-            logger.errLog("Sending socket not opened!");
-            e.printStackTrace();
-            scheduleReviveSocket(false);
-        }
-
-        System.out.println("Before listener");
-
-        listener.execute(new Listener(handler, controller, listeningSocket));
+        startSendingSocket();
 
         scheduleFlushing();
+
+        listener.execute(new Listener(handler, controller));
 
         while (true) {
             try {
@@ -247,10 +199,6 @@ public class Communication extends Module {
                 switch (message.content.operation) {
                     case COMMUNICATION_SEND:
                         sendMessage(message);
-                        break;
-                    case COMMUNICATION_REVIVE_SOCKET:
-                        CommunicationReviveSocket content = (CommunicationReviveSocket)message.content;
-                        tryReviveSocket(content.listening);
                         break;
                     case COMMUNICATION_FLUSH_OLD:
                         flushOld();
@@ -271,14 +219,33 @@ public class Communication extends Module {
         private final SynchronizationController controller;
         private DatagramSocket listeningSocket;
 
-        private Listener (MessageHandler handler, SynchronizationController controller,
-                          DatagramSocket listeningSocket) {
+        private Listener (MessageHandler handler, SynchronizationController controller) {
             this.handler = handler;
             this.controller = controller;
-            this.listeningSocket = listeningSocket;
+        }
+
+        private void startListeningSocket() {
+            while (true) {
+                try {
+                    listeningSocket = new DatagramSocket(UDP_PORT);
+                    logger.log("Open the listening socket");
+                    break;
+                } catch (SocketException e) {
+                    logger.errLog("Listening socket not opened!");
+                    e.printStackTrace();
+                    try {
+                        sleep(REVIVE_DELAY);
+                        logger.log("Woke up to open the listening socket");
+                    }  catch (InterruptedException ie) {
+
+                    }
+                }
+            }
         }
 
         public void run() {
+            startListeningSocket();
+
             while (true) {
                 try {
                     byte[] receiveData = new byte[UDP_PACKET_SIZE];
@@ -286,11 +253,7 @@ public class Communication extends Module {
                     DatagramPacket receivePacket = new DatagramPacket(receiveData,
                             receiveData.length);
 
-                    System.out.println(listeningSocket);
-
                     listeningSocket.receive(receivePacket);
-
-                    System.out.println("A");
 
                     logger.log("Listener received a message!");
 
@@ -298,7 +261,7 @@ public class Communication extends Module {
 
                 } catch (SocketException e) {
                     logger.log("Listening socket went down!");
-                    tryReviveSocket(true);
+                    startListeningSocket();
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -399,6 +362,7 @@ public class Communication extends Module {
                 }
 
             } catch (IOException e) {
+                logger.errLog("Failed to read message");
                 e.printStackTrace();
             }
         }
@@ -450,22 +414,6 @@ public class Communication extends Module {
         public synchronized void release() {
             taken = false;
             notify();
-        }
-    }
-
-    public static class SocketReviver implements Runnable, Serializable {
-        private MessageHandler handler;
-
-        private boolean listening;
-
-        private SocketReviver(MessageHandler handler, boolean listening) {
-            this.handler = handler;
-            this.listening = listening;
-        }
-
-        public void run() {
-            CommunicationReviveSocket content = new CommunicationReviveSocket(listening);
-            handler.addMessage(new Message(TIMER, COMMUNICATION, content));
         }
     }
 
