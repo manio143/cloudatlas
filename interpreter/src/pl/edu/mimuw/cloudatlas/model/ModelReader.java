@@ -55,13 +55,9 @@ public class ModelReader {
                 }
                 String[] parts = valueString.split(";");
                 String name = parts[0].trim();
-                String[] address = parts[1].trim().split("\\.");
-                Byte[] bytes = new Byte[4];
-                for (int i = 0; i < 4; i++) {
-                    bytes[i] = (byte)Integer.parseInt(address[i]);
-                }
+                String address = parts[1].trim();
                 try {
-                    return createContact(name, bytes[0], bytes[1], bytes[2], bytes[3]);
+                    return new ValueContact(new PathName(name), InetAddress.getByName(address));
                 } catch (UnknownHostException e) {
                     System.out.println(e.getMessage());
                 }

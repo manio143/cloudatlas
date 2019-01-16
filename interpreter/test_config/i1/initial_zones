@@ -1,0 +1,53 @@
+/
+    level : integer = 0
+    name : string = null
+/test
+    level : integer = 1
+    name : string = "test"
+    timestamp : time = 2019/01/01 01:00:00.000
+/probe
+    level : integer = 1
+    name : string = "probe"
+    timestamp : time = 2019/01/01 01:00:00.000
+/test/i1
+    level : integer = 2
+    name : string = "i1"
+    owner : string = "/test/i1"
+    timestamp : time = 2012/11/09 18:00:00.000
+    cardinality : integer = 1
+    members : set contact = {/UW1;10.1.1.38}
+    creation : time = 2011/11/09 20:8:13.123
+    cpu_usage : double = 0.9
+    num_cores : integer = 3
+    num_processes : integer = 131
+    has_ups : boolean = NULL
+    some_names : list string = ["tola", "tosia"]
+    expiry : duration = +13 12:00:00.000
+/test/i2 
+    level : integer = 2
+    name : string = "i2"
+    owner : string = "/test/i2"
+    timestamp : time = 2012/11/09 20:03:00.000
+    cardinality : integer = 1
+    members : set contact = {/UW2A;10.1.1.38}
+    creation : time = 2011/11/09 20:12:13.123
+    cpu_usage : double = NULL
+    num_cores : integer = 3
+    num_processes : integer = 124
+    has_ups : boolean = false
+    some_names : list string = ["agatka", "beatka", "celina"]
+    expiry : duration = -13 11:00:00.000
+/probe/i3
+    level : integer = 2
+    name : string = "i3"
+    owner : string = "/probe/i3"
+    timestamp : time = 2012/11/09 21:03:00.000
+    cardinality : integer = 1
+    members : set contact = {/UW3B;10.1.1.38}
+    creation : time = NULL
+    cpu_usage : double = 0.1
+    num_cores : integer = NULL
+    num_processes : integer = 107
+    has_ups : boolean = true
+    some_names : list string = []
+    expiry : duration = NULL

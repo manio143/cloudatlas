@@ -19,8 +19,8 @@ KERNEL_VER="$(uname -r)"
 LOGGED_USERS="$(users | wc -w)"
 DNS_NAME="$(dnsdomainname)"
 
-echo "/uw/violet07" > ${metricsFile}
-echo "contacts : set contact = {/uw/violet07;127.0.0.1}" >> ${metricsFile}
+echo "/probe/i3" > ${metricsFile}
+echo "contacts : set contact = {/test/i2;i2, /test/i1;i1}" >> ${metricsFile}
 echo "cpu_load : double = ${CPU_LOAD}" >> ${metricsFile}
 echo "free_disk : integer = ${FREE_DISK}" >> ${metricsFile}
 echo "total_disk : integer = ${TOTAL_DISK}" >> ${metricsFile}

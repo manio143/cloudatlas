@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd bin
+rmiregistry &
+cd ..
+./server > server.log 2>&1 & 
+echo "server started"
+sleep 3s
+echo "fetcher started"
+./fetcher > fetcher.log 2>&1 &
+sleep 1h

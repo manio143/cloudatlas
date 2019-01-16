@@ -1,0 +1,34 @@
+version: '3'
+services:
+    i1:
+        image:  cloudatlas
+        networks:
+            - cloud
+        volumes:
+            - ${PWD}/test_config/i1/server.ini:/cloudatlas/utility/server.ini
+            - ${PWD}/test_config/i1/fetch_metrics:/cloudatlas/utility/fetch_metrics
+            - ${PWD}/test_config/i1/server.log:/cloudatlas/server.log
+            - ${PWD}/test_config/i1/fetcher.log:/cloudatlas/fetcher.log
+            - ${PWD}/test_config/i1/initial_zones:/cloudatlas/utility/initial_zones
+    i2:
+        image:  cloudatlas
+        networks:
+            - cloud
+        volumes:
+            - ${PWD}/test_config/i2/server.ini:/cloudatlas/utility/server.ini
+            - ${PWD}/test_config/i2/fetch_metrics:/cloudatlas/utility/fetch_metrics
+            - ${PWD}/test_config/i2/server.log:/cloudatlas/server.log
+            - ${PWD}/test_config/i2/fetcher.log:/cloudatlas/fetcher.log
+            - ${PWD}/test_config/i2/initial_zones:/cloudatlas/utility/initial_zones
+    i3:
+        image:  cloudatlas
+        networks:
+            - cloud
+        volumes:
+            - ${PWD}/test_config/i3/server.ini:/cloudatlas/utility/server.ini
+            - ${PWD}/test_config/i3/fetch_metrics:/cloudatlas/utility/fetch_metrics
+            - ${PWD}/test_config/i3/server.log:/cloudatlas/server.log
+            - ${PWD}/test_config/i3/fetcher.log:/cloudatlas/fetcher.log
+            - ${PWD}/test_config/i3/initial_zones:/cloudatlas/utility/initial_zones
+networks:
+    cloud:
