@@ -83,6 +83,7 @@ public class Gossip extends Module {
                         }
                         if (nonEmptyContacts.size() > 0) {
                             int idx = rand.nextInt(nonEmptyContacts.size());
+                            logger.log("Gossip: sibling with contacts "+)
                             handler.addMessage(new Message(GOSSIP, GOSSIP, new GossipContacts(nonEmptyContacts.get(idx))));
                         } else {
                             handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperFallbackContactsGossip()));
@@ -95,8 +96,7 @@ public class Gossip extends Module {
                         try {
                             int idx = rand.nextInt(gossipContacts.contacts.size());
                             ValueContact chosen = gossipContacts.contacts.get(idx);
-                            List<GossipInterFreshness.Node> freshnessNodes = new ArrayList<>();
-                            // get ZMI's interesting for chosen
+                            logger.log("Gossip: chosen "+chosen+" to gossip with.");
                             handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperFreshnessForContact(chosen)));
                         } catch (IllegalArgumentException e) {
                             logger.errLog("Gossip: No contacts found!");
@@ -146,7 +146,7 @@ public class Gossip extends Module {
                     //foreign
                     case GOSSIP_PROVIDE_DETAILS:
                         GossipProvideDetails gpd = (GossipProvideDetails) message.content;
-                        GossipUpdate up = new GossipUpdate(gpd.details, currentNode);
+                        GossipUpdate up = new GossipUpdate(gpd.details, gpd.installedQueries, currentNode);
                         up.addTimestamps(gpd.sourceMsg.timestamps);
                         message = new Message(GOSSIP, GOSSIP, up);
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gpd.sourceMsg.responseAddress, message)));
@@ -156,7 +156,7 @@ public class Gossip extends Module {
                     case GOSSIP_UPDATE:
                         GossipUpdate update = (GossipUpdate) message.content;
                         recordDelay(update.responseContact, update.timestamps);
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, delay.get(update.responseContact.getName().toString()))));
+                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, update.installedQueries, delay.get(update.responseContact.getName().toString()))));
                         break;
 
                     case TIMER_ADD_EVENT_ACK:

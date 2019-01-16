@@ -54,6 +54,10 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return new PathName(names).toString();
     }
 
+    public synchronized Map<String, Program> getInstalledQueries() {
+        return installedQueries;
+    }
+
     private void removeAttribute(ZMI zmi, Attribute attribute) {
         if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
@@ -232,6 +236,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                             Program program = (new parser(lex)).pProgram();
                             installedQueries.put(attributeName, program);
                             calculateQueries(root, attributeName);
+
                         } catch (Exception e) {
                             throw new AgentParserException(query);
                         }
@@ -323,8 +328,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     public ValueSet getFallbackContacts() {
         return contacts;
     }
-
+    
     private void updateTimestamp(ZMI zmi) {
         zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+    }
+    public synchronized void safeInstallQuery(String attributeName, Program program) {
+        installedQueries.put(attributeName, program);
+        queryAttributes.put(attributeName, new ArrayList<>());
     }
 }

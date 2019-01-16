@@ -5,6 +5,7 @@ import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.NotSingletonZoneException;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
+import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.model.*;
 
 import java.io.Serializable;
@@ -165,7 +166,7 @@ public class ZMIKeeper extends Module {
                             for (PathName pn : zmiKeeperProvideDetails.msg.nodes)
                                 details.put(pn, agent.getAttributes(pn.toString()));
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
-                                    new GossipProvideDetails(zmiKeeperProvideDetails.msg, details)));
+                                    new GossipProvideDetails(zmiKeeperProvideDetails.msg, details, agent.getInstalledQueries())));
                             continue;
 
                         case ZMI_KEEPER_UPDATE_ZMI:
@@ -183,6 +184,10 @@ public class ZMIKeeper extends Module {
                                 } catch (NotSingletonZoneException nsze) {
                                     continue;
                                 }
+                            for(Map.Entry<String, Program> entry : zmiKeeperUpdateZMI.installedQueries.entrySet()) {
+                                if(!agent.getInstalledQueries().containsKey(entry.getKey()))
+                                    agent.safeInstallQuery(entry.getKey(),entry.getValue());
+                            }
                             continue;
 
                         case ZMI_KEEPER_RECOMPUTE_QUERIES:
