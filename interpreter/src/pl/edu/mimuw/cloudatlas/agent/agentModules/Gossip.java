@@ -83,7 +83,7 @@ public class Gossip extends Module {
                         }
                         if (nonEmptyContacts.size() > 0) {
                             int idx = rand.nextInt(nonEmptyContacts.size());
-                            logger.log("Gossip: sibling with contacts "+)
+                            logger.log("Gossip: sibling with contacts "+nonEmptyContacts.get(idx));
                             handler.addMessage(new Message(GOSSIP, GOSSIP, new GossipContacts(nonEmptyContacts.get(idx))));
                         } else {
                             handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperFallbackContactsGossip()));

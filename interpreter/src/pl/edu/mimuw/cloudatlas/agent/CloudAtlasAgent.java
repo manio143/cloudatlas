@@ -31,12 +31,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     public CloudAtlasAgent(String zonesFile, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
-        try {
-            root = ModelReader.readZMI(zonesFile);
-        } catch (Exception e) {
-            System.out.println("Failed to read ZMIs");
-            throw e;
-        }
+        root = new ZMI();
+        root.getAttributes().addOrChange("name", new ValueString(""));
+        root.getAttributes().addOrChange("level", new ValueInt(0L));
     }
 
     private String getName(ZMI zmi) {
@@ -147,7 +144,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return res;
     }
 
-    private ZMI reachZone(String pathName, Integer depthLimit) {
+    private ZMI reachZone(String pathName, Integer depthLimit, boolean addNew) {
         PathName pN = new PathName(pathName);
         List<String> comp = pN.getComponents();
 
@@ -167,7 +164,21 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 }
             }
             if (!found) {
-                throw new ZoneNotFoundException(pathName);
+                if(addNew) {
+                    ZMI z = new ZMI(candidate);
+                    candidate.addSon(z);
+                    z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
+                    z.getAttributes().addOrChange("owner", new ValueString(pathName));
+                    z.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+
+                    long parentLevel = ((ValueInt)candidate.getAttributes().get("level")).getValue();
+                    z.getAttributes().addOrChange("level", new ValueInt(parentLevel + 1));
+
+                    candidate = z;
+                    which++;
+                } else {
+                    throw new ZoneNotFoundException(pathName);
+                }
             }
         }
 
@@ -175,12 +186,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public AttributesMap getAttributes(String pathName) {
-        ZMI zmi = reachZone(pathName, null);
+        ZMI zmi = reachZone(pathName, null, false);
         return zmi.getAttributes();
     }
 
     public List<GossipSiblings.Sibling> siblings(int level, String pathName) {
-        ZMI zmi = reachZone(pathName, level);
+        ZMI zmi = reachZone(pathName, level, false);
         List<GossipSiblings.Sibling> res = new ArrayList<>();
         String fatherName = getFullName(zmi.getFather());
         if(fatherName.equals("/"))
@@ -266,7 +277,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public void setAttribute(String pathName, String attr, Value val) {
-        ZMI zmi = reachZone(pathName, null);
+        ZMI zmi = reachZone(pathName, null, false);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
@@ -276,12 +287,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public void setAttributes(String pathName, AttributesMap attrs) {
-        ZMI zmi;
-        try {
-            zmi = reachZone(pathName, null);
-        } catch (ZoneNotFoundException zex){
-            zmi = addZMI(pathName);
-        }
+        ZMI zmi = reachZone(pathName, null, true);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
         }
@@ -291,35 +297,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 //        updateQueries(zmi, true);
     }
 
-    private ZMI addZMI(String pathName) {
-        PathName pN = new PathName(pathName);
-        List<String> comp = pN.getComponents();
-
-        ZMI candidate = root;
-
-        int which = 0;
-        boolean found;
-
-        while (which != comp.size()) {
-            found = false;
-            for (ZMI son : candidate.getSons()) {
-                if (getName(son).equals(comp.get(which))) {
-                    candidate = son;
-                    which++;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                ZMI z = new ZMI(candidate);
-                candidate.addSon(z);
-                z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
-                candidate = z;
-                which++;
-            }
-        }
-        return candidate;
-    }
 
     public void setFallbackContacts(ValueSet contacts) {
         this.contacts = contacts;
