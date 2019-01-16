@@ -38,7 +38,7 @@ public class Timer extends Module {
             handler.addMessage(ack);
 
         } catch (ClassCastException e) {
-            System.out.println("Invalid cast to TimerAddEvent!");
+            logger.errLog("Invalid cast to TimerAddEvent!");
             e.printStackTrace();
         }
     }
@@ -57,7 +57,7 @@ public class Timer extends Module {
             handler.addMessage(ack);
 
         } catch (ClassCastException e) {
-            System.out.println("Invalid cast to TimerAddEvent!");
+            logger.errLog("Invalid cast to TimerAddEvent!");
             e.printStackTrace();
         }
     }
@@ -77,7 +77,7 @@ public class Timer extends Module {
                         removeEvent(message);
                         break;
                     default:
-                        System.out.println("Incorrect message type for timer: " + message.content.operation);
+                        logger.errLog("Incorrect message type: " + message.content.operation);
                 }
 
             } catch (InterruptedException e) {

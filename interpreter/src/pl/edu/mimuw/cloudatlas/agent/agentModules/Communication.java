@@ -55,7 +55,7 @@ public class Communication extends Module {
             sendCount++;
 
         } catch (ClassCastException e) {
-            logger.errLog("Cast exception in Communication!");
+            logger.errLog("Cast exception!");
             e.printStackTrace();
         } catch (IOException e) {
             // TODO - check socket

@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import pl.edu.mimuw.cloudatlas.agent.Logger;
 import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
@@ -15,6 +16,7 @@ import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
 public class Tester extends Module {
     public Tester(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
+        this.logger = new Logger(TESTER);
     }
 
     public void run() {
@@ -29,7 +31,7 @@ public class Tester extends Module {
         for (int i = 0; i < delays.length; i++) {
 
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            System.out.println("Timestamp of message: " + timestamp);
+            logger.log("Message timestamp: " + timestamp);
             TimerAddEvent content = new TimerAddEvent(i, delays[i], timestamp.getTime(), new Test());
 
             Message message = new Message(TESTER, TIMER, content);
@@ -90,7 +92,7 @@ public class Tester extends Module {
                         type = "Unknown";
                         break;
                 }
-                System.out.println("Received: " + type);
+                logger.log("Received: " + type);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

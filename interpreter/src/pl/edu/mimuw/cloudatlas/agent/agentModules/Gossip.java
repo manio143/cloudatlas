@@ -59,7 +59,7 @@ public class Gossip extends Module {
             try {
                 Message message = messages.take();
 
-                logger.log("Gossip received a message from: " + message.src);
+                logger.log("Received a message from: " + message.src);
 
                 switch (message.content.operation) {
 
@@ -164,7 +164,7 @@ public class Gossip extends Module {
                         throw new IncorrectMessageContent(null, message.content.operation);
                 }
             } catch (InterruptedException iex) {
-                logger.errLog("Interrupted exception in Gossip!");
+                logger.errLog("Interrupted exception!");
             }
         }
     }

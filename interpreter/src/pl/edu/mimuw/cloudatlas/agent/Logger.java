@@ -4,6 +4,8 @@ import java.sql.Timestamp;
 
 public class Logger {
     private final String source;
+    private final int PAD = 50;
+    private final String format = "%1$-" + PAD + "s";
 
     public Logger(Message.Module module) {
         this.source = module.toString();
@@ -25,7 +27,7 @@ public class Logger {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
         if (verbose) {
-            System.out.println("LOG " + source + " " + timestamp + " : " + toLog);
+            System.out.println(String.format(format, "LOG " + source + " " + timestamp + " : ") + toLog);
         }
     }
 
@@ -33,7 +35,7 @@ public class Logger {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
         if (verbose) {
-            System.out.println("ERROR " + source + " " + timestamp + " : " + toLog);
+            System.out.println(String.format(format, "ERROR " + source + " " + timestamp + " : ") + toLog);
         }
     }
 }

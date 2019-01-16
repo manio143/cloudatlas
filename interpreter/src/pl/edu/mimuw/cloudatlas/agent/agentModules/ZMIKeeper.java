@@ -1,9 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.*;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
@@ -25,6 +22,7 @@ public class ZMIKeeper extends Module {
     public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages, CloudAtlasAgent agent) {
         super(handler, messages);
         this.agent = agent;
+        this.logger = new Logger(ZMI_KEEPER);
     }
 
     private void handleMessage(MessageContent content) {
@@ -38,7 +36,7 @@ public class ZMIKeeper extends Module {
             while (true) {
                 Message message = messages.take();
 
-                System.out.println("Keeper received a message from: " + message.src);
+                logger.log("Received a message from: " + message.src);
 
                 boolean correct = true;
                 MessageContent content = new RMIError(new ContentNotInitialized());
@@ -159,7 +157,7 @@ public class ZMIKeeper extends Module {
                             continue;
 
                         default:
-                            System.out.println("Incorrect message type in ZMI Keeper: " + message.content.operation);
+                            logger.log("Incorrect message type: " + message.content.operation);
                             correct = false;
                     }
 

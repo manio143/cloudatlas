@@ -38,7 +38,7 @@ public class GossipStrategyProvider extends Module {
                 switch (message.content.operation) {
                 case GOSSIP_STRATEGY_NEXT:
                     int level = this.strategy.nextLevel();
-                    MessageContent content = new GossipNext(level);
+                    MessageContent content = new GossipNext();
                     handler.addMessage(new Message(GOSSIP_STRATEGY, GOSSIP, content));
                     break;
                 }

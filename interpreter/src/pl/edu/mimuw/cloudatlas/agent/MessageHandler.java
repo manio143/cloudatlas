@@ -2,6 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent;
 
 public class MessageHandler {
     private final QueueKeeper keeper;
+    private final Logger logger = new Logger("HANDLER");
 
     public MessageHandler(QueueKeeper keeper) {
         this.keeper = keeper;
@@ -9,11 +10,9 @@ public class MessageHandler {
 
     public synchronized void addMessage(Message message) {
 
-        String log = "Handler has received message from " + message.src
+        logger.log("Message from " + message.src
                 + " to " + message.dest
-                + ", operation: " + message.content.operation;
-
-        System.out.println(log);
+                + ", operation: " + message.content.operation);
 
         switch (message.dest) {
             case TIMER:
