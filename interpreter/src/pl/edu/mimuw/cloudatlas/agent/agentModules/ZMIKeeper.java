@@ -175,11 +175,11 @@ public class ZMIKeeper extends Module {
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet())
                                 try {
                                     AttributesMap map1 = entry.getValue();
-                                    ValueTime timestamp = (ValueTime) map1.getOrNull("timestamp");
+                                    ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
                                     if(timestamp == null)
                                         continue;
                                     timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
-                                    map1.addOrChange("timestamp", timestamp);
+                                    map1.addOrChange("freshness", timestamp);
                                     agent.setAttributes(entry.getKey().toString(), map1);
                                 } catch (NotSingletonZoneException nsze) {
                                     continue;
@@ -205,6 +205,7 @@ public class ZMIKeeper extends Module {
 
                 } catch (AgentException e) {
                     content = new RMIError(e);
+                    e.printStackTrace();
                 }
 
                 if (resend) {

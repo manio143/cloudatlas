@@ -156,6 +156,7 @@ public class Gossip extends Module {
                     case GOSSIP_UPDATE:
                         GossipUpdate update = (GossipUpdate) message.content;
                         recordDelay(update.responseContact, update.timestamps);
+                        logger.log("Received "+update.details.size() + " updates.");
                         handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, update.installedQueries, delay.get(update.responseContact.getName().toString()))));
                         break;
 

@@ -29,11 +29,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private PublicKey publicKey;
 
-    public CloudAtlasAgent(String zonesFile, PublicKey signerKey) throws IOException {
+    public CloudAtlasAgent(String pathName, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
         root = new ZMI();
-        root.getAttributes().addOrChange("name", new ValueString(""));
+        root.getAttributes().addOrChange("name", new ValueString(null));
         root.getAttributes().addOrChange("level", new ValueInt(0L));
+        reachZone(pathName, null, true);
     }
 
     private String getName(ZMI zmi) {
@@ -170,6 +171,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
                     z.getAttributes().addOrChange("owner", new ValueString(pathName));
                     z.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+                    z.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
 
                     long parentLevel = ((ValueInt)candidate.getAttributes().get("level")).getValue();
                     z.getAttributes().addOrChange("level", new ValueInt(parentLevel + 1));
@@ -201,7 +203,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
             String zone = fatherName + "/" + name;
             if (!pathName.startsWith(zone)) {
                 ValueSet contacts = (ValueSet) zmi.getAttributes().getOrNull("contacts");
-                ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("timestamp");
+                ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
                 List<ValueContact> lvc = new ArrayList<>();
                 if(contacts != null)
                     for(Value v : contacts)
@@ -217,8 +219,22 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         String pathName = contact.getName().toString();
         List<GossipInterFreshness.Node> nodes = new ArrayList<>();
         for(int l = 1; l <= levels; l++)
-            for(GossipSiblings.Sibling sib : siblings(l, pathName))
-                nodes.add(new GossipInterFreshness.Node(sib.pathName, sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+            try {
+                for (GossipSiblings.Sibling sib : siblings(l, pathName))
+                    nodes.add(new GossipInterFreshness.Node(sib.pathName, sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+            } catch (ZoneNotFoundException e) {
+                ZMI zmi = reachZone(pathName, l-1, false);
+                String fatherName = getFullName(zmi);
+                if(fatherName.equals("/"))
+                    fatherName = "";
+                for(ZMI son : zmi.getSons()) {
+                    String name = getName(son);
+                    String zone = fatherName + "/" + name;
+                    ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
+                    nodes.add(new GossipInterFreshness.Node(new PathName(zone), timestamp != null ? timestamp : new ValueTime(0L)));
+                }
+                break;
+            }
         return nodes;
     }
 
@@ -283,7 +299,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
         zmi.getAttributes().addOrChange(attr, val);
         updateTimestamp(zmi);
-//        updateQueries(zmi, true);
     }
 
     public void setAttributes(String pathName, AttributesMap attrs) {
@@ -294,7 +309,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         zmi.getAttributes().addOrChange(attrs);
         zmi.printAttributes(System.out);
         updateTimestamp(zmi);
-//        updateQueries(zmi, true);
     }
 
 
@@ -307,7 +321,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
     
     private void updateTimestamp(ZMI zmi) {
-        zmi.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+        zmi.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
     }
     public synchronized void safeInstallQuery(String attributeName, Program program) {
         installedQueries.put(attributeName, program);
