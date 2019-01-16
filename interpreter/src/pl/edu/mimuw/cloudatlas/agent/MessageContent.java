@@ -10,6 +10,7 @@ public abstract class MessageContent implements Serializable {
         TIMER_REMOVE_EVENT_ACK,
         COMMUNICATION_SEND,
         COMMUNICATION_REVIVE_SOCKET,
+        COMMUNICATION_FLUSH_OLD,
         RMI_ZONES,
         RMI_ATTRIBUTES,
         RMI_QUERIES,

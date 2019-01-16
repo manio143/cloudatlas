@@ -26,6 +26,10 @@ public class Logger {
     public void log(String toLog, boolean verbose) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 
+        if (source.compareTo("COMMUNICATION") != 0) {
+            return;
+        }
+
         if (verbose) {
             System.out.println(String.format(format, "LOG " + source + " " + timestamp + " : ") + toLog);
         }
@@ -33,6 +37,10 @@ public class Logger {
 
     public void errLog(String toLog, boolean verbose) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+        if (source.compareTo("COMMUNICATION") != 0) {
+            return;
+        }
 
         if (verbose) {
             System.out.println(String.format(format, "ERROR " + source + " " + timestamp + " : ") + toLog);

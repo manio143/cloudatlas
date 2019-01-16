@@ -1,11 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationReviveSocket;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.CommunicationSend;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.agent.Message;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.TimerAddEvent;
 
 import java.io.*;
 import java.net.*;
@@ -15,12 +13,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static java.lang.Thread.sleep;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
+    private final SynchronizationController controller = new SynchronizationController();
     private DatagramSocket sendingSocket;
     private DatagramSocket listeningSocket;
     private Long sendCount = 0L;
@@ -35,9 +35,9 @@ public class Communication extends Module {
     private static final int UDP_METADATA = BYTE_LENGTH + INT_LENGTH + LONG_LENGTH;
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
 
-    private static final int MILISECONDS = 1000;
-    private static final int TIMEOUT = 10 * MILISECONDS;
-    private static final int DELAY = 3 * MILISECONDS;
+    private static final long MILISECONDS = 1000;
+    private static final long TIMEOUT = 10 * MILISECONDS;
+    private static final long REVIVE_DELAY = 3 * MILISECONDS;
 
     public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
@@ -45,35 +45,47 @@ public class Communication extends Module {
     }
 
     private void scheduleReviveSocket(boolean listening) {
+        logger.log("Scheduling socket revival");
+
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         long time = timestamp.getTime();
 
         SocketReviver reviver = new SocketReviver(handler, listening);
 
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, DELAY, time, reviver);
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, REVIVE_DELAY, time, reviver);
 
         handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+
+        try {
+            sleep(REVIVE_DELAY);
+            logger.log("Woke up from sleep to revive socket");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void tryReviveSocket(boolean listening) {
         if (listening) {
-            if (listeningSocket.isClosed()) {
+//            if (listeningSocket.isClosed()) {
                 try {
                     listeningSocket = new DatagramSocket(UDP_PORT);
+                    System.out.println(listeningSocket);
+                    logger.log("Managed to revive the listening socket.");
                 } catch (SocketException e) {
                     logger.errLog("Listening socket not revived!");
                     scheduleReviveSocket(true);
                 }
-            }
+//            }
         } else {
-            if (sendingSocket.isClosed()) {
+//            if (sendingSocket.isClosed()) {
                 try {
                     sendingSocket = new DatagramSocket();
+                    logger.log("Managed to revive the sending socket.");
                 } catch (SocketException e) {
                     logger.errLog("Sending socket not revived!");
                     scheduleReviveSocket(false);
                 }
-            }
+//            }
         }
     }
 
@@ -99,7 +111,7 @@ public class Communication extends Module {
             logger.errLog("Cast exception!");
             e.printStackTrace();
         } catch (SocketException e) {
-            logger.errLog("Socket down!");
+            logger.errLog("Sending socket went down!");
             tryReviveSocket(false);
         } catch (IOException e) {
             e.printStackTrace();
@@ -167,14 +179,51 @@ public class Communication extends Module {
         return fragments;
     }
 
+    private void scheduleFlushing() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long time = timestamp.getTime();
+
+        FlushAnnouncer announcer = new FlushAnnouncer(handler, time, TIMEOUT);
+
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, TIMEOUT, time, announcer);
+
+        handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+    }
+
+    private void flushOld() {
+        logger.log("Flushing old messages");
+
+        List<Key> toFlush = new LinkedList<>();
+
+        controller.take();
+
+        for (Map.Entry<Key, MapValue> entry : received.entrySet()) {
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            if (timestamp.getTime() - entry.getValue().timestamp > TIMEOUT) {
+                toFlush.add(entry.getKey());
+            }
+        }
+
+        for (Key key : toFlush) {
+            received.remove(key);
+        }
+
+        controller.release();
+    }
+    
+
     @Override
     public void run() {
-        try {
-            listeningSocket = new DatagramSocket(UDP_PORT);
-        } catch (SocketException e) {
-            logger.errLog("Listening socket not opened!");
-            e.printStackTrace();
-            scheduleReviveSocket(true);
+        while (true) {
+            try {
+                listeningSocket = new DatagramSocket(UDP_PORT);
+
+                break;
+            } catch (SocketException e) {
+                logger.errLog("Listening socket not opened!");
+                e.printStackTrace();
+                scheduleReviveSocket(true);
+            }
         }
 
         try {
@@ -185,7 +234,11 @@ public class Communication extends Module {
             scheduleReviveSocket(false);
         }
 
-        listener.execute(new Listener(handler, listeningSocket));
+        System.out.println("Before listener");
+
+        listener.execute(new Listener(handler, controller, listeningSocket));
+
+        scheduleFlushing();
 
         while (true) {
             try {
@@ -199,6 +252,9 @@ public class Communication extends Module {
                         CommunicationReviveSocket content = (CommunicationReviveSocket)message.content;
                         tryReviveSocket(content.listening);
                         break;
+                    case COMMUNICATION_FLUSH_OLD:
+                        flushOld();
+                        break;
                     default:
                 }
 
@@ -211,11 +267,14 @@ public class Communication extends Module {
 
     private class Listener implements Runnable {
         private final ExecutorService collector = Executors.newSingleThreadExecutor();
-        private MessageHandler handler;
+        private final MessageHandler handler;
+        private final SynchronizationController controller;
         private DatagramSocket listeningSocket;
 
-        private Listener (MessageHandler handler, DatagramSocket listeningSocket) {
+        private Listener (MessageHandler handler, SynchronizationController controller,
+                          DatagramSocket listeningSocket) {
             this.handler = handler;
+            this.controller = controller;
             this.listeningSocket = listeningSocket;
         }
 
@@ -224,16 +283,21 @@ public class Communication extends Module {
                 try {
                     byte[] receiveData = new byte[UDP_PACKET_SIZE];
 
-                    logger.log("Received a message!");
-
                     DatagramPacket receivePacket = new DatagramPacket(receiveData,
                             receiveData.length);
 
+                    System.out.println(listeningSocket);
+
                     listeningSocket.receive(receivePacket);
 
-                    collector.execute(new Collector(handler, receiveData, receivePacket.getAddress()));
+                    System.out.println("A");
+
+                    logger.log("Listener received a message!");
+
+                    collector.execute(new Collector(handler, controller, receiveData, receivePacket.getAddress()));
 
                 } catch (SocketException e) {
+                    logger.log("Listening socket went down!");
                     tryReviveSocket(true);
 
                 } catch (IOException e) {
@@ -245,11 +309,13 @@ public class Communication extends Module {
 
     private class Collector implements Runnable {
         private final MessageHandler handler;
+        private final SynchronizationController controller;
         private byte[] data;
         private final InetAddress ip;
 
-        private Collector(MessageHandler handler, byte[] data, InetAddress ip) {
+        private Collector(MessageHandler handler, SynchronizationController controller, byte[] data, InetAddress ip) {
             this.handler = handler;
+            this.controller = controller;
             this.data = data;
             this.ip = ip;
         }
@@ -273,22 +339,19 @@ public class Communication extends Module {
 
                 Key key = new Key(ip, id);
 
+                byte [] content = new byte[UDP_PACKET_SPACE];
+                System.arraycopy(data, UDP_METADATA, content, 0, UDP_PACKET_SPACE);
+
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 MapValue value = new MapValue(timestamp.getTime());
+
+                controller.take();
 
                 if (received.containsKey(key)) {
                     value = received.get(key);
                 }
 
-                // TODO: schedule regular cleaning
-
-                if (timestamp.getTime() - value.timestamp > TIMEOUT) {
-                    return;
-                }
-
-                byte [] content = new byte[UDP_PACKET_SPACE];
-
-                System.arraycopy(data, UDP_METADATA, content, 0, UDP_PACKET_SPACE);
+                controller.release();
 
                 switch (marker) {
                     case 0:
@@ -313,7 +376,11 @@ public class Communication extends Module {
                                 UDP_PACKET_SPACE * i, value.fragments.get(i).length);
                     }
 
+                    controller.take();
+
                     received.remove(key);
+
+                    controller.release();
 
                     byteStream = new ByteArrayInputStream(messageBytes);
 
@@ -334,21 +401,6 @@ public class Communication extends Module {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public static class SocketReviver implements Runnable, Serializable {
-        private MessageHandler handler;
-        private boolean listening;
-
-        private SocketReviver(MessageHandler handler, boolean listening) {
-            this.handler = handler;
-            this.listening = listening;
-        }
-
-        public void run() {
-            CommunicationReviveSocket content = new CommunicationReviveSocket(listening);
-            handler.addMessage(new Message(TIMER, COMMUNICATION, content));
         }
     }
 
@@ -378,6 +430,65 @@ public class Communication extends Module {
 
         private MapValue(long timestamp) {
             this.timestamp = timestamp;
+        }
+    }
+
+    private class SynchronizationController {
+        boolean taken = false;
+
+        public synchronized void take() {
+            try {
+                while (taken) {
+                    wait();
+                }
+                taken = true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public synchronized void release() {
+            taken = false;
+            notify();
+        }
+    }
+
+    public static class SocketReviver implements Runnable, Serializable {
+        private MessageHandler handler;
+
+        private boolean listening;
+
+        private SocketReviver(MessageHandler handler, boolean listening) {
+            this.handler = handler;
+            this.listening = listening;
+        }
+
+        public void run() {
+            CommunicationReviveSocket content = new CommunicationReviveSocket(listening);
+            handler.addMessage(new Message(TIMER, COMMUNICATION, content));
+        }
+    }
+
+    public static class FlushAnnouncer implements Runnable, Serializable {
+        MessageHandler handler;
+        long timestamp;
+        long delay;
+
+        public FlushAnnouncer(MessageHandler handler, long timestamp, long delay) {
+            this.handler = handler;
+            this.timestamp = timestamp;
+            this.delay = delay;
+        }
+
+        public void run() {
+            handler.addMessage(new Message(TIMER, COMMUNICATION, new CommunicationFlushOld()));
+
+            long newTimestamp = timestamp + delay;
+
+            FlushAnnouncer announcer = new FlushAnnouncer(handler, newTimestamp, delay);
+            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, announcer);
+
+            handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
         }
     }
 }
