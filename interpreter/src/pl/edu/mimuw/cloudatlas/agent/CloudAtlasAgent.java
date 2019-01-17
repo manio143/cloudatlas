@@ -310,10 +310,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     public void setAttributes(String pathName, AttributesMap attrs) {
         ZMI zmi = reachZone(pathName, null, true);
         if (!zmi.getSons().isEmpty()) {
-            throw new NotSingletonZoneException(pathName);
+            zmi.getAttributes().addOrChange(attrs);
+            zmi.printAttributes(System.out);
         }
-        zmi.getAttributes().addOrChange(attrs);
-        zmi.printAttributes(System.out);
     }
 
     public void cleanUp(long diff) {

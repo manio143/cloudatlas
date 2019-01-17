@@ -1,11 +1,13 @@
 package pl.edu.mimuw.cloudatlas.fetcher;
 
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.io.FileInputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
@@ -15,43 +17,71 @@ import java.util.concurrent.TimeUnit;
 
 public class Fetcher implements Runnable {
     boolean set = false;
-    private String metricsFile;
 
-    private String header;
+    private final String metricsFile;
+    private final String nodePath;
+    private final String contacts;
+    private final String fallbackContacts;
 
     private CloudAtlasAPI stub;
 
-    public Fetcher(String host, String metricsFile, Properties properties) {
-        this.metricsFile = metricsFile;
+    public Fetcher(Properties properties) {
+        this.metricsFile = properties.getProperty("metricsFile");
+        this.nodePath = properties.getProperty("nodePath");
+        this.contacts = properties.getProperty("contacts");
+        this.fallbackContacts = properties.getProperty("fallbackContacts");
 
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
 
+        String host = properties.getProperty("host");
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             stub = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-
-            ValueSet contacts = (ValueSet)ModelReader.formValue("set contact", properties.getProperty("contacts"));
-            header = properties.getProperty("zone") + "\n" + "contacts : set contact = "+properties.getProperty("contacts") + "\n";
-            stub.setFallbackContacts(contacts);
             this.set = true;
 
-        } catch (Exception e) {
+        } catch (RemoteException e) {
+            System.out.println("Failed to get registry!");
+        } catch (NotBoundException e) {
+            System.out.println("Failed to connect to CloudAtlas agent!");
+        }
+
+    }
+
+    public void setContacts(boolean fallback) {
+        String append = "";
+        if (fallback) {
+            append = "fallback";
+        }
+        try {
+            if (fallback) {
+                ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", fallbackContacts);
+                stub.setFallbackContacts(contactsSet);
+            } else {
+                ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", contacts);
+                stub.setAttribute(nodePath, "contacts", contactsSet);
+            }
+        } catch (AgentException e) {
+            System.out.println("Agent exception while setting " + append + " contact:");
+            System.out.println(e.getMessage());
+        } catch (RemoteException e) {
+            System.out.println("Remote exception while setting " + append + " contacts:");
             e.printStackTrace();
         }
     }
 
     @Override
-    public void run(){
+    public void run() {
+        setContacts(true);
+        setContacts(false);
+
+        Runtime rt = Runtime.getRuntime();
+        String toExec = "./utility/fetch_metrics " + metricsFile + " " + nodePath;
         try {
-            Runtime rt = Runtime.getRuntime();
-            Process pr = rt.exec("./utility/fetch_metrics " + metricsFile);
+            Process pr = rt.exec(toExec);
 
             pr.waitFor();
-
-            String metrics = new String(Files.readAllBytes(Paths.get(metricsFile)));
-            Files.write(Paths.get(metricsFile), (header + metrics).getBytes());
 
             for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
 
@@ -60,8 +90,14 @@ public class Fetcher implements Runnable {
                 }
             }
 
-        } catch (Exception e) {
-            System.out.println(e);
+        } catch (IOException e) {
+            System.out.println("Exception during execution of: " +toExec);
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted exception");
+        } catch (AgentException e) {
+            System.out.println("Agent exception while setting fallback contacts:");
+            System.out.println(e.getMessage());
         }
     }
 
@@ -72,9 +108,9 @@ public class Fetcher implements Runnable {
     public static void main(String[] args) {
         try {
             Properties prop = new Properties();
-            prop.load(new FileInputStream(args[1]));
+            prop.load(new FileInputStream(args[0]));
             Long interval = Long.parseLong(prop.getProperty("fetchingInterval"));
-            Fetcher fetcher = new Fetcher(args[0], args[2], prop);
+            Fetcher fetcher = new Fetcher(prop);
             if (fetcher.isSet()) {
                 ScheduledExecutorService scheduler =
                         Executors.newScheduledThreadPool(1);

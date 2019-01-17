@@ -1,9 +1,9 @@
 #!/bin/bash
 
 metricsFile=$1
+nodePath=$2
 
 rm -rf ${metricsFile}
-
 touch ${metricsFile}
 
 CPU_LOAD="$(uptime | awk '{for(i=NF;i>=1;i--) printf "%s ", $i;print ""}' | cut -f 3 -d ' ' | rev | cut -c 2- | rev | sed 's/,/./g')"
@@ -19,7 +19,8 @@ KERNEL_VER="$(uname -r)"
 LOGGED_USERS="$(users | wc -w)"
 DNS_NAME="$(dnsdomainname)"
 
-echo "cpu_load : double = ${CPU_LOAD}" > ${metricsFile}
+echo ${nodePath}
+echo "cpu_load : double = ${CPU_LOAD}" >> ${metricsFile}
 echo "free_disk : integer = ${FREE_DISK}" >> ${metricsFile}
 echo "total_disk : integer = ${TOTAL_DISK}" >> ${metricsFile}
 echo "free_ram : integer = ${FREE_RAM}" >> ${metricsFile}

@@ -395,13 +395,13 @@ public class ClientServer implements Runnable {
             response.append("\t\"Queries\" : [");
 
             try {
-                Map<String, List<Attribute>> queries = cloudAtlas.getQueries();
+                Map<String, List<String>> queries = cloudAtlas.getQueries();
 
-                for (Map.Entry<String, List<Attribute>> entry : queries.entrySet()) {
+                for (Map.Entry<String, List<String>> entry : queries.entrySet()) {
                     response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");
                     response.append("\"columns\" : [");
-                    for (Attribute attr : entry.getValue()) {
-                        response.append("\"" + attr.toString() + "\", ");
+                    for (String attr : entry.getValue()) {
+                        response.append("\"" + attr + "\", ");
                     }
                     if (response.charAt(response.length() - 2) == ',') {
                         response.replace(response.length() - 2, response.length(), "");

@@ -189,17 +189,13 @@ public class ZMIKeeper extends Module {
 
                             ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet()) {
-                                try {
-                                    AttributesMap map1 = entry.getValue();
-                                    ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
-                                    if (timestamp == null)
-                                        continue;
-                                    timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
-                                    map1.addOrChange("freshness", timestamp);
-                                    agent.setAttributes(entry.getKey().toString(), map1);
-                                } catch (NotSingletonZoneException nsze) {
+                                AttributesMap map1 = entry.getValue();
+                                ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
+                                if (timestamp == null)
                                     continue;
-                                }
+                                timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
+                                map1.addOrChange("freshness", timestamp);
+                                agent.setAttributes(entry.getKey().toString(), map1);
                             }
                             for (SignedQueryRequest sqr : zmiKeeperUpdateZMI.installedQueries) {
                                 agent.installQueries(sqr);
