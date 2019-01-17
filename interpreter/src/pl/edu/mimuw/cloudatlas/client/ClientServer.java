@@ -35,7 +35,7 @@ public class ClientServer implements Runnable {
     private final int MAX_SIZE = 100;
     private TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
 
-    public ClientServer(String host, String port, Long interval) {
+    public ClientServer(String host, Integer port, Long interval) {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
@@ -43,7 +43,7 @@ public class ClientServer implements Runnable {
             Registry registry = LocateRegistry.getRegistry(host);
             cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             signer = (SignerAPI) registry.lookup("SignerAPI");
-            HttpServer server = HttpServer.create(new InetSocketAddress(Integer.parseInt(port)), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/queries", new FileHandler("www/queries.html"));
             server.createContext("/set", new FileHandler("www/setAttribute.html"));
@@ -81,9 +81,11 @@ public class ClientServer implements Runnable {
     public static void main(String[] args) {
         try {
             Properties prop = new Properties();
-            prop.load(new FileInputStream(args[2]));
+            prop.load(new FileInputStream(args[0]));
             Long interval = Long.parseLong(prop.getProperty("collectionInterval"));
-            ClientServer server = new ClientServer(args[0], args[1], interval);
+            String host = prop.getProperty("host");
+            Integer port = Integer.parseInt(prop.getProperty("port"));
+            ClientServer server = new ClientServer(host, port, interval);
             ScheduledExecutorService scheduler =
                     Executors.newScheduledThreadPool(1);
             scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);

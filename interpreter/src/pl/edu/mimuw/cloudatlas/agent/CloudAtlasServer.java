@@ -14,9 +14,9 @@ public class CloudAtlasServer {
         }
         try {
             Properties prop = new Properties();
-            prop.load(new FileInputStream(args[1]));
+            prop.load(new FileInputStream(args[0]));
 
-            byte[] keyBytes = Files.readAllBytes(new File(args[2]).toPath());
+            byte[] keyBytes = Files.readAllBytes(new File(args[1]).toPath());
             X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 

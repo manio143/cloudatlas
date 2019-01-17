@@ -49,10 +49,10 @@ public class Fetcher implements Runnable {
 
     }
 
-    public void setContacts(boolean fallback) {
+    private void setContacts(boolean fallback) {
         String append = "";
         if (fallback) {
-            append = "fallback";
+            append = "fallback ";
         }
         try {
             if (fallback) {
@@ -65,10 +65,10 @@ public class Fetcher implements Runnable {
                 stub.setAttribute(nodePath, "contacts", contactsSet);
             }
         } catch (AgentException e) {
-            System.out.println("Agent exception while setting " + append + " contact:");
+            System.out.println("Agent exception while setting " + append + "contacts:");
             System.out.println(e.getMessage());
         } catch (RemoteException e) {
-            System.out.println("Remote exception while setting " + append + " contacts:");
+            System.out.println("Remote exception while setting " + append + "contacts:");
             e.printStackTrace();
         }
     }
@@ -87,9 +87,17 @@ public class Fetcher implements Runnable {
 
             for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
 
+                System.out.println("Zone: " + zone.getKey());
+
                 for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
                     System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
                     stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
+                    try {
+                        stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
+                    } catch (AgentException e) {
+                        System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
+                        System.out.println(e.getMessage());
+                    }
                 }
             }
 

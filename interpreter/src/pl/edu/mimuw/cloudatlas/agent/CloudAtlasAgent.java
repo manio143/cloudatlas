@@ -182,9 +182,13 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         int which = 0;
         boolean found;
 
+        System.out.println(pathName);
+
         while (which != comp.size() && (depthLimit == null || which != depthLimit)) {
+            System.out.println(comp.get(which));
             found = false;
             for (ZMI son : candidate.getSons()) {
+                System.out.println(son.getAttributes().get("name"));
                 if (getName(son).equals(comp.get(which))) {
                     candidate = son;
                     which++;
@@ -321,13 +325,16 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public void setAttribute(String pathName, String attr, Value val) {
+        System.out.println(pathName);
+
         if (restricted.contains(attr)) {
             throw new RestrictedAttributeException(attr);
         }
 
         ZMI zmi = reachZone(pathName, null, false);
         if (!zmi.getSons().isEmpty()) {
-            throw new NotSingletonZoneException(pathName);
+            zmi.printAttributes(System.out);
+            throw new NotSingletonZoneException(pathName + " " + zmi);
         }
         zmi.getAttributes().addOrChange(attr, val);
         updateTimestamp(zmi);
