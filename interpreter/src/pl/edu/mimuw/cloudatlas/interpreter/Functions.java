@@ -384,6 +384,11 @@ class Functions {
 						return arguments.get(1).first(((ValueInt)size).getValue().intValue());
 					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
 							+ " and be >= 0.");
+				} else if (arguments.size() == 1) {
+					ValueList list = (ValueList) arguments.get(0).transformOperation(UNFOLD);
+					if(list.getValue().size() == 0)
+						throw new IllegalArgumentException("First on an empty collection");
+					return Result.from(list.getValue().get(0));
 				}
 				break;
 			case "last":
