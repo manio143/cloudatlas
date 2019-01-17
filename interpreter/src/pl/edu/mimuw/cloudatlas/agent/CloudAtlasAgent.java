@@ -321,8 +321,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public void setAttribute(String pathName, String attr, Value val) {
-        System.out.println(pathName);
-
         if (restricted.contains(attr)) {
             throw new RestrictedAttributeException(attr);
         }

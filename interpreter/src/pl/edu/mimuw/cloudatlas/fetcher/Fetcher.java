@@ -49,7 +49,7 @@ public class Fetcher implements Runnable {
 
     }
 
-    private void setContacts(boolean fallback) {
+    private void setContacts(boolean fallback) throws RemoteException {
         String append = "";
         if (fallback) {
             append = "fallback ";
@@ -67,28 +67,27 @@ public class Fetcher implements Runnable {
         } catch (AgentException e) {
             System.out.println("Agent exception while setting " + append + "contacts:");
             System.out.println(e.getMessage());
-        } catch (RemoteException e) {
-            System.out.println("Remote exception while setting " + append + "contacts:");
-            e.printStackTrace();
         }
     }
 
     @Override
     public void run() {
-        setContacts(true);
-        setContacts(false);
-
-        Runtime rt = Runtime.getRuntime();
-        String toExec = "./utility/fetch_metrics " + metricsFile + " " + nodePath;
         try {
-            Process pr = rt.exec(toExec);
+            setContacts(true);
+            setContacts(false);
 
-            pr.waitFor();
+            Runtime rt = Runtime.getRuntime();
+            String toExec = "./utility/fetch_metrics " + metricsFile + " " + nodePath;
+            try {
+                Process pr = rt.exec(toExec);
 
-            for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
+                pr.waitFor();
 
-                System.out.println("Zone: " + zone.getKey());
+                for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
 
+                    System.out.println("Zone: " + zone.getKey());
+
+<<<<<<< 83a0babd801a3de451d1ea8c612fb26b6cbb47e6
                 for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
                     System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
                     stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
@@ -97,10 +96,23 @@ public class Fetcher implements Runnable {
                     } catch (AgentException e) {
                         System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
                         System.out.println(e.getMessage());
+=======
+                    for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
+                        System.out.println("Entry: " + entry);
+
+                        try {
+                            stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
+                        } catch (AgentException e) {
+                            System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
+                            System.out.println(e.getMessage());
+                        }
+>>>>>>> Minor print fix
                     }
                 }
-            }
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted exception");
 
+<<<<<<< 83a0babd801a3de451d1ea8c612fb26b6cbb47e6
             System.out.println();
 
         } catch (IOException e) {
@@ -114,6 +126,13 @@ public class Fetcher implements Runnable {
         } catch (Exception other) {
             System.out.println("Unexpected exception occured!");
             other.printStackTrace();
+=======
+            } catch (IOException e) {
+                System.out.println("Exception during execution of: " + toExec);
+            }
+        } catch (RemoteException e) {
+            System.out.println("Remote exception");
+>>>>>>> Minor print fix
         }
     }
 
