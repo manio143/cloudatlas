@@ -5,15 +5,17 @@ import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.util.Map;
+import java.util.Set;
 
 public class GossipProvideDetails extends TimedGossipMessage {
     public final GossipRequestDetails sourceMsg;
     public final Map<PathName, AttributesMap> details;
-    public final Map<String, Program> installedQueries;
+    public final Set<SignedQueryRequest> installedQueries;
 
-    public GossipProvideDetails(GossipRequestDetails sourceMsg, Map<PathName, AttributesMap> details, Map<String, Program> installedQueries)
+    public GossipProvideDetails(GossipRequestDetails sourceMsg, Map<PathName, AttributesMap> details, Set<SignedQueryRequest> installedQueries)
     {
         this.details = details;
         this.sourceMsg = sourceMsg;

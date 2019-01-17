@@ -13,7 +13,7 @@ public interface CloudAtlasAPI extends Remote {
 
     AttributesMap getAttributes(String pathName) throws RemoteException;
 
-    Map<String, List<Attribute>> getQueries() throws RemoteException;
+    Map<String, List<String>> getQueries() throws RemoteException;
 
     void installQueries(SignedQueryRequest queries) throws RemoteException;
 

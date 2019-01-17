@@ -20,23 +20,47 @@ import java.time.Instant;
 import java.util.*;
 
 public class CloudAtlasAgent implements CloudAtlasAPI {
-    private ZMI root;
-    private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
+    private final ZMI root = new ZMI();
 
-    private Map<String, Program> installedQueries = new HashMap<String, Program>();
-
-    private Map<String, List<Attribute>> queryAttributes = new HashMap<String, List<Attribute>>();
-
-    private PublicKey publicKey;
+    private final List<Program> preinstalled = new LinkedList<>();
+    private final Map<SignedQueryRequest, Program> installed = new HashMap<>();
+    private final Set<Long> uninstalled = new HashSet<>();
 
     private final Logger logger = new Logger("AGENT");
+    private final PublicKey publicKey;
+
+    private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
     public CloudAtlasAgent(String pathName, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
-        root = new ZMI();
+        startNode(pathName);
+        preinstallPrograms();
+    }
+
+    private void startNode(String pathName) {
         root.getAttributes().addOrChange("name", new ValueString(null));
         root.getAttributes().addOrChange("level", new ValueInt(0L));
+        root.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
         reachZone(pathName, null, true);
+    }
+
+    private void preinstallPrograms() {
+        List<String> selects = new LinkedList<>();
+        selects.add("SELECT first(1, name) AS owner ORDER BY timestamp ASC NULLS LAST");
+        selects.add("SELECT first(1, timestamp) AS timestamp ORDER BY timestamp ASC NULLS LAST");
+        selects.add("SELECT random(7, unfold(contacts)) AS contacts");
+        selects.add("SELECT sum(cardinality) AS cardinality");
+
+        for (String select : selects) {
+            Yylex lex = new Yylex(new ByteArrayInputStream(select.getBytes()));
+            try {
+                Program program = (new parser(lex)).pProgram();
+                preinstalled.add(program);
+                logger.log("Program preinstalled: " + select);
+            } catch (Exception e) {
+                logger.errLog("Incorrect query to preinstall: " + select);
+            }
+        }
     }
 
     private String getName(ZMI zmi) {
@@ -54,11 +78,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return new PathName(names).toString();
     }
 
-    public synchronized Map<String, Program> getInstalledQueries() {
-        return installedQueries;
+    public Set<SignedQueryRequest> getInstalledQueries() {
+        return installed.keySet();
     }
 
-    private void removeAttribute(ZMI zmi, Attribute attribute) {
+    private void removeAttribute(ZMI zmi, String attribute) {
         if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
                 removeAttribute(son, attribute);
@@ -67,53 +91,37 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
     }
 
-    private void calculateQueries(ZMI zmi, String attributeName) {
-        if (!zmi.getSons().isEmpty()) {
-            for (ZMI son : zmi.getSons()) {
-                calculateQueries(son, attributeName);
-            }
-            Interpreter interpreter = new Interpreter(zmi);
-            Program program = installedQueries.get(attributeName);
+    private void computePrograms(Collection<Program> programs, ZMI zmi) {
+        Interpreter interpreter = new Interpreter(zmi);
+        for (Program program : programs) {
             try {
-                List<Attribute> columns = queryAttributes.get(attributeName);
                 List<QueryResult> result = interpreter.interpretProgram(program);
-
                 for (QueryResult r : result) {
                     zmi.getAttributes().addOrChange(r.getName(), r.getValue());
-                    if (zmi.getFather() == null) {
-                        columns.add(r.getName());
-                    }
                 }
-                if (result.size() > 0) {
+                if(result.size() > 0) {
                     updateTimestamp(zmi);
                 }
             } catch (InterpreterException exception) {
-                queryAttributes.remove(attributeName);
-                installedQueries.remove(attributeName);
+                logger.errLog(exception.getMessage());
             }
         }
     }
 
-    private void updateQueries(ZMI zmi, boolean propagateUp) {
-        if (!zmi.getSons().isEmpty()) {
-            Interpreter interpreter = new Interpreter(zmi);
-            for (Map.Entry<String, Program> entry : installedQueries.entrySet()) {
-                Program program = entry.getValue();
-                try {
-                    List<QueryResult> result = interpreter.interpretProgram(program);
-                    for (QueryResult r : result) {
-                        zmi.getAttributes().addOrChange(r.getName(), r.getValue());
-                    }
-                    if(result.size() > 0) {
-                        updateTimestamp(zmi);
-                    }
-                } catch (InterpreterException exception) {
-                    logger.errLog(exception.getMessage());
-                }
+    private void checkUninstalled() {
+        List<SignedQueryRequest> toRemove = new LinkedList<>();
+
+        for (SignedQueryRequest sqr : installed.keySet()) {
+            if (uninstalled.contains(sqr.queryID)) {
+                toRemove.add(sqr);
             }
         }
-        if (propagateUp && zmi.getFather() != null) {
-            updateQueries(zmi.getFather(), propagateUp);
+
+        for (SignedQueryRequest sqr : toRemove) {
+            for (String attribute : sqr.columns) {
+                removeAttribute(root, attribute);
+            }
+            installed.remove(sqr);
         }
     }
 
@@ -121,12 +129,14 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         recomputeQueries(root);
     }
 
-    public void recomputeQueries(ZMI zmi) {
+    private void recomputeQueries(ZMI zmi) {
         if (!zmi.getSons().isEmpty()) {
             for (ZMI son : zmi.getSons()) {
                 recomputeQueries(son);
             }
-            updateQueries(zmi, false);
+            computePrograms(preinstalled, zmi);
+            checkUninstalled();
+            computePrograms(installed.values(), zmi);
         }
     }
 
@@ -172,12 +182,8 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     ZMI z = new ZMI(candidate);
                     candidate.addSon(z);
                     z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
-                    z.getAttributes().addOrChange("owner", new ValueString(pathName));
-                    z.getAttributes().addOrChange("timestamp", new ValueTime(Instant.now().toEpochMilli()));
+                    z.getAttributes().addOrChange("level", new ValueInt((long)which + 1));
                     z.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
-
-                    long parentLevel = ((ValueInt)candidate.getAttributes().get("level")).getValue();
-                    z.getAttributes().addOrChange("level", new ValueInt(parentLevel + 1));
 
                     candidate = z;
                     which++;
@@ -199,8 +205,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         ZMI zmi = reachZone(pathName, level, false);
         List<GossipSiblings.Sibling> res = new ArrayList<>();
         String fatherName = getFullName(zmi.getFather());
-        if(fatherName.equals("/"))
+        if (fatherName.equals("/")) {
             fatherName = "";
+        }
         for (ZMI z : zmi.getFather().getSons()) {
             String name = getName(z);
             String zone = fatherName + "/" + name;
@@ -208,9 +215,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 ValueSet contacts = (ValueSet) zmi.getAttributes().getOrNull("contacts");
                 ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
                 List<ValueContact> lvc = new ArrayList<>();
-                if(contacts != null)
-                    for(Value v : contacts)
+                if(contacts != null) {
+                    for (Value v : contacts) {
                         lvc.add((ValueContact) v);
+                    }
+                }
                 res.add(new GossipSiblings.Sibling(new PathName(zone), lvc, timestamp));
             }
         }
@@ -221,16 +230,18 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         int levels = contact.getName().getComponents().size();
         String pathName = contact.getName().toString();
         List<GossipInterFreshness.Node> nodes = new ArrayList<>();
-        for(int l = 1; l <= levels; l++)
+        for(int l = 1; l <= levels; l++) {
             try {
-                for (GossipSiblings.Sibling sib : siblings(l, pathName))
+                for (GossipSiblings.Sibling sib : siblings(l, pathName)) {
                     nodes.add(new GossipInterFreshness.Node(sib.pathName, sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+                }
             } catch (ZoneNotFoundException e) {
-                ZMI zmi = reachZone(pathName, l-1, false);
+                ZMI zmi = reachZone(pathName, l - 1, false);
                 String fatherName = getFullName(zmi);
-                if(fatherName.equals("/"))
+                if (fatherName.equals("/")) {
                     fatherName = "";
-                for(ZMI son : zmi.getSons()) {
+                }
+                for (ZMI son : zmi.getSons()) {
                     String name = getName(son);
                     String zone = fatherName + "/" + name;
                     ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
@@ -238,63 +249,53 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 }
                 break;
             }
+        }
         return nodes;
     }
 
-    public Map<String, List<Attribute>> getQueries() {
-        return queryAttributes;
+    public Map<String, List<String>> getQueries() {
+        Map<String, List<String>> queries = new HashMap<>();
+        for (SignedQueryRequest sqr : installed.keySet()) {
+            queries.put(sqr.queryName, sqr.columns);
+        }
+        return queries;
     }
 
     public void installQueries(SignedQueryRequest sqr) {
-        if (!sqr.isValid(publicKey))
-            throw new IllegalArgumentException("Invalid request signature");
+        logger.log("Got query to install");
 
+        if (!sqr.isValid(publicKey)) {
+            throw new IllegalArgumentException("Invalid install request signature");
+        }
 
+        if (uninstalled.contains(sqr.queryID)) {
+            logger.log("Received query was already uninstalled!");
+        }
 
-//        String input = sqr.select;
-//        String[] lines = input.substring(1).split("&");
-//        for (String line : lines) {
-//            String[] parts = line.split(":");
-//            String attributeName = parts[0];
-//            if (queryAttributes.containsKey(attributeName)) {
-//                throw new AgentDuplicateQuery(attributeName);
-//            } else {
-//                queryAttributes.put(attributeName, new ArrayList<>());
-//                String[] queries = parts[1].split(";");
-//                try {
-//                    for (String query : queries) {
-//                        Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
-//                        try {
-//                            Program program = (new parser(lex)).pProgram();
-//                            installedQueries.put(attributeName, program);
-//                            calculateQueries(root, attributeName);
-//
-//                        } catch (Exception e) {
-//                            throw new AgentParserException(query);
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    queryAttributes.remove(attributeName);
-//                    throw e;
-//                }
-//            }
-//        }
+        try {
+            Yylex lex = new Yylex(new ByteArrayInputStream(sqr.select.getBytes()));
+            Program program = (new parser(lex)).pProgram();
+
+            installed.put(sqr, program);
+
+            logger.log("Successful query installation");
+        } catch (Exception e) {
+            logger.errLog("Exception while trying to install query");
+        }
     }
 
     public void uninstallQuery(SignedQueryRequest sqr) {
-        if (!sqr.isValid(publicKey))
-            throw new IllegalArgumentException("Invalid request signature");
+        logger.log("Got query to uninstall");
 
-        String queryName = sqr.select;
-        if (!installedQueries.containsKey(queryName)) {
-            throw new QueryNotFoundException(queryName);
+        if (!sqr.isValid(publicKey)) {
+            throw new IllegalArgumentException("Invalid uninstall request signature");
         }
-        installedQueries.remove(queryName);
-        List<Attribute> attributes = queryAttributes.get(queryName);
-        for (Attribute attribute : attributes) {
-            removeAttribute(root, attribute);
+
+        if (uninstalled.contains(sqr.queryID)) {
+            logger.log("Received query was already uninstalled!");
         }
-        queryAttributes.remove(queryName);
+
+        uninstalled.add(sqr.queryID);
     }
 
     public void setAttribute(String pathName, String attr, Value val) {
@@ -343,9 +344,5 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     
     private void updateTimestamp(ZMI zmi) {
         zmi.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
-    }
-    public synchronized void safeInstallQuery(String attributeName, Program program) {
-        installedQueries.put(attributeName, program);
-        queryAttributes.put(attributeName, new ArrayList<>());
     }
 }

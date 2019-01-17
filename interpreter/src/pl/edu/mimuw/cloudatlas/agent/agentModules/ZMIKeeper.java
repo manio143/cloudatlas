@@ -7,6 +7,7 @@ import pl.edu.mimuw.cloudatlas.agent.agentExceptions.NotSingletonZoneException;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
 import pl.edu.mimuw.cloudatlas.model.*;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -106,7 +107,7 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_QUERIES:
 
-                            Map<String, List<Attribute>> queries = agent.getQueries();
+                            Map<String, List<String>> queries = agent.getQueries();
 
                             content = new RMIQueries(queries);
                             break;
@@ -177,8 +178,9 @@ public class ZMIKeeper extends Module {
 
                             ZMIKeeperProvideDetails zmiKeeperProvideDetails = (ZMIKeeperProvideDetails) message.content;
                             Map<PathName, AttributesMap> details = new HashMap<>();
-                            for (PathName pn : zmiKeeperProvideDetails.msg.nodes)
+                            for (PathName pn : zmiKeeperProvideDetails.msg.nodes) {
                                 details.put(pn, agent.getAttributes(pn.toString()));
+                            }
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
                                     new GossipProvideDetails(zmiKeeperProvideDetails.msg, details, agent.getInstalledQueries())));
                             continue;
@@ -186,11 +188,11 @@ public class ZMIKeeper extends Module {
                         case ZMI_KEEPER_UPDATE_ZMI:
 
                             ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
-                            for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet())
+                            for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet()) {
                                 try {
                                     AttributesMap map1 = entry.getValue();
                                     ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
-                                    if(timestamp == null)
+                                    if (timestamp == null)
                                         continue;
                                     timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
                                     map1.addOrChange("freshness", timestamp);
@@ -198,9 +200,9 @@ public class ZMIKeeper extends Module {
                                 } catch (NotSingletonZoneException nsze) {
                                     continue;
                                 }
-                            for(Map.Entry<String, Program> entry : zmiKeeperUpdateZMI.installedQueries.entrySet()) {
-                                if(!agent.getInstalledQueries().containsKey(entry.getKey()))
-                                    agent.safeInstallQuery(entry.getKey(),entry.getValue());
+                            }
+                            for (SignedQueryRequest sqr : zmiKeeperUpdateZMI.installedQueries) {
+                                agent.installQueries(sqr);
                             }
                             continue;
 

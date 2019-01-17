@@ -78,7 +78,7 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
         return ((RMIAttributes) content).attributesMap;
     }
 
-    public synchronized Map<String, List<Attribute>> getQueries() {
+    public synchronized Map<String, List<String>> getQueries() {
         ZMIKeeperQueries toKeeper = new ZMIKeeperQueries();
 
         MessageContent content = handleMessages(toKeeper, RMI_QUERIES);
