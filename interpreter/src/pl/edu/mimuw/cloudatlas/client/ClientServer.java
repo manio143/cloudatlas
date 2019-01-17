@@ -23,6 +23,7 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
+import pl.edu.mimuw.cloudatlas.signer.signerExceptions.SignerException;
 
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.DOUBLE;
 import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
@@ -369,10 +370,13 @@ public class ClientServer implements Runnable {
                     String select = parameters.get("query");
                     String queries = "&" + attribute + ": " + select;
                     SignedQueryRequest sqr = signer.installQueries(queries);
+                    System.out.println("Signer accepted the query!");
                     cloudAtlas.installQueries(sqr);
                     response = "Successful install of " + attribute;
                 } catch (AgentException e) {
                     response = "AgentException: " + e.getMessage();
+                } catch (SignerException e) {
+                    response = "SignerException: " + e.getMessage();
                 } catch (Exception e) {
                     e.printStackTrace();
                     response = "Error: " + e.getMessage();

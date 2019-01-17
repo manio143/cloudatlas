@@ -249,34 +249,36 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
-        String input = sqr.select;
-        String[] lines = input.substring(1).split("&");
-        for (String line : lines) {
-            String[] parts = line.split(":");
-            String attributeName = parts[0];
-            if (queryAttributes.containsKey(attributeName)) {
-                throw new AgentDuplicateQuery(attributeName);
-            } else {
-                queryAttributes.put(attributeName, new ArrayList<>());
-                String[] queries = parts[1].split(";");
-                try {
-                    for (String query : queries) {
-                        Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
-                        try {
-                            Program program = (new parser(lex)).pProgram();
-                            installedQueries.put(attributeName, program);
-                            calculateQueries(root, attributeName);
 
-                        } catch (Exception e) {
-                            throw new AgentParserException(query);
-                        }
-                    }
-                } catch (Exception e) {
-                    queryAttributes.remove(attributeName);
-                    throw e;
-                }
-            }
-        }
+
+//        String input = sqr.select;
+//        String[] lines = input.substring(1).split("&");
+//        for (String line : lines) {
+//            String[] parts = line.split(":");
+//            String attributeName = parts[0];
+//            if (queryAttributes.containsKey(attributeName)) {
+//                throw new AgentDuplicateQuery(attributeName);
+//            } else {
+//                queryAttributes.put(attributeName, new ArrayList<>());
+//                String[] queries = parts[1].split(";");
+//                try {
+//                    for (String query : queries) {
+//                        Yylex lex = new Yylex(new ByteArrayInputStream(query.getBytes()));
+//                        try {
+//                            Program program = (new parser(lex)).pProgram();
+//                            installedQueries.put(attributeName, program);
+//                            calculateQueries(root, attributeName);
+//
+//                        } catch (Exception e) {
+//                            throw new AgentParserException(query);
+//                        }
+//                    }
+//                } catch (Exception e) {
+//                    queryAttributes.remove(attributeName);
+//                    throw e;
+//                }
+//            }
+//        }
     }
 
     public void uninstallQuery(SignedQueryRequest sqr) {
