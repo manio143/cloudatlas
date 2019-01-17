@@ -91,7 +91,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public Set<SignedQueryRequest> getInstalledQueries() {
-        return installed.keySet();
+        return new HashSet<>(installed.keySet());
     }
 
     private void removeAttribute(ZMI zmi, String attribute) {

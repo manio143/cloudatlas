@@ -52,6 +52,8 @@ public class Communication extends Module {
 
             InetAddress ip = content.ip;
 
+            logger.log("Sending message " + content.message.content.operation);
+
             if(content.message.content.isTimed()) {
                 logger.log("Recorded timestamp before send");
                 TimedGossipMessage tgm = (TimedGossipMessage) content.message.content;

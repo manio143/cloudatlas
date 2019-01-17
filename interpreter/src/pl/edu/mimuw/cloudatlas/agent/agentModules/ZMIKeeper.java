@@ -203,7 +203,12 @@ public class ZMIKeeper extends Module {
                             continue;
 
                         case ZMI_KEEPER_RECOMPUTE_QUERIES:
-                            agent.recomputeQueries();
+                        try {
+                            resend = false;
+                                agent.recomputeQueries();
+                            } catch (Exception e) {
+                            e.printStackTrace();
+                            }
                             break;
 
                         case TIMER_ADD_EVENT_ACK:
@@ -211,8 +216,8 @@ public class ZMIKeeper extends Module {
                             break;
 
                         case ZMI_KEEPER_CLEANUP:
-                            agent.cleanUp(cleanupFrequency);
                             resend = false;
+                            agent.cleanUp(cleanupFrequency);
                             break;
 
                         default:
