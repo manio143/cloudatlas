@@ -311,7 +311,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         }
         zmi.getAttributes().addOrChange(attrs);
         zmi.printAttributes(System.out);
-        updateTimestamp(zmi);
     }
 
 
