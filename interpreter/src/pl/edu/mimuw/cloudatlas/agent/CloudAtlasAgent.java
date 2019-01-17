@@ -26,6 +26,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     private final List<Program> preinstalled = new LinkedList<>();
     private final Map<SignedQueryRequest, Program> installed = new HashMap<>();
     private final Set<Long> uninstalled = new HashSet<>();
+    private final List<String> restricted = new LinkedList<>();
 
     private final Logger logger = new Logger("AGENT");
     private final PublicKey publicKey;
@@ -36,6 +37,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         publicKey = signerKey;
         startNode(pathName);
         preinstallPrograms();
+        addRestrictedNames();
     }
 
     private void startNode(String pathName) {
@@ -62,6 +64,16 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 logger.errLog("Incorrect query to preinstall: " + select);
             }
         }
+    }
+
+    private void addRestrictedNames() {
+        restricted.add("name");
+        restricted.add("level");
+        restricted.add("freshness");
+        restricted.add("owner");
+        restricted.add("contacts");
+        restricted.add("cardinality");
+        restricted.add("timestamp");
     }
 
     private String getName(ZMI zmi) {
@@ -307,6 +319,10 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     public void setAttribute(String pathName, String attr, Value val) {
+        if (restricted.contains(attr)) {
+            throw new RestrictedAttributeException(attr);
+        }
+
         ZMI zmi = reachZone(pathName, null, false);
         if (!zmi.getSons().isEmpty()) {
             throw new NotSingletonZoneException(pathName);
