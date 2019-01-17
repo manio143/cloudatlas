@@ -71,7 +71,6 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         restricted.add("level");
         restricted.add("freshness");
         restricted.add("owner");
-        restricted.add("contacts");
         restricted.add("cardinality");
         restricted.add("timestamp");
     }

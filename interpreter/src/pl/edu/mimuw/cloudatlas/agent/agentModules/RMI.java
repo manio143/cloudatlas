@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import pl.edu.mimuw.cloudatlas.agent.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.RMIError;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
 import java.rmi.RemoteException;
@@ -12,6 +13,7 @@ import java.util.concurrent.SynchronousQueue;
 
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.ZMI_KEEPER;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.RMI_ERROR;
 
 public class RMI extends Module {
     private SynchronousQueue<MessageContent> rmi = new SynchronousQueue<>();
@@ -35,17 +37,18 @@ public class RMI extends Module {
             while (true) {
                 Message message = messages.take();
 
-                if (message.src == ZMI_KEEPER && controller.waiting) {
+                if (controller.waiting && message.src == ZMI_KEEPER) {
                     rmi.put(message.content);
                 } else if (message.src != ZMI_KEEPER) {
                     logger.errLog("Message not from ZMI Keeper, but from: " + message.src);
                 } else {
-                    logger.errLog("No RMI function invoked!");
+                    logger.errLog("No RMI function invoked, RMI was not awaiting a message!");
                 }
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.errLog("Interrupted exception!");
         } catch (RemoteException e) {
+            logger.errLog("RemoteException exception!");
             e.printStackTrace();
         }
 
