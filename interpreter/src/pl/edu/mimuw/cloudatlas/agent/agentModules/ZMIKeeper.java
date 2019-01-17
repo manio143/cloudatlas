@@ -22,12 +22,14 @@ import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;
     private long computationInterval;
+    private long cleanupFrequency;
 
     public ZMIKeeper(MessageHandler handler, LinkedBlockingQueue<Message> messages,
-                     CloudAtlasAgent agent, long computationInterval) {
+                     CloudAtlasAgent agent, long computationInterval, long cleanupFrequency) {
         super(handler, messages);
         this.agent = agent;
         this.computationInterval = computationInterval;
+        this.cleanupFrequency = cleanupFrequency;
         this.logger = new Logger(ZMI_KEEPER);
     }
 
@@ -48,8 +50,20 @@ public class ZMIKeeper extends Module {
         handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
     }
 
+    private void scheduleCleanup() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long time = timestamp.getTime();
+
+        Cleanup cleanup = new Cleanup(handler, time, cleanupFrequency);
+
+        TimerAddEvent timerAddEvent = new TimerAddEvent(0, cleanupFrequency, time, cleanup);
+
+        handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
+    }
+
     public void run() {
         scheduleQueryUpdates();
+        scheduleCleanup();
 
         try {
             while (true) {
@@ -198,6 +212,11 @@ public class ZMIKeeper extends Module {
                             resend = false;
                             break;
 
+                        case ZMI_KEEPER_CLEANUP:
+                            agent.cleanUp(cleanupFrequency);
+                            resend = false;
+                            break;
+
                         default:
                             logger.errLog("Incorrect message type: " + message.content.operation);
                             resend = false;
@@ -235,6 +254,29 @@ public class ZMIKeeper extends Module {
 
             QueriesUpdate update = new QueriesUpdate(handler, newTimestamp, delay);
             TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, update);
+
+            handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
+        }
+    }
+
+    public static class Cleanup implements Runnable, Serializable {
+        MessageHandler handler;
+        long timestamp;
+        long delay;
+
+        public Cleanup(MessageHandler handler, long timestamp, long delay) {
+            this.handler = handler;
+            this.timestamp = timestamp;
+            this.delay = delay;
+        }
+
+        public void run() {
+            handler.addMessage(new Message(TIMER, ZMI_KEEPER, new ZMIKeeperCleanup()));
+
+            long newTimestamp = timestamp + delay;
+
+            Cleanup cleanup = new Cleanup(handler, newTimestamp, delay);
+            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, cleanup);
 
             handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
         }

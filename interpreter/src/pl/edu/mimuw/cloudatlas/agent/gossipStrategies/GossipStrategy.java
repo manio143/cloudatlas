@@ -28,7 +28,7 @@ public abstract class GossipStrategy {
                 System.out.println("Not a correct strategy name: " + name);
         }
 
-        GossipStrategy defaultStrategy = new RRCFGossipStrategy(levels);
+        GossipStrategy defaultStrategy = new RRCFGossipStrategy(levels); //TODO choose at random
 
         return defaultStrategy;
     }

@@ -313,6 +313,23 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         zmi.printAttributes(System.out);
     }
 
+    public void cleanUp(long diff) {
+        cleanUp(root, Instant.now().toEpochMilli(), diff);
+    }
+
+    private List<ZMI> toRemove = new ArrayList<>();
+    private void cleanUp(ZMI zmi, long now, long diff) {
+        for(ZMI son : zmi.getSons())
+            cleanUp(son, now, diff);
+        for(ZMI r : toRemove)
+            r.getFather().removeSon(r);
+        ValueTime freshness = (ValueTime) zmi.getAttributes().getOrNull("freshness");
+        if(freshness != null && now - freshness.getValue() > diff) {
+            logger.log("Cleanup: Zone "+getFullName(zmi) + " is old");
+            if(zmi.getSons().size() == 0)
+                toRemove.add(zmi);
+        }
+    }
 
     public void setFallbackContacts(ValueSet contacts) {
         this.contacts = contacts;

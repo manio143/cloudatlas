@@ -26,6 +26,7 @@ public class CloudAtlasPool {
 
         long computationInterval = MILISECONDS * Long.parseLong(properties.getProperty("computationInterval"));
         long gossipFrequency = MILISECONDS * Integer.parseInt(properties.getProperty("gossipFrequency"));
+        long cleanupFrequency = MILISECONDS * Integer.parseInt(properties.getProperty("cleanUpFrequency"));
 
         String pathName = properties.getProperty("pathName");
         String strategyName = properties.getProperty("peerSelectionStrategy");
@@ -50,7 +51,7 @@ public class CloudAtlasPool {
         rmi.execute(new RMI(messageHandler, keeper.rmiQueue));
 
         ExecutorService zmiKeeper = Executors.newSingleThreadExecutor();
-        zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent, computationInterval));
+        zmiKeeper.execute(new ZMIKeeper(messageHandler, keeper.zmiKeeperQueue, agent, computationInterval, cleanupFrequency));
 
         ExecutorService gossip = Executors.newSingleThreadExecutor();
         gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine, strategy, gossipFrequency));
