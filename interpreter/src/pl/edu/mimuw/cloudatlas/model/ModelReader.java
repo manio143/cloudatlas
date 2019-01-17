@@ -60,6 +60,7 @@ public class ModelReader {
                     return new ValueContact(new PathName(name), InetAddress.getByName(address));
                 } catch (UnknownHostException e) {
                     System.out.println(e.getMessage());
+                    return ValueNull.getInstance();
                 }
             case "double":
                 if (isNull(valueString)) {
@@ -91,7 +92,9 @@ public class ModelReader {
                 Set<Value> valuesSet = new HashSet<>();
                 if (valueString.length() > 2) {
                     for (String elem : valueString.substring(1,valueString.length() - 1).split(",")) {
-                        valuesSet.add(createValue(types, elem.trim(), which + 1));
+                        Value v = createValue(types, elem.trim(), which + 1);
+                        if(!v.isNull())
+                            valuesSet.add(v);
                     }
                 }
                 return new ValueSet(new HashSet<>(valuesSet), typeFromStrings(types, which + 1));

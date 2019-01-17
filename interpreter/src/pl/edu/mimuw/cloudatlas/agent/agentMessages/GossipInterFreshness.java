@@ -13,8 +13,8 @@ public class GossipInterFreshness extends TimedGossipMessage {
     public final List<Node> nodes;
     public final ValueContact responseContact;
     public final int level;
-    //TODO?GTP timestamps
-    
+    public final int id;
+
     public static class Node implements Serializable {
         public final PathName pathName;
         public final ValueTime freshness;
@@ -24,19 +24,20 @@ public class GossipInterFreshness extends TimedGossipMessage {
         }
     }
 
-    private GossipInterFreshness(List<Node> nodes, ValueContact responseContact, int level, Operation operation) {
+    private GossipInterFreshness(List<Node> nodes, ValueContact responseContact, int level, Operation operation, int id) {
         this.nodes = nodes;
         this.responseContact = responseContact;
         this.level = level;
+        this.id = id;
 
         this.operation = operation;
     }
 
-    public static GossipInterFreshness Start(List<Node> nodes, ValueContact responseContact, int level){
-        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_START);
+    public static GossipInterFreshness Start(List<Node> nodes, ValueContact responseContact, int level, int id){
+        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_START, id);
     }
 
-    public static GossipInterFreshness Response(List<Node> nodes, ValueContact responseContact, int level){
-        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE);
+    public static GossipInterFreshness Response(List<Node> nodes, ValueContact responseContact, int level, int id){
+        return new GossipInterFreshness(nodes, responseContact, level, Operation.GOSSIP_INTER_FRESHNESS_RESPONSE, id);
     }
 }

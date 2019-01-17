@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.*;
 
 import pl.edu.mimuw.cloudatlas.agent.Logger;
@@ -35,14 +36,22 @@ public class Gossip extends Module {
     private final Map<String, List<GossipInterFreshness.Node>> freshness = new HashMap<>();
     private final Map<String, Long> delay = new HashMap<>();
 
+    private final GossipState[] gossips = new GossipState[100];
+    private int gossipId;
+
+    private final long repeatK;
+    private final long repeatInterval;
+
     public Gossip(MessageHandler handler, LinkedBlockingQueue<Message> messages,
-                  ValueContact currentNode, GossipStrategy strategy, long gossipFrequency) {
+                  ValueContact currentNode, GossipStrategy strategy, long gossipFrequency, long repeatK, long repeatInterval) {
         super(handler, messages);
         this.currentNode = currentNode;
         this.nodePath = currentNode.getName().toString();
         this.ip = currentNode.getAddress();
         this.strategy = strategy;
         this.gossipFrequency = gossipFrequency;
+        this.repeatK = repeatK;
+        this.repeatInterval = repeatInterval;
 
         this.logger = new Logger(GOSSIP);
     }
@@ -107,8 +116,11 @@ public class Gossip extends Module {
                     case GOSSIP_FRESHNESS_TO_SEND:
                         GossipFreshnessToSend toSend = (GossipFreshnessToSend) message.content;
                         freshness.put(toSend.contact.getName().toString(), toSend.nodes);
-                        message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, currentOutGossipLevel));
+                        int id = nextGossipId();
+                        message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, currentOutGossipLevel, id));
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(toSend.contact.getAddress(), message)));
+                        handler.addMessage(new Message(GOSSIP, TIMER,
+                                new TimerAddEvent(id, repeatInterval, Instant.now().toEpochMilli(), new Repeat(id, toSend))));
                         break;
 
                     //foreign
@@ -123,7 +135,7 @@ public class Gossip extends Module {
                     //foreign
                     case GOSSIP_SIBLINGS_FRESHNESS:
                         GossipSiblingsFreshness gossipSiblingsFreshness = (GossipSiblingsFreshness) message.content;
-                        GossipInterFreshness response = GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode, gossipSiblingsFreshness.sourceMsg.level);
+                        GossipInterFreshness response = GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode, gossipSiblingsFreshness.sourceMsg.level, gossipSiblingsFreshness.sourceMsg.id);
                         response.addTimestamps(gossipSiblingsFreshness.sourceMsg.timestamps);
                         message = new Message(GOSSIP, GOSSIP, response);
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gossipSiblingsFreshness.sourceMsg.responseContact.getAddress(), message)));
@@ -133,6 +145,7 @@ public class Gossip extends Module {
                     //local
                     case GOSSIP_INTER_FRESHNESS_RESPONSE:
                         GossipInterFreshness gifr = (GossipInterFreshness) message.content;
+                        gossips[gifr.id].set();
                         recordDelay(gifr.responseContact, gifr.timestamps);
                         compareFreshness(freshness.get(gifr.responseContact.getName().toString()), gifr.nodes, gifr.responseContact.getAddress());
                         break;
@@ -191,6 +204,33 @@ public class Gossip extends Module {
         logger.log("Recorded delay "+dT+"ms to node "+contact.getName());
     }
 
+    private int nextGossipId() {
+        int starting = gossipId - 1;
+        while(starting != gossipId) {
+            if(gossips[gossipId] == null || gossips[gossipId].isSet()) {
+                gossips[gossipId] = new GossipState();
+                int id = gossipId;
+                gossipId = (gossipId + 1) % gossips.length;
+                return id;
+            } else {
+                gossipId = (gossipId + 1) % gossips.length;
+            }
+        }
+        throw new RuntimeException("No more space for gossips");
+    }
+
+    private class GossipState {
+        private boolean completed = false;
+        private int tryNum = 0;
+
+        public void set() { completed = true; }
+        public boolean isSet() { return completed; }
+        public boolean tryAgain() {
+            tryNum++;
+            return tryNum < repeatK;
+        }
+    }
+
     private void compareFreshness(List<GossipInterFreshness.Node> local, List<GossipInterFreshness.Node> remote, InetAddress target) {
         logger.log("Comparing freshness of local "+local.size()+" nodes with remote "+remote.size()+" nodes.");
         List<PathName> myUpdates = new ArrayList<>();
@@ -235,6 +275,30 @@ public class Gossip extends Module {
             TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, announcer);
 
             handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+        }
+    }
+
+    public class Repeat implements Runnable, Serializable {
+        private final int id;
+        private final GossipFreshnessToSend toSend;
+
+        public Repeat(int id, GossipFreshnessToSend toSend) {
+            this.id = id;
+            this.toSend = toSend;
+        }
+
+        public void run() {
+            logger.log("Gossip: Checking if gossip with id "+id+" has been completed.");
+            if(!gossips[id].isSet() && gossips[id].tryAgain())
+            {
+                logger.log("Gossip: retrying ("+gossips[id].tryNum+"/"+repeatK+")");
+                Message msg = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, -1, id));
+                handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(toSend.contact.getAddress(), msg)));
+                handler.addMessage(new Message(GOSSIP, TIMER,
+                        new TimerAddEvent(id, repeatInterval, Instant.now().toEpochMilli(), this)));
+            }else {
+                logger.log("Gossip: completed.");
+            }
         }
     }
 }
