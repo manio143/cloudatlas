@@ -38,16 +38,6 @@ public class TestClient {
             cloudAtlas.getQueries();
             cloudAtlas.setAttribute("/uw/violet07", "wan", new ValueInt(3L));
 
-            KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-            keyGenerator.initialize(1024);
-            KeyPair keyPair = keyGenerator.generateKeyPair();
-            PrivateKey privateKey = keyPair.getPrivate();
-
-//            SignedQueryRequest query = SignedQueryRequest.create("", privateKey);
-
-//            cloudAtlas.installQueries(query);
-//            cloudAtlas.uninstallQuery(query);
-
             cloudAtlas.setFallbackContacts(new ValueSet(CONTACT));
 
 

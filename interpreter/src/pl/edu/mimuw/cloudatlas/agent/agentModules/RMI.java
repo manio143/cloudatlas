@@ -38,9 +38,9 @@ public class RMI extends Module {
                 if (message.src == ZMI_KEEPER && controller.waiting) {
                     rmi.put(message.content);
                 } else if (message.src != ZMI_KEEPER) {
-                    logger.log("Message not from ZMI Keeper, but from: " + message.src);
+                    logger.errLog("Message not from ZMI Keeper, but from: " + message.src);
                 } else {
-                    logger.log("No RMI function invoked!");
+                    logger.errLog("No RMI function invoked!");
                 }
             }
         } catch (InterruptedException e) {

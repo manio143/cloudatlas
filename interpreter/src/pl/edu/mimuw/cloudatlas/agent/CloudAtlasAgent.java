@@ -29,6 +29,8 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private PublicKey publicKey;
 
+    private final Logger logger = new Logger("AGENT");
+
     public CloudAtlasAgent(String pathName, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
         root = new ZMI();
@@ -106,6 +108,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                         updateTimestamp(zmi);
                     }
                 } catch (InterpreterException exception) {
+                    logger.errLog(exception.getMessage());
                 }
             }
         }
@@ -165,7 +168,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 }
             }
             if (!found) {
-                if(addNew) {
+                if (addNew) {
                     ZMI z = new ZMI(candidate);
                     candidate.addSon(z);
                     z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
@@ -246,7 +249,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
-        String input = sqr.getQuery();
+        String input = sqr.select;
         String[] lines = input.substring(1).split("&");
         for (String line : lines) {
             String[] parts = line.split(":");
@@ -280,7 +283,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         if (!sqr.isValid(publicKey))
             throw new IllegalArgumentException("Invalid request signature");
 
-        String queryName = sqr.getQuery();
+        String queryName = sqr.select;
         if (!installedQueries.containsKey(queryName)) {
             throw new QueryNotFoundException(queryName);
         }

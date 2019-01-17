@@ -392,7 +392,6 @@ public class ClientServer implements Runnable {
 
             try {
                 Map<String, List<Attribute>> queries = cloudAtlas.getQueries();
-                System.out.println(queries);
 
                 for (Map.Entry<String, List<Attribute>> entry : queries.entrySet()) {
                     response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");

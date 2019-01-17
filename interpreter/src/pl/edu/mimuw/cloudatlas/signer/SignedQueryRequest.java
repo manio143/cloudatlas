@@ -4,27 +4,32 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.LinkedList;
+import java.util.List;
 import javax.crypto.Cipher;
 
 public class SignedQueryRequest implements Serializable {
-    private final String query;
     private final byte[] signature;
+
+    public final long queryID;
+    public final String queryName;
+    public final String select;
+    public final List<String> columns;
 
     private static final long serialVersionUID = 1;
 
-    public SignedQueryRequest(String query, byte[] signature) {
-        this.query = query;
+    public SignedQueryRequest(byte[] signature, long queryID, String queryName, String select, List<String> columns) {
         this.signature = signature;
-    }
-
-    public String getQuery() {
-        return query;
+        this.queryID = queryID;
+        this.queryName = queryName;
+        this.select = select;
+        this.columns = columns;
     }
 
     public boolean isValid(PublicKey pub) {
         try {
             MessageDigest digestGenerator = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = query.getBytes();
+            byte[] bytes = select.getBytes();
             byte[] digest = digestGenerator.digest(bytes);
 
             Cipher verifyCipher = Cipher.getInstance("RSA");
@@ -44,17 +49,21 @@ public class SignedQueryRequest implements Serializable {
         }
     }
 
-    public static SignedQueryRequest create(String query, PrivateKey priv) {
+    public static SignedQueryRequest createNew(PrivateKey priv,
+                                               long queryID,
+                                               String queryName,
+                                               String select,
+                                               List<String> columns) {
         try {
             MessageDigest digestGenerator = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = query.getBytes();
+            byte[] bytes = select.getBytes();
             byte[] digest = digestGenerator.digest(bytes);
 
             Cipher signCipher = Cipher.getInstance("RSA");
             signCipher.init(Cipher.ENCRYPT_MODE, priv);
             byte[] signature = signCipher.doFinal(digest);
 
-            return new SignedQueryRequest(query, signature);
+            return new SignedQueryRequest(signature, queryID, queryName, select, columns);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
