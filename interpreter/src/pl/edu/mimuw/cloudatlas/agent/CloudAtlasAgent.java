@@ -16,6 +16,7 @@ import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.PublicKey;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
@@ -184,6 +185,13 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
                     z.getAttributes().addOrChange("level", new ValueInt((long)which + 1));
                     z.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
+
+                    if (which == comp.size() - 1) {
+                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                        z.getAttributes().addOrChange("timestamp", new ValueTime(timestamp.getTime()));
+                        z.getAttributes().addOrChange("cardinality", new ValueInt(1L));
+                        z.getAttributes().addOrChange("owner", new ValueString(pathName));
+                    }
 
                     candidate = z;
                     which++;
