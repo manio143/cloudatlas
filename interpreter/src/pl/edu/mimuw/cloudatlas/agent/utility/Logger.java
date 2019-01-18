@@ -7,8 +7,8 @@ public class Logger {
     private final int PAD = 50;
     private final String format = "%1$-" + PAD + "s";
 
-    public Logger(Message.Module module) {
-        this.source = module.toString();
+    public Logger(ModuleName moduleName) {
+        this.source = moduleName.toString();
     }
 
     public Logger(String source) {

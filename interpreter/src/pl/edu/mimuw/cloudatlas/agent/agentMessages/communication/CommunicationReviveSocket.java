@@ -2,7 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages.communication;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.COMMUNICATION_REVIVE_SOCKET;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.COMMUNICATION_REVIVE_SOCKET;
 
 public class CommunicationReviveSocket extends MessageContent {
     public boolean listening;

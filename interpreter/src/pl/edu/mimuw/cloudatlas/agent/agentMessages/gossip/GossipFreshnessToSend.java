@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 
 import java.util.List;

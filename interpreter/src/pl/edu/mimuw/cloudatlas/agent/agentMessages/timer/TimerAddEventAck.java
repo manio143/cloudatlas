@@ -2,7 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages.timer;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.TIMER_ADD_EVENT_ACK;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.TIMER_ADD_EVENT_ACK;
 
 public class TimerAddEventAck extends MessageContent {
     public long id;

@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.sleep;
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.COMMUNICATION;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.COMMUNICATION;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();

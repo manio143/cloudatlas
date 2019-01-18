@@ -2,7 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.ZMI_KEEPER_RECOMPUTE_QUERIES;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.ZMI_KEEPER_RECOMPUTE_QUERIES;
 
 public class ZMIKeeperRecomputeQueries extends MessageContent {
     public ZMIKeeperRecomputeQueries () {

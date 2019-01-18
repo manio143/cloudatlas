@@ -3,16 +3,13 @@ package pl.edu.mimuw.cloudatlas.agent.utility;
 import java.io.Serializable;
 
 public class Message implements Serializable {
-    public enum Module {
-        TIMER, COMMUNICATION, RMI, ZMI_KEEPER, TESTER, GOSSIP, GOSSIP_STRATEGY
-    }
 
-    public final Module src;
-    public final Module dest;
+    public final ModuleName src;
+    public final ModuleName dest;
 
     public final MessageContent content;
 
-    public Message(Module src, Module dest, MessageContent content) {
+    public Message(ModuleName src, ModuleName dest, MessageContent content) {
         this.src = src;
         this.dest = dest;
         this.content = content;

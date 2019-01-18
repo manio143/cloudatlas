@@ -5,7 +5,7 @@ import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 import java.util.List;
 import java.util.Map;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.RMI_QUERIES;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.RMI_QUERIES;
 
 public class RMIQueries extends MessageContent {
     public Map<String, List<String>> queries;

@@ -14,8 +14,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.ZMI_KEEPER;
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.ZMI_KEEPER;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.RMI;
 
 public class RMI extends Module {
     private SynchronousQueue<MessageContent> rmi = new SynchronousQueue<>();

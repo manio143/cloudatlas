@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.*;
 
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;

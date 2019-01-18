@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip;
 
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimedGossipMessage;
+import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;

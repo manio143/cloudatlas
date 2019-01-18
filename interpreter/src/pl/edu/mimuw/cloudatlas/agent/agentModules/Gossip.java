@@ -21,7 +21,7 @@ import pl.edu.mimuw.cloudatlas.model.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.*;
 
 public class Gossip extends Module {
     private final String nodePath;

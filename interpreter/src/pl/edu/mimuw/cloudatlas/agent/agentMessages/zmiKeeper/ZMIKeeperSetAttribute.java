@@ -3,7 +3,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper;
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 import pl.edu.mimuw.cloudatlas.model.Value;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.ZMI_KEEPER_SET_ATTRIBUTE;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.ZMI_KEEPER_SET_ATTRIBUTE;
 
 public class ZMIKeeperSetAttribute extends MessageContent {
     public final String pathName;

@@ -2,7 +2,7 @@ package pl.edu.mimuw.cloudatlas.agent.agentMessages.communication;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.COMMUNICATION_FLUSH_OLD;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.COMMUNICATION_FLUSH_OLD;
 
 public class CommunicationFlushOld extends MessageContent {
     public CommunicationFlushOld() {

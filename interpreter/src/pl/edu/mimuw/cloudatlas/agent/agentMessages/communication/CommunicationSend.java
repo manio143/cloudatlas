@@ -5,7 +5,7 @@ import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
 import java.net.InetAddress;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.COMMUNICATION_SEND;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.COMMUNICATION_SEND;
 
 public class CommunicationSend extends MessageContent {
     public InetAddress ip;

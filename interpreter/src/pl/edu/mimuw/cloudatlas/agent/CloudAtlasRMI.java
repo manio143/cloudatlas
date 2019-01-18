@@ -21,10 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.RMI;
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.ZMI_KEEPER;
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation;
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.RMI;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.ZMI_KEEPER;
+
+import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.*;
 
 public class CloudAtlasRMI implements CloudAtlasAPI {
     private SynchronousQueue<MessageContent> rmi;

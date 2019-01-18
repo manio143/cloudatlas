@@ -1,9 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages;
 
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
 
 public class CopyNotImplementedException extends RuntimeException {
-    public CopyNotImplementedException(MessageContent.Operation operation) {
+    public CopyNotImplementedException(Operation operation) {
         super("Copy constructor not implemented for: " + operation);
     }
 }

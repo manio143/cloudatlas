@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 
 public class ZMIKeeperFreshnessForContact extends MessageContent {

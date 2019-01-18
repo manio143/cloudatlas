@@ -1,9 +1,6 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
-import pl.edu.mimuw.cloudatlas.agent.utility.Message;
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.*;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEvent;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEventAck;
@@ -19,7 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.TIMER;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.TIMER;
 
 public class Timer extends Module {
     private final QueueController controller = new QueueController();
@@ -93,12 +90,12 @@ public class Timer extends Module {
     }
 
     private class Event implements Comparable<Event> {
-        private final Message.Module src;
+        private final ModuleName src;
         private final long id;
         private long wakeUp;
         private Runnable toRun;
 
-        private Event (Message.Module src, long id, long wakeUp, Runnable toRun) {
+        private Event (ModuleName src, long id, long wakeUp, Runnable toRun) {
             this.src = src;
             this.id = id;
             this.wakeUp = wakeUp;
@@ -140,7 +137,7 @@ public class Timer extends Module {
         }
 
 
-        private void removeEvent(Message.Module src, long id) {
+        private void removeEvent(ModuleName src, long id) {
             toRemove.add(new PairModuleId(src, id));
         }
 
@@ -167,17 +164,17 @@ public class Timer extends Module {
     }
 
     private class PairModuleId implements Comparable<PairModuleId> {
-        public Message.Module module;
+        public ModuleName moduleName;
         public long id;
 
-        private PairModuleId(Message.Module module, long id) {
-            this.module = module;
+        private PairModuleId(ModuleName moduleName, long id) {
+            this.moduleName = moduleName;
             this.id = id;
         }
 
         @Override
         public int compareTo(PairModuleId other) {
-            int moduleCompare = module.toString().compareTo(other.module.toString());
+            int moduleCompare = moduleName.toString().compareTo(other.moduleName.toString());
             if (moduleCompare != 0) {
                 return moduleCompare;
             }
@@ -222,23 +219,23 @@ public class Timer extends Module {
 
         TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, time, announcer);
 
-        info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
+        info.handler.addMessage(new Message(info.moduleName, TIMER, timerAddEvent));
     }
 
     public static class NotificationInfo {
         private final MessageHandler handler;
         private final Logger logger;
         private final MessageContent content;
-        private final Message.Module module;
+        private final ModuleName moduleName;
         private final long id;
         private final long delay;
 
         public NotificationInfo(MessageHandler handler, Logger logger, MessageContent content,
-                                Message.Module module, long id, long delay) {
+                                ModuleName moduleName, long id, long delay) {
             this.handler = handler;
             this.logger = logger;
             this.content = content;
-            this.module = module;
+            this.moduleName = moduleName;
             this.id = id;
             this.delay = delay;
         }
@@ -257,7 +254,7 @@ public class Timer extends Module {
             try {
                 MessageContent contentCopy = info.content.copy();
 
-                info.handler.addMessage(new Message(TIMER, info.module, contentCopy));
+                info.handler.addMessage(new Message(TIMER, info.moduleName, contentCopy));
 
                 long newTimestamp = timestamp + info.delay;
 
@@ -265,7 +262,7 @@ public class Timer extends Module {
 
                 TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, newTimestamp, announcer);
 
-                info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
+                info.handler.addMessage(new Message(info.moduleName, TIMER, timerAddEvent));
             } catch (CopyNotImplementedException e) {
                 info.logger.errLog(e.toString());
             }

@@ -15,7 +15,7 @@ import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.ModuleName.*;
 
 public class Tester extends Module {
     public Tester(MessageHandler handler, LinkedBlockingQueue<Message> messages) {

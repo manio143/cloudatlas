@@ -4,7 +4,7 @@ import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
 
 import java.util.List;
 
-import static pl.edu.mimuw.cloudatlas.agent.utility.MessageContent.Operation.RMI_ZONES;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Operation.RMI_ZONES;
 
 public class RMIZones extends MessageContent {
     public List<String> zones;
