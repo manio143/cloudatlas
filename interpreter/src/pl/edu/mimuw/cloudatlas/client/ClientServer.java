@@ -18,10 +18,11 @@ public class ClientServer {
             prop.load(new FileInputStream(args[0]));
             Long interval = Long.parseLong(prop.getProperty("collectionInterval"));
             String host = prop.getProperty("host");
+            String signerHost = prop.getProperty("signerHost");
             Integer port = Integer.parseInt(prop.getProperty("port"));
             Integer maxResultsSize = Integer.parseInt(prop.getProperty("maxResultsSize"));
 
-            Client client = new Client(host, port, interval, maxResultsSize);
+            Client client = new Client(host, signerHost, port, interval, maxResultsSize);
             if (client.isSet()) {
                 ScheduledExecutorService scheduler =
                         Executors.newSingleThreadScheduledExecutor();

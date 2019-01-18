@@ -108,7 +108,7 @@ public class Client implements Runnable {
 
     public static void rebindSigner(ClientStructures structures) {
         try {
-            Registry registry = LocateRegistry.getRegistry(structures.getHost());
+            Registry registry = LocateRegistry.getRegistry(structures.getSignerHost());
             bindSigner(registry, structures);
             System.out.println("Signer rebound");
         } catch (RemoteException re) {
@@ -116,17 +116,19 @@ public class Client implements Runnable {
         }
     }
 
-    public Client(String host, int port, long interval, int maxResultsSize) throws IOException {
+    public Client(String host, String signerHost, int port, long interval, int maxResultsSize) throws IOException {
         this.port = port;
         this.interval = interval;
         this.maxResultsSize = maxResultsSize;
 
         this.structures.setHost(host);
+        this.structures.setSignerHost(signerHost);
 
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             bindCloudAtlas(registry, structures);
-            bindSigner(registry, structures);
+            Registry signerRegistry = LocateRegistry.getRegistry(signerHost);
+            bindSigner(signerRegistry, structures);
 
         } catch (RemoteException e) {
             System.out.print("Remote exception while locating registry!");
