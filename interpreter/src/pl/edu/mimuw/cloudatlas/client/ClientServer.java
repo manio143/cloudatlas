@@ -2,10 +2,7 @@ package pl.edu.mimuw.cloudatlas.client;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -14,50 +11,45 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
-import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ZoneNotFoundException;
+import pl.edu.mimuw.cloudatlas.client.handlers.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
-import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
-import pl.edu.mimuw.cloudatlas.signer.signerExceptions.SignerException;
 
-import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.DOUBLE;
-import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 
 public class ClientServer implements Runnable {
-    private CloudAtlasAPI cloudAtlas;
-    private SignerAPI signer;
-
     private final int MAX_SIZE = 100;
-    private TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
 
-    public ClientServer(String host, Integer port, Long interval) {
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new SecurityManager());
-        }
+    private String host;
+    private Integer port;
+    private Long interval;
+
+    private boolean set = false;
+    private final ClientStructures structures = new ClientStructures();
+
+    private boolean isSet() {
+        return set;
+    }
+
+    private void createServer() throws IOException {
         try {
-            Registry registry = LocateRegistry.getRegistry(host);
-            cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-            signer = (SignerAPI) registry.lookup("SignerAPI");
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/queries", new FileHandler("www/queries.html"));
             server.createContext("/set", new FileHandler("www/setAttribute.html"));
             server.createContext("/contacts", new FileHandler("www/fallback.html"));
-            server.createContext("/rmi/all", new AllZonesHandler());
-            server.createContext("/rmi/overtime", new OvertimeHandler());
-            server.createContext("/rmi/zones", new ZonesHandler());
-            server.createContext("/rmi/contacts", new ContactsHandler());
-            server.createContext("/rmi/set", new SetAttributeHandler());
-            server.createContext("/rmi/attributes", new AttributesHandler());
-            server.createContext("/rmi/install", new InstallHandler());
-            server.createContext("/rmi/uninstall", new UninstallHandler());
+            server.createContext("/rmi/all", new AllZonesHandler(structures));
+            server.createContext("/rmi/overtime", new OvertimeHandler(structures));
+            server.createContext("/rmi/zones", new ZonesHandler(structures));
+            server.createContext("/rmi/contacts", new ContactsHandler(structures));
+            server.createContext("/rmi/set", new SetAttributeHandler(structures));
+            server.createContext("/rmi/attributes", new AttributesHandler(structures));
+            server.createContext("/rmi/install", new InstallHandler(structures));
+            server.createContext("/rmi/uninstall", new UninstallHandler(structures));
+            server.createContext("/rmi/queries", new QueriesHandler(structures));
             server.createContext("/rmi/interval", new IntervalHandler(interval));
-            server.createContext("/rmi/queries", new QueriesHandler());
             server.createContext("/graph.js", new FileHandler("www/graph.js"));
             server.createContext("/bootstrap.min.js", new FileHandler("www/bootstrap.min.js"));
             server.createContext("/bootstrap.min.css", new FileHandler("www/bootstrap.min.css"));
@@ -71,397 +63,78 @@ public class ClientServer implements Runnable {
                     new FileHandler("www/jquery.treetable.theme.default.css"));
             server.setExecutor(null);
             server.start();
+            set = true;
 
-        } catch (Exception e) {
-            System.err.println("Client server exception:");
-            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("Failed to create client server!");
+            throw e;
         }
+    }
+
+    public ClientServer(String host, Integer port, Long interval) throws IOException {
+        this.host = host;
+        this.port = port;
+        this.interval = interval;
+
+        try {
+            Registry registry = LocateRegistry.getRegistry(host);
+
+            structures.cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
+            System.out.println("CloudAtlas bound");
+
+            structures.signer = (SignerAPI) registry.lookup("SignerAPI");
+            System.out.println("Signer bound");
+
+        } catch (RemoteException e) {
+            System.out.print("Remote exception while locating registry!");
+            e.printStackTrace();
+
+        } catch (NotBoundException e) {
+            System.out.print("Exception during CloudAtlas and Signer binding!");
+        }
+
+        createServer();
     }
 
     public static void main(String[] args) {
         try {
+            if (System.getSecurityManager() == null) {
+                System.setSecurityManager(new SecurityManager());
+            }
+
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[0]));
             Long interval = Long.parseLong(prop.getProperty("collectionInterval"));
             String host = prop.getProperty("host");
             Integer port = Integer.parseInt(prop.getProperty("port"));
             ClientServer server = new ClientServer(host, port, interval);
-            ScheduledExecutorService scheduler =
-                    Executors.newScheduledThreadPool(1);
-            scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);
+            if (server.isSet()) {
+                ScheduledExecutorService scheduler =
+                        Executors.newSingleThreadScheduledExecutor();
+                scheduler.scheduleAtFixedRate(server, 0L, interval, TimeUnit.SECONDS);
+            }
         } catch(Exception e) {
-                System.out.println(e);
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void run() {
         try {
-            if (results.size() > MAX_SIZE) {
-                results.remove(results.firstKey());
+            if (structures.results.size() > MAX_SIZE) {
+                structures.results.remove(structures.results.firstKey());
             }
-            List<String> zones = cloudAtlas.getZones();
+            List<String> zones = structures.cloudAtlas.getZones();
             Map<String, AttributesMap> res = new HashMap<>();
             for (String zone : zones) {
-                res.put(zone, cloudAtlas.getAttributes(zone));
+                res.put(zone, structures.cloudAtlas.getAttributes(zone));
             }
-            results.put(System.currentTimeMillis(), res);
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
+            structures.results.put(System.currentTimeMillis(), res);
 
-    private String valueJSON(Value val) {
-        if (val.isNull()) {
-            return "null";
-        } else if (val.getType().getPrimaryType() == INT || val.getType().getPrimaryType() == DOUBLE) {
-            return val.toString();
-        } else {
-            return "\"" + val.toString() + "\"";
-        }
-    }
+        } catch (AgentException e) {
+            System.out.println(e.getMessage());
 
-    @SuppressWarnings("unchecked")
-    private static void parseQuery(String query, Map<String, String> parameters) throws UnsupportedEncodingException {
-
-        if (query != null) {
-            String pairs[] = query.split("[&]");
-            for (String pair : pairs) {
-                String param[] = pair.split("[=]");
-                String key = null;
-                String value = null;
-
-                if (param.length > 1) {
-                    key = URLDecoder.decode(param[0],
-                            System.getProperty("file.encoding"));
-
-                    value = URLDecoder.decode(pair.substring(param[0].length() + 1, pair.length()),
-                            System.getProperty("file.encoding"));
-
-                    parameters.put(key, value);
-                }
-            }
-        }
-    }
-
-    private abstract class RMIHandler implements HttpHandler {
-        public abstract String prepareResponse(Map<String, String> parameters) throws RemoteException;
-
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-            Map<String, String> parameters = new HashMap<>();
-            URI requestedUri = t.getRequestURI();
-            String query = requestedUri.getRawQuery();
-
-            parseQuery(query, parameters);
-
-            String response = prepareResponse(parameters);
-
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        }
-    }
-
-    private class AllZonesHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            StringBuilder response = new StringBuilder();
-            response.append("{\n");
-            Integer which = 0;
-            for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
-                response.append("\t\"Fetch_" + which + "\": {\n");
-                which++;
-                response.append("\t\t\"Timestamp\" : " + entry.getKey() + ",\n");
-                response.append("\t\t\"Map\" : {\n");
-
-                for (Map.Entry<String, AttributesMap> zone : entry.getValue().entrySet()) {
-                    response.append("\t\t\t\"" + zone.getKey() + "\" : {\n");
-                    for (Map.Entry<Attribute, Value> attribute : zone.getValue()) {
-                        Value val = attribute.getValue();
-                        response.append("\t\t\t\t\"" + attribute.getKey() + "\" : " + valueJSON(val) + ",\n");
-                    }
-                    if (response.charAt(response.length() - 2) == ',') {
-                        response.replace(response.length() - 2, response.length() - 1, "");
-                    }
-                    response.append("\t\t\t},\n");
-                }
-                if (response.charAt(response.length() - 2) == ',') {
-                    response.replace(response.length() - 2, response.length() - 1, "");
-                }
-                response.append("\t\t}\n");
-                response.append("\t},\n");
-            }
-            if (response.charAt(response.length() - 2) == ',') {
-                response.replace(response.length() - 2, response.length() - 1, "");
-            }
-            response.append("}");
-            return response.toString();
-        }
-    }
-
-    class OvertimeHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            StringBuilder response = new StringBuilder();
-            response.append("{\n");
-
-            if (!parameters.containsKey("path")) {
-                return "Error: path not specified!";
-            } else if (!parameters.containsKey("attribute")) {
-                return "Error: attribute not specified!";
-            } else {
-                String path = parameters.get("path");
-                String attribute = parameters.get("attribute");
-                response.append("\t\"Values\" : [");
-                for (Map.Entry<Long, Map<String, AttributesMap>> entry : results.entrySet()) {
-                    if (entry.getValue().containsKey(path)) {
-                        AttributesMap map = entry.getValue().get(path);
-                        Value val = map.getOrNull(attribute);
-                        if (val != null) {
-                            response.append("\n\t\t{\"timestamp\" : " + entry.getKey() + ", ");
-                            response.append("\"value\" : " + val + "},");
-                        }
-                    }
-                }
-                if (response.charAt(response.length() - 1) == ',') {
-                    response.replace(response.length() - 1, response.length(), "");
-                }
-                response.append("\n\t]");
-            }
-
-            response.append("\n}");
-            return response.toString();
-        }
-    }
-
-    class ZonesHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
-            String response = "{\n" +
-                    "\t\"Zones\": [";
-
-            List<String> zones = cloudAtlas.getZones();
-
-            for (int i = 0; i < zones.size(); i++) {
-                if (i != 0) {
-                    response += ", ";
-                }
-                response += "\"" + zones.get(i) + "\"";
-            }
-
-            response += "]\n}";
-            return response;
-        }
-    }
-
-    class ContactsHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
-            String response = "";
-            if (!parameters.containsKey("set")) {
-                response = "Error: contacts not specified!";
-            } else {
-                try {
-                    ValueSet contacts =
-                            (ValueSet)ModelReader
-                                    .formValue("set contact", "{" + parameters.get("set") + "}");
-                    cloudAtlas.setFallbackContacts(contacts);
-                    response = "Successfully set fallback contacts";
-                } catch (Exception e) {
-                    response = "Error: " + e.getMessage();
-                }
-            }
-
-            return response;
-        }
-    }
-
-    class AttributesHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            String response = "{\n";
-            if (!parameters.containsKey("path")) {
-                response = "Error: path not specified!";
-            } else {
-                try {
-                    AttributesMap attributes = cloudAtlas.getAttributes(parameters.get("path"));
-                    for (Map.Entry<Attribute, Value> entry : attributes) {
-                        Attribute attr = entry.getKey();
-                        Value val = entry.getValue();
-                        response += "\t\"" + attr + "\": " + valueJSON(val) + ",\n";
-                    }
-                    response = response.substring(0, response.length() - 2);
-                    response += "\n}";
-                } catch (ZoneNotFoundException e) {
-                    response = "Error: no node under that path";
-                } catch (Exception e) {
-                    response = e.getMessage();
-                }
-            }
-            return response;
-        }
-    }
-
-    class SetAttributeHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) throws RemoteException {
-            String response = "";
-            if (!parameters.containsKey("path")) {
-                response = "Error: node path not specified!";
-            } else if (!parameters.containsKey("name")) {
-                response = "Error: attribute name not specified!";
-            } else if (!parameters.containsKey("type")) {
-                response = "Error: type not specified!";
-            } else if (!parameters.containsKey("value")) {
-                response = "Error: value not specified!";
-            } else {
-                try {
-                    String valueString =
-                            parameters.get("value")
-                                    .replace("<", "{")
-                                    .replace(">", "}");
-                    Value val = ModelReader.formValue(parameters.get("type"), valueString);
-                    cloudAtlas.setAttribute(parameters.get("path"), parameters.get("name"), val);
-                    response = "Attribute changed!";
-                } catch(AgentException e) {
-                    response = e.getMessage();
-                }
-            }
-
-            return response;
-        }
-    }
-
-    class UninstallHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            String response = "";
-
-            if (!parameters.containsKey("attribute")) {
-                response = "Error: attribute not specified!";
-            } else {
-                try {
-                    SignedQueryRequest sqr = signer.uninstallQueries(parameters.get("attribute"));
-                    cloudAtlas.uninstallQuery(sqr);
-                    response = "Successful uninstall of " + parameters.get("attribute");
-                } catch (AgentException e) {
-                    response = "AgentException: " + e.getMessage();
-                } catch (Exception e) {
-                    response = e.getMessage();
-                }
-            }
-
-            return response;
-        }
-    }
-
-    class InstallHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            String response = "";
-
-            if (!parameters.containsKey("attribute")) {
-                response = "Error: attribute not specified!";
-            } else if (!parameters.containsKey("query")) {
-                response = "Error: query not specified!";
-            } else {
-                try {
-                    String attribute = parameters.get("attribute");
-                    String select = parameters.get("query");
-                    String queries = "&" + attribute + ": " + select;
-                    SignedQueryRequest sqr = signer.installQueries(queries);
-                    System.out.println("Signer accepted the query!");
-                    cloudAtlas.installQueries(sqr);
-                    response = "Successful install of " + attribute;
-                } catch (AgentException e) {
-                    response = "AgentException: " + e.getMessage();
-                } catch (SignerException e) {
-                    response = "SignerException: " + e.getMessage();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    response = "Error: " + e.getMessage();
-                }
-            }
-            return response;
-        }
-    }
-
-
-    class QueriesHandler extends RMIHandler {
-        @Override
-        public String prepareResponse(Map<String, String> parameters) {
-            StringBuilder response = new StringBuilder();
-            response.append("{\n");
-            response.append("\t\"Queries\" : [");
-
-            try {
-                Map<String, List<String>> queries = cloudAtlas.getQueries();
-
-                for (Map.Entry<String, List<String>> entry : queries.entrySet()) {
-                    response.append("\n\t\t{\"name\" : \"" + entry.getKey() + "\", ");
-                    response.append("\"columns\" : [");
-                    for (String attr : entry.getValue()) {
-                        response.append("\"" + attr + "\", ");
-                    }
-                    if (response.charAt(response.length() - 2) == ',') {
-                        response.replace(response.length() - 2, response.length(), "");
-                    }
-                    response.append("]},");
-                }
-                if (response.charAt(response.length() - 1) == ',') {
-                    response.replace(response.length() - 1, response.length(), "");
-                }
-
-            } catch (AgentException e) {
-                return "AgentException: " + e.getMessage();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return "Error: " + e.getMessage();
-            }
-
-            response.append("\n\t]");
-            response.append("\n}");
-            return response.toString();
-        }
-    }
-
-
-    class IntervalHandler implements HttpHandler {
-        Long interval;
-
-        public IntervalHandler(Long interval) {
-            this.interval = interval;
-        }
-
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-            String response = interval.toString();
-
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        }
-    }
-
-
-    class FileHandler implements HttpHandler {
-        String path;
-
-        public FileHandler(String path) {
-            this.path = path;
-        }
-
-        @Override
-        public void handle(HttpExchange t) throws IOException {
-            byte[] response = Files.readAllBytes(Paths.get(path));
-
-            t.sendResponseHeaders(200, response.length);
-            OutputStream os = t.getResponseBody();
-            os.write(response);
-            os.close();
+        } catch (RemoteException e) {
         }
     }
 }
