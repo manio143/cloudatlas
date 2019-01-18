@@ -26,7 +26,7 @@ public class Logger {
     public void log(String toLog, boolean verbose) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         
-        if (verbose) {
+        if (!verbose) {
             System.out.println(String.format(format, "LOG " + source + " " + timestamp + " : ") + toLog);
         }
     }

@@ -294,6 +294,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     public void installQueries(SignedQueryRequest sqr) {
         logger.log("Got query to install");
 
+        for (SignedQueryRequest i : installed.keySet())
+            if (i.queryID == sqr.queryID) {
+                logger.log("Query already installed.");
+                return;
+            }
+
         if (!sqr.isValid(publicKey)) {
             throw new IllegalArgumentException("Invalid install request signature");
         }
