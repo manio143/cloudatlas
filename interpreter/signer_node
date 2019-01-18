@@ -3,4 +3,4 @@
 cd bin
 rmiregistry &
 cd ..
-./signer
+./signer $(hostname)
