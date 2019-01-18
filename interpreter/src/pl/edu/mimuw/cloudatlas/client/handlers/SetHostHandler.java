@@ -20,10 +20,12 @@ public class SetHostHandler extends RMIHandler {
         } else {
             String newHost = parameters.get("host");
             try {
+                System.out.println("Trying to connect to host: " + newHost);
                 InetAddress ia = InetAddress.getByName(newHost);
                 structures.setHost(newHost);
                 Client.rebindCloudAtlas(structures);
                 response = "Host set to " + newHost;
+                System.out.println(response);
             } catch (UnknownHostException e) {
                 response = "Error: host unreachable!";
             }

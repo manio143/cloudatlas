@@ -15,9 +15,11 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 
 public class Client implements Runnable {
     private int port;
@@ -37,8 +39,9 @@ public class Client implements Runnable {
             server.createContext("/", new FileHandler("www/table.html"));
             server.createContext("/queries", new FileHandler("www/queries.html"));
             server.createContext("/set", new FileHandler("www/setAttribute.html"));
-            server.createContext("/setHost", new SetHostHandler(structures));
             server.createContext("/contacts", new FileHandler("www/fallback.html"));
+            server.createContext("/host", new FileHandler("www/host.html"));
+            server.createContext("/setHost", new SetHostHandler(structures));
             server.createContext("/rmi/all", new AllZonesHandler(structures));
             server.createContext("/rmi/overtime", new OvertimeHandler(structures));
             server.createContext("/rmi/zones", new ZonesHandler(structures));
@@ -152,7 +155,8 @@ public class Client implements Runnable {
             }
             structures.results.put(System.currentTimeMillis(), res);
 
-            System.out.println("Results updated");
+            Timestamp time = new Timestamp(System.currentTimeMillis());
+            System.out.println(time + " : Results updated");
 
         } catch (AgentException e) {
             System.out.println("Agent exception during results update!");

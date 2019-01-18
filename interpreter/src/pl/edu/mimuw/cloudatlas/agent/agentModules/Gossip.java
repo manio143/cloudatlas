@@ -82,8 +82,9 @@ public class Gossip extends Module {
                         GossipSiblings gossipSiblings = (GossipSiblings) message.content;
                         List<List<ValueContact>> nonEmptyContacts = new ArrayList<>();
                         for (GossipSiblings.Sibling sibling : gossipSiblings.siblings) {
-                            if (sibling.contacts.size() > 0)
+                            if (sibling.contacts.size() > 0) {
                                 nonEmptyContacts.add(sibling.contacts);
+                            }
                         }
                         if (nonEmptyContacts.size() > 0) {
                             int idx = rand.nextInt(nonEmptyContacts.size());
@@ -122,8 +123,9 @@ public class Gossip extends Module {
                     case GOSSIP_INTER_FRESHNESS_START:
                         GossipInterFreshness gifs = (GossipInterFreshness) message.content;
                         logger.log("Received gossip request from "+gifs.responseContact);
-                        if(gifs.responseContact.getName().equals(currentNode.getName()))
+                        if(gifs.responseContact.getName().equals(currentNode.getName())) {
                             break; // do not exchange contacts with yourself
+                        }
                         handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperSiblingsForGossip(gifs)));
                         break;
 

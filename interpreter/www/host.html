@@ -19,12 +19,8 @@
     <script src="jquery.treetable.js"></script>
     <script src="bootstrap.min.js"></script>
     <script>
-        function setNodeAttribute() {
-            var path = $("#path").val();
-            var name = $("#attribute").val();
-            var type = $("#type").val();
-            var value = $("#value").val();
-            var url = "/rmi/set?path=" + path + "&name=" + name + "&type=" + type + "&value=" + value;
+        function setAgentHost() {
+            var url = "/setHost?host=" + $("#host").val();
             $.ajax({
                 url: url ,
             }).done(function (dataS) {
@@ -65,24 +61,11 @@
 
 <div class="container">
     <div class="row">
-        <h4>Set attribute</h4>
+        <h4>Connect to the agent on host</h4>
         <div class="form-group">
-            <label for="path">Node path:</label>
-            <input type="text" class="form-control" id="path">
+            <input type="text" class="form-control" id="host">
         </div>
-        <div class="form-group">
-            <label for="attribute">Attribute:</label>
-            <input type="text" class="form-control" id="attribute">
-        </div>
-        <div class="form-group">
-            <label for="type">Type:</label>
-            <input type="text" class="form-control" id="type">
-        </div>
-        <div class="form-group">
-            <label for="value">Value:</label>
-            <input type="text" class="form-control" id="value">
-        </div>
-        <button type="button" class="btn" onclick="setNodeAttribute()">Set</button>
+        <button type="button" class="btn" onclick="setAgentHost()">Connect</button>
     </div>
 </div>
 
