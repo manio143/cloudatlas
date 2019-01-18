@@ -18,6 +18,7 @@ import static java.lang.Thread.sleep;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.COMMUNICATION_FLUSH_OLD;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
@@ -37,8 +38,8 @@ public class Communication extends Module {
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
 
     private static final long MILISECONDS = 1000;
-    private static final long TIMEOUT = 10 * MILISECONDS;
-    private static final long REVIVE_DELAY = 3 * MILISECONDS;
+    private static final long MESSAGE_TIMEOUT = 10 * MILISECONDS;
+    private static final long SOCKET_REVIVE_DELAY = 3 * MILISECONDS;
 
     public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
@@ -144,17 +145,6 @@ public class Communication extends Module {
         return fragments;
     }
 
-    private void scheduleFlushing() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long time = timestamp.getTime();
-
-        FlushAnnouncer announcer = new FlushAnnouncer(handler, time, TIMEOUT);
-
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, TIMEOUT, time, announcer);
-
-        handler.addMessage(new Message(COMMUNICATION, TIMER, timerAddEvent));
-    }
-
     private void flushOld() {
         logger.log("Flushing old messages");
 
@@ -164,7 +154,7 @@ public class Communication extends Module {
 
         for (Map.Entry<Key, MapValue> entry : received.entrySet()) {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            if (timestamp.getTime() - entry.getValue().timestamp > TIMEOUT) {
+            if (timestamp.getTime() - entry.getValue().timestamp > MESSAGE_TIMEOUT) {
                 toFlush.add(entry.getKey());
             }
         }
@@ -186,7 +176,7 @@ public class Communication extends Module {
                 logger.errLog("Sending socket not opened!");
                 e.printStackTrace();
                 try {
-                    sleep(REVIVE_DELAY);
+                    sleep(SOCKET_REVIVE_DELAY);
                     logger.log("Woke up to open the sending socket");
                 }  catch (InterruptedException ie) {
 
@@ -199,7 +189,10 @@ public class Communication extends Module {
     public void run() {
         startSendingSocket();
 
-        scheduleFlushing();
+        Timer.NotificationInfo info =
+                new Timer.NotificationInfo(handler, logger, new CommunicationFlushOld(), COMMUNICATION, 0, MESSAGE_TIMEOUT);
+
+        Timer.scheduleNotification(info);
 
         listener.execute(new Listener(handler, controller));
 
@@ -245,7 +238,7 @@ public class Communication extends Module {
                     logger.errLog("Listening socket not opened!");
                     e.printStackTrace();
                     try {
-                        sleep(REVIVE_DELAY);
+                        sleep(SOCKET_REVIVE_DELAY);
                         logger.log("Woke up to open the listening socket");
                     }  catch (InterruptedException ie) {
 
@@ -431,29 +424,6 @@ public class Communication extends Module {
         public synchronized void release() {
             taken = false;
             notify();
-        }
-    }
-
-    public static class FlushAnnouncer implements Runnable, Serializable {
-        MessageHandler handler;
-        long timestamp;
-        long delay;
-
-        public FlushAnnouncer(MessageHandler handler, long timestamp, long delay) {
-            this.handler = handler;
-            this.timestamp = timestamp;
-            this.delay = delay;
-        }
-
-        public void run() {
-            handler.addMessage(new Message(TIMER, COMMUNICATION, new CommunicationFlushOld()));
-
-            long newTimestamp = timestamp + delay;
-
-            FlushAnnouncer announcer = new FlushAnnouncer(handler, newTimestamp, delay);
-            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, announcer);
-
-            handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
         }
     }
 }

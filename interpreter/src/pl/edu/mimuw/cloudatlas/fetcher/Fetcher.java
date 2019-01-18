@@ -16,7 +16,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Fetcher implements Runnable {
-    boolean set = false;
+    private boolean set = false;
 
     private final String metricsFile;
     private final String nodePath;

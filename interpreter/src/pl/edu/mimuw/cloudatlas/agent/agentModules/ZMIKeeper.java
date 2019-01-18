@@ -41,25 +41,19 @@ public class ZMIKeeper extends Module {
     }
 
     private void scheduleQueryUpdates() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long time = timestamp.getTime();
+        Timer.NotificationInfo info =
+                new Timer.NotificationInfo(handler, logger,
+                        new ZMIKeeperRecomputeQueries(), ZMI_KEEPER, 0, computationInterval);
 
-        QueriesUpdate updater = new QueriesUpdate(handler, time, computationInterval);
-
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, computationInterval, time, updater);
-
-        handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
+        Timer.scheduleNotification(info);
     }
 
     private void scheduleCleanup() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long time = timestamp.getTime();
+        Timer.NotificationInfo info =
+                new Timer.NotificationInfo(handler, logger,
+                        new ZMIKeeperCleanup(), ZMI_KEEPER, 0, cleanupFrequency);
 
-        Cleanup cleanup = new Cleanup(handler, time, cleanupFrequency);
-
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, cleanupFrequency, time, cleanup);
-
-        handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
+        Timer.scheduleNotification(info);
     }
 
     public void run() {
@@ -218,13 +212,13 @@ public class ZMIKeeper extends Module {
                             }
                             break;
 
+                        case ZMI_KEEPER_CLEANUP:
+                        resend = false;
+                        agent.cleanUp(cleanupFrequency);
+                        break;
+
                         case TIMER_ADD_EVENT_ACK:
                             resend = false;
-                            break;
-
-                        case ZMI_KEEPER_CLEANUP:
-                            resend = false;
-                            agent.cleanUp(cleanupFrequency);
                             break;
 
                         default:
@@ -243,52 +237,6 @@ public class ZMIKeeper extends Module {
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static class QueriesUpdate implements Runnable, Serializable {
-        MessageHandler handler;
-        long timestamp;
-        long delay;
-
-        public QueriesUpdate(MessageHandler handler, long timestamp, long delay) {
-            this.handler = handler;
-            this.timestamp = timestamp;
-            this.delay = delay;
-        }
-
-        public void run() {
-            handler.addMessage(new Message(TIMER, ZMI_KEEPER, new ZMIKeeperRecomputeQueries()));
-
-            long newTimestamp = timestamp + delay;
-
-            QueriesUpdate update = new QueriesUpdate(handler, newTimestamp, delay);
-            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, update);
-
-            handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
-        }
-    }
-
-    public static class Cleanup implements Runnable, Serializable {
-        MessageHandler handler;
-        long timestamp;
-        long delay;
-
-        public Cleanup(MessageHandler handler, long timestamp, long delay) {
-            this.handler = handler;
-            this.timestamp = timestamp;
-            this.delay = delay;
-        }
-
-        public void run() {
-            handler.addMessage(new Message(TIMER, ZMI_KEEPER, new ZMIKeeperCleanup()));
-
-            long newTimestamp = timestamp + delay;
-
-            Cleanup cleanup = new Cleanup(handler, newTimestamp, delay);
-            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, cleanup);
-
-            handler.addMessage(new Message(ZMI_KEEPER, TIMER, timerAddEvent));
         }
     }
 }

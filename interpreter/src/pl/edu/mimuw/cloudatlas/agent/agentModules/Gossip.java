@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.GOSSIP_NEXT;
 
 public class Gossip extends Module {
     private final String nodePath;
@@ -58,14 +59,10 @@ public class Gossip extends Module {
 
     public void run() {
 
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long time = timestamp.getTime();
+        Timer.NotificationInfo info =
+                new Timer.NotificationInfo(handler, logger, new GossipNext(), GOSSIP, 0, gossipFrequency);
 
-        Announcer announcer = new Announcer(handler, time, gossipFrequency);
-
-        TimerAddEvent timerAddEvent = new TimerAddEvent(0, gossipFrequency, time, announcer);
-
-        handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
+        Timer.scheduleNotification(info);
 
         while (true) {
             try {
@@ -186,7 +183,7 @@ public class Gossip extends Module {
     }
 
     private void recordDelay(ValueContact contact, List<Long> timestamps) {
-        if(timestamps.size() != 4) {
+        if (timestamps.size() != 4) {
             logger.errLog("Invalid number of timestamps to record delay.");
             return;
         }
@@ -206,8 +203,8 @@ public class Gossip extends Module {
 
     private int nextGossipId() {
         int starting = gossipId - 1;
-        while(starting != gossipId) {
-            if(gossips[gossipId] == null || gossips[gossipId].isSet()) {
+        while (starting != gossipId) {
+            if (gossips[gossipId] == null || gossips[gossipId].isSet()) {
                 gossips[gossipId] = new GossipState();
                 int id = gossipId;
                 gossipId = (gossipId + 1) % gossips.length;
@@ -236,46 +233,27 @@ public class Gossip extends Module {
         List<PathName> myUpdates = new ArrayList<>();
         for (GossipInterFreshness.Node n : remote) {
             boolean found = false;
-            for (GossipInterFreshness.Node s : local)
+            for (GossipInterFreshness.Node s : local) {
                 if (n.pathName.equals(s.pathName)) {
-                    if (n.freshness.getValue() > s.freshness.getValue())
+                    if (n.freshness.getValue() > s.freshness.getValue()) {
                         myUpdates.add(n.pathName);
+                    }
                     found = true;
                 }
-            if (!found)
+            }
+            if (!found) {
                 myUpdates.add(n.pathName);
+            }
         }
 
-        if(myUpdates.size() == 0)
+        if (myUpdates.size() == 0) {
             return; //do not send any requests
+        }
 
         String updates = myUpdates.stream().map(Object::toString).collect(Collectors.joining(", "));
         logger.log("Foreign node has updates for:" + updates);
         Message message = new Message(GOSSIP, GOSSIP, new GossipRequestDetails(myUpdates, ip));
         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(target, message)));
-    }
-
-    public static class Announcer implements Runnable, Serializable {
-        MessageHandler handler;
-        long timestamp;
-        long delay;
-
-        public Announcer(MessageHandler handler, long timestamp, long delay) {
-            this.handler = handler;
-            this.timestamp = timestamp;
-            this.delay = delay;
-        }
-
-        public void run() {
-            handler.addMessage(new Message(TIMER, GOSSIP, new GossipNext()));
-
-            long newTimestamp = timestamp + delay;
-
-            Announcer announcer = new Announcer(handler, newTimestamp, delay);
-            TimerAddEvent timerAddEvent = new TimerAddEvent(0, delay, newTimestamp, announcer);
-
-            handler.addMessage(new Message(GOSSIP, TIMER, timerAddEvent));
-        }
     }
 
     public class Repeat implements Runnable, Serializable {
@@ -289,14 +267,15 @@ public class Gossip extends Module {
 
         public void run() {
             logger.log("Gossip: Checking if gossip with id "+id+" has been completed.");
-            if(!gossips[id].isSet() && gossips[id].tryAgain())
-            {
+            if (!gossips[id].isSet() && gossips[id].tryAgain()) {
+
                 logger.log("Gossip: retrying ("+gossips[id].tryNum+"/"+repeatK+")");
                 Message msg = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, -1, id));
                 handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(toSend.contact.getAddress(), msg)));
                 handler.addMessage(new Message(GOSSIP, TIMER,
                         new TimerAddEvent(id, repeatInterval, Instant.now().toEpochMilli(), this)));
-            }else {
+
+            } else {
                 logger.log("Gossip: completed.");
             }
         }

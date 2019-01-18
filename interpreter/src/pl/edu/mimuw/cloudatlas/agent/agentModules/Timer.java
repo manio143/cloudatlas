@@ -1,9 +1,12 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
+import pl.edu.mimuw.cloudatlas.agent.Logger;
 import pl.edu.mimuw.cloudatlas.agent.Message;
+import pl.edu.mimuw.cloudatlas.agent.MessageContent;
 import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,6 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
+import static java.lang.Thread.sleep;
+import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class Timer extends Module {
@@ -20,9 +25,11 @@ public class Timer extends Module {
 
     public Timer(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
         super(handler, messages);
+
+        this.logger = new Logger(TIMER);
     }
 
-    public void addEvent(Message message) {
+    private void addEvent(Message message) {
         try {
             TimerAddEvent content = (TimerAddEvent) message.content;
 
@@ -39,12 +46,11 @@ public class Timer extends Module {
 
         } catch (ClassCastException e) {
             logger.errLog("Invalid cast to TimerAddEvent!");
-            e.printStackTrace();
         }
     }
 
 
-    public void removeEvent(Message message) {
+    private void removeEvent(Message message) {
         try {
             TimerRemoveEvent content = (TimerRemoveEvent) message.content;
 
@@ -58,7 +64,6 @@ public class Timer extends Module {
 
         } catch (ClassCastException e) {
             logger.errLog("Invalid cast to TimerAddEvent!");
-            e.printStackTrace();
         }
     }
 
@@ -66,8 +71,8 @@ public class Timer extends Module {
     public void run() {
         executor.execute(new Sleeper(controller));
 
-        while (true) {
-            try {
+        try {
+            while(true) {
                 Message message = messages.take();
                 switch (message.content.operation) {
                     case TIMER_ADD_EVENT:
@@ -79,20 +84,18 @@ public class Timer extends Module {
                     default:
                         logger.errLog("Incorrect message type: " + message.content.operation);
                 }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
             }
+        } catch (InterruptedException e) {
+            logger.errLog("Interrupted exception");
         }
     }
 
     private class Event implements Comparable<Event> {
-        public long id;
-        public long wakeUp;
-        public Runnable toRun;
+        private long id;
+        private long wakeUp;
+        private Runnable toRun;
 
-        public Event (long id, long wakeUp, Runnable toRun) {
+        private Event (long id, long wakeUp, Runnable toRun) {
             this.id = id;
             this.wakeUp = wakeUp;
             this.toRun = toRun;
@@ -108,13 +111,13 @@ public class Timer extends Module {
         private final PriorityBlockingQueue<Event> events = new PriorityBlockingQueue<>();
         private final Set<Long> toRemove = new HashSet<>();
 
-        public synchronized void addEvent(Event event) {
+        private synchronized void addEvent(Event event) {
             events.add(event);
 
             notify();
         }
 
-        public synchronized void issueWait(long time) {
+        private synchronized void issueWait(long time) {
             try {
                 wait(time);
             } catch (InterruptedException e) {
@@ -122,7 +125,7 @@ public class Timer extends Module {
             }
         }
 
-        public Event takeEvent() {
+        private Event takeEvent() {
             Event event = null;
             try {
                 event = events.take();
@@ -133,15 +136,15 @@ public class Timer extends Module {
         }
 
 
-        public void removeEvent(long id) {
+        private void removeEvent(long id) {
             toRemove.add(id);
         }
 
-        public boolean isIdRemoved(long id) {
+        private boolean isIdRemoved(long id) {
             return toRemove.remove(id);
         }
 
-        public synchronized void checkNearest(Event event, long difference) {
+        private synchronized void checkNearest(Event event, long difference) {
             Event nearest = events.peek();
             if (nearest == null) {
                 return;
@@ -164,7 +167,7 @@ public class Timer extends Module {
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
         private Event event;
 
-        public Sleeper(QueueController controller) {
+        private Sleeper(QueueController controller) {
             this.controller = controller;
         }
 
@@ -185,6 +188,57 @@ public class Timer extends Module {
                     controller.checkNearest(event, difference);
                 }
             }
+        }
+    }
+
+    public static void scheduleNotification(NotificationInfo info) {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long time = timestamp.getTime();
+
+        Announcer announcer = new Announcer(info, time);
+
+        TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, time, announcer);
+
+        info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
+    }
+
+    public static class NotificationInfo {
+        public final MessageHandler handler;
+        public final MessageContent content;
+        public final Message.Module module;
+        public final long id;
+        public final long delay;
+
+        public NotificationInfo(MessageHandler handler, Logger logger, MessageContent content,
+                                Message.Module module, long id, long delay) {
+            this.handler = handler;
+            this.content = content;
+            this.module = module;
+            this.id = id;
+            this.delay = delay;
+        }
+    }
+
+    public static class Announcer implements Runnable, Serializable {
+        private final NotificationInfo info;
+        private final long timestamp;
+
+        public Announcer(NotificationInfo info, long timestamp) {
+            this.info = info;
+            this.timestamp = timestamp;
+        }
+
+        public void run() {
+            // TODO: send a copy of info.content
+            info.handler.addMessage(new Message(TIMER, info.module, info.content));
+
+            long newTimestamp = timestamp + info.delay;
+
+            Announcer announcer = new Announcer(info, newTimestamp);
+
+            TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, newTimestamp, announcer);
+
+            info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
         }
     }
 }

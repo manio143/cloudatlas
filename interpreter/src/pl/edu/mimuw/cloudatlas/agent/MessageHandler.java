@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.CONTENT_PLACEHOLDER;
+
 public class MessageHandler {
     private final QueueKeeper keeper;
     private final Logger logger = new Logger("HANDLER");
@@ -9,6 +11,12 @@ public class MessageHandler {
     }
 
     public synchronized void addMessage(Message message) {
+
+        if (message.content.operation == CONTENT_PLACEHOLDER) {
+            logger.errLog("Message sent without proper content set!");
+
+            return;
+        }
 
         logger.log("Message from " + message.src
                 + " to " + message.dest
@@ -37,6 +45,7 @@ public class MessageHandler {
                 keeper.gossipStrategyQueue.add(message);
                 break;
             default:
+                logger.errLog("Unknown destination: " + message.dest);
         }
     }
 }
