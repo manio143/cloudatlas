@@ -2,6 +2,7 @@ package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.Value;
 
@@ -22,8 +23,11 @@ import static pl.edu.mimuw.cloudatlas.model.Type.PrimaryType.INT;
 public abstract class RMIHandler implements HttpHandler {
     protected final ClientStructures structures;
 
-    public RMIHandler(ClientStructures structures) {
+    protected final Logger logger;
+
+    public RMIHandler(ClientStructures structures, Logger logger) {
         this.structures = structures;
+        this.logger = logger;
     }
 
     protected abstract String prepareResponse(Map<String, String> parameters) throws RemoteException;

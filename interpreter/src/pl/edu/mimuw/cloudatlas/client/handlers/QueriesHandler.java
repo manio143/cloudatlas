@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 
@@ -9,7 +10,7 @@ import java.util.Map;
 
 public class QueriesHandler extends RMIHandler {
     public QueriesHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("QUERIES"));
     }
 
     @Override
@@ -39,7 +40,7 @@ public class QueriesHandler extends RMIHandler {
         } catch (AgentException e) {
             return "AgentException: " + e.getMessage();
         } catch (Exception e) {
-            Client.rebindCloudAtlas(structures);
+            Client.rebindCloudAtlas(structures, logger);
             return "RemoteException, trying to rebind!";
         }
 

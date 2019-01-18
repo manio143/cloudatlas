@@ -2,6 +2,7 @@ package pl.edu.mimuw.cloudatlas.fetcher;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ZoneNotFoundException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.model.*;
 
@@ -22,6 +23,8 @@ public class Fetcher implements Runnable {
     private final String fallbackContacts;
     private final String agentHost;
 
+    private final Logger logger = new Logger("FETCHER");
+
     private CloudAtlasAPI cloudAtlas;
 
     public Fetcher(Properties properties) {
@@ -33,16 +36,16 @@ public class Fetcher implements Runnable {
     }
 
     private void bindCloudAtlas() {
-        System.out.println("Trying to bind CloudAtlas");
+        logger.log("Trying to bind CloudAtlas");
         try {
             Registry registry = LocateRegistry.getRegistry(agentHost);
             cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-            System.out.println("CloudAtlas bound");
+            logger.log("CloudAtlas bound");
 
         } catch (RemoteException e) {
-            System.out.println("Failed to get registry!");
+            logger.errLog("Failed to get registry!");
         } catch (NotBoundException e) {
-            System.out.println("Failed to connect to CloudAtlas agent!");
+            logger.errLog("Failed to connect to CloudAtlas agent!");
         }
     }
 
@@ -54,16 +57,16 @@ public class Fetcher implements Runnable {
         try {
             if (fallback) {
                 ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", fallbackContacts);
-                System.out.println("Setting fallback contacts = " + contactsSet);
+                logger.log("Setting fallback contacts = " + contactsSet);
                 cloudAtlas.setFallbackContacts(contactsSet);
             } else {
                 ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", contacts);
-                System.out.println("Setting contacts = " + contactsSet);
+                logger.log("Setting contacts = " + contactsSet);
                 cloudAtlas.setAttribute(nodePath, "contacts", contactsSet);
             }
         } catch (AgentException e) {
-            System.out.println("Agent exception while setting " + append + "contacts:");
-            System.out.println(e.getMessage());
+            logger.errLog("Agent exception while setting " + append + "contacts:");
+            logger.errLog(e.getMessage());
         }
     }
 
@@ -76,7 +79,7 @@ public class Fetcher implements Runnable {
                 setContacts(false);
                 set = true;
             } catch (RemoteException e) {
-                System.out.println("RemoteException, will try to rebind CloudAtlas");
+                logger.errLog("RemoteException, will try to rebind CloudAtlas");
                 return;
             }
         }
@@ -90,38 +93,38 @@ public class Fetcher implements Runnable {
 
                 pr.waitFor();
             } catch (IOException e) {
-                System.out.println("IOException during execution of " + toExec);
-                System.out.println("Check the file utility/fetch_metrics!");
+                logger.errLog("IOException during execution of " + toExec);
+                logger.errLog("Check the file utility/fetch_metrics!");
                 return;
             }
 
             for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
                 for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
-                    System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
+                    logger.log("Setting " + entry.getKey().getName() + " = " + entry.getValue());
                     cloudAtlas.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                     try {
                         cloudAtlas.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                     } catch (ZoneNotFoundException e) {
-                        System.out.println("Zone not found: " + zone.getKey());
+                        logger.errLog("Zone not found: " + zone.getKey());
                         return;
                     } catch (AgentException e) {
-                        System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
-                        System.out.println(e.getMessage());
+                        logger.errLog("Agent exception while adding: " + entry + " to " + zone.getKey());
+                        logger.errLog(e.getMessage());
                     }
                 }
             }
         } catch (AgentException e) {
-            System.out.println("Agent exception while setting fallback contacts:");
-            System.out.println(e.getMessage());
+            logger.errLog("Agent exception while setting fallback contacts:");
+            logger.errLog(e.getMessage());
         } catch (RemoteException e) {
-            System.out.println("RemoteException, trying to rebind CloudAtlas");
+            logger.errLog("RemoteException, trying to rebind CloudAtlas");
             set = false;
         } catch (InterruptedException e) {
-            System.out.println("Interrupted exception");
+            logger.errLog("Interrupted exception");
         } catch (IOException e) {
-            System.out.println("IOException related to reading attributes from: " + metricsFile);
+            logger.errLog("IOException related to reading attributes from: " + metricsFile);
         } catch (Exception other) {
-            System.out.println("Unexpected exception occured!");
+            logger.errLog("Unexpected exception occured!");
             other.printStackTrace();
         }
     }

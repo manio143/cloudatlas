@@ -3,6 +3,7 @@ package pl.edu.mimuw.cloudatlas.client;
 import com.sun.net.httpserver.HttpServer;
 import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.handlers.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
@@ -25,6 +26,8 @@ public class Client implements Runnable {
     private int port;
     private long interval;
     private int maxResultsSize;
+
+    private Logger logger = new Logger("CLIENT");
 
     private boolean set = false;
     private final ClientStructures structures = new ClientStructures();
@@ -68,55 +71,55 @@ public class Client implements Runnable {
             set = true;
 
         } catch (IOException e) {
-            System.out.println("Failed to create client server!");
+            logger.log("Failed to create client server!");
             throw e;
         }
     }
 
-    private static void bindCloudAtlas(Registry registry, ClientStructures structures) {
+    private static void bindCloudAtlas(Registry registry, ClientStructures structures, Logger logger) {
         try {
             structures.cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
-            System.out.println("CloudAtlas bound");
+            logger.log("CloudAtlas bound");
 
         } catch (NotBoundException e) {
             System.out.print("NotBoundException during CloudAtlas binding!");
         } catch (AccessException e) {
             System.out.print("AccessException during CloudAtlas binding!");
         } catch (RemoteException e) {
-            System.out.println("RemoteException during CloudAtlas binding!");
+            logger.errLog("RemoteException during CloudAtlas binding!");
         }
     }
 
-    private static void bindSigner(Registry registry, ClientStructures structures) {
+    private static void bindSigner(Registry registry, ClientStructures structures, Logger logger) {
         try {
             structures.signer = (SignerAPI) registry.lookup("SignerAPI");
-            System.out.println("Signer bound");
+            logger.log("Signer bound");
         } catch (NotBoundException e) {
             System.out.print("NotBoundException during Signer binding!");
         } catch (AccessException e) {
             System.out.print("AccessException during Signer binding!");
         } catch (RemoteException e) {
-            System.out.println("RemoteException during Signer binding!");
+            logger.errLog("RemoteException during Signer binding!");
         }
     }
 
-    public static void rebindCloudAtlas(ClientStructures structures) {
+    public static void rebindCloudAtlas(ClientStructures structures, Logger logger) {
         try {
             Registry registry = LocateRegistry.getRegistry(structures.getHost());
-            bindCloudAtlas(registry, structures);
-            System.out.println("CloudAtlas rebound");
+            bindCloudAtlas(registry, structures, logger);
+            logger.log("CloudAtlas rebound");
         } catch (RemoteException re) {
-            System.out.println("Failed to rebind CloudAtlas");
+            logger.errLog("Failed to rebind CloudAtlas");
         }
     }
 
-    public static void rebindSigner(ClientStructures structures) {
+    public static void rebindSigner(ClientStructures structures, Logger logger) {
         try {
             Registry registry = LocateRegistry.getRegistry(structures.getSignerHost());
-            bindSigner(registry, structures);
-            System.out.println("Signer rebound");
+            bindSigner(registry, structures, logger);
+            logger.log("Signer rebound");
         } catch (RemoteException re) {
-            System.out.println("Failed to rebind Signer");
+            logger.errLog("Failed to rebind Signer");
         }
     }
 
@@ -130,12 +133,12 @@ public class Client implements Runnable {
 
         try {
             Registry registry = LocateRegistry.getRegistry(host);
-            bindCloudAtlas(registry, structures);
+            bindCloudAtlas(registry, structures, logger);
             Registry signerRegistry = LocateRegistry.getRegistry(signerHost);
-            bindSigner(signerRegistry, structures);
+            bindSigner(signerRegistry, structures, logger);
 
         } catch (RemoteException e) {
-            System.out.print("Remote exception while locating registry!");
+            logger.errLog("Remote exception while locating registry!");
             e.printStackTrace();
         }
 
@@ -156,16 +159,16 @@ public class Client implements Runnable {
             structures.results.put(System.currentTimeMillis(), res);
 
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            System.out.println(time + " : Results updated");
+            logger.log(time + " : Results updated");
 
         } catch (AgentException e) {
-            System.out.println("Agent exception during results update!");
-            System.out.println(e.getMessage());
+            logger.errLog("Agent exception during results update!");
+            logger.errLog(e.getMessage());
 
         } catch (RemoteException e) {
-            System.out.println("Remote exception during results update!");
-            System.out.println(e.getMessage());
-            rebindCloudAtlas(structures);
+            logger.errLog("Remote exception during results update!");
+            logger.errLog(e.getMessage());
+            rebindCloudAtlas(structures, logger);
         }
     }
 }

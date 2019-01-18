@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
@@ -12,7 +13,7 @@ import java.util.Map;
 public
 class InstallHandler extends RMIHandler {
     public InstallHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("INSTALL"));
     }
 
     @Override
@@ -31,7 +32,7 @@ class InstallHandler extends RMIHandler {
                 String queries = attribute + ": " + select;
                 SignedQueryRequest sqr = structures.signer.installQueries(queries);
                 signerResponded = true;
-                System.out.println("Signer accepted the query!");
+                logger.log("Signer accepted the query!");
                 structures.cloudAtlas.installQueries(sqr);
                 response = "Successful install of " + attribute;
             } catch (AgentException e) {
@@ -40,13 +41,14 @@ class InstallHandler extends RMIHandler {
                 response = "SignerException: " + e.getMessage();
             } catch (RemoteException e) {
                 if (signerResponded) {
-                    Client.rebindCloudAtlas(structures);
+                    Client.rebindCloudAtlas(structures, logger);
                 } else {
-                    Client.rebindSigner(structures);
+                    Client.rebindSigner(structures, logger);
                 }
                 response = "RemoteException, trying to rebind!";
             }
         }
+        logger.log(response);
         return response;
     }
 }

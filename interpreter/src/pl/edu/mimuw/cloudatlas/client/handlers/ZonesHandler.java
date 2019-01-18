@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 
@@ -10,13 +11,13 @@ import java.util.Map;
 
 public class ZonesHandler extends RMIHandler {
     public ZonesHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("ZONES"));
     }
 
     @Override
     public String prepareResponse(Map<String, String> parameters) {
+        String response = "{\n" + "\t\"Zones\": [";
         try {
-            String response = "{\n" + "\t\"Zones\": [";
 
             List<String> zones = structures.cloudAtlas.getZones();
 
@@ -30,10 +31,14 @@ public class ZonesHandler extends RMIHandler {
             return response;
 
         } catch (AgentException e) {
-            return "AgentException: " + e.getMessage();
+            response = "AgentException: " + e.getMessage();
+            logger.log(response);
         } catch (RemoteException e) {
-            Client.rebindCloudAtlas(structures);
-            return "RemoteException, trying to rebind!";
+            response = "RemoteException, trying to rebind!";
+            logger.log(response);
+            Client.rebindCloudAtlas(structures, logger);
         }
+
+        return response;
     }
 }

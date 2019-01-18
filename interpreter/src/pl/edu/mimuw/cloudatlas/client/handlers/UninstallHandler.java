@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 public class UninstallHandler extends RMIHandler {
     public UninstallHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("UNINSTALL"));
     }
 
     @Override
@@ -35,9 +36,9 @@ public class UninstallHandler extends RMIHandler {
                 System.out.println(response);
             } catch (RemoteException e) {
                 if (signerResponded) {
-                    Client.rebindCloudAtlas(structures);
+                    Client.rebindCloudAtlas(structures, logger);
                 } else {
-                    Client.rebindSigner(structures);
+                    Client.rebindSigner(structures, logger);
                 }
                 response = "RemoteException, trying to rebind!";
             }

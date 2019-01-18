@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.signer;
 
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;
@@ -28,6 +29,7 @@ public class SignerAgent implements SignerAPI {
 
     private final List<String> restrictedColumns = new LinkedList<>();
 
+    private final Logger logger = new Logger("SIGNER");
 
     public SignerAgent(PrivateKey key) {
         this.key = key;
@@ -45,7 +47,7 @@ public class SignerAgent implements SignerAPI {
     }
 
     private void printThrow(SignerException exception) {
-        System.out.println(exception.getMessage());
+        logger.errLog(exception.getMessage());
         throw exception;
     }
 
@@ -60,7 +62,7 @@ public class SignerAgent implements SignerAPI {
     }
 
     public SignedQueryRequest installQueries(String query) {
-        System.out.println("Trying to install query: " + query);
+        logger.log("Trying to install query: " + query);
 
         String queryName = "";
         String select = "";
@@ -86,7 +88,7 @@ public class SignerAgent implements SignerAPI {
                     son.getAttributes().addOrChange(attribute, ValueNull.getInstance());
                 }
 
-                System.out.println(attributes);
+                logger.log("Possible attribute names: " + attributes.toString());
 
                 Interpreter interpreter = new Interpreter(zmi);
                 List<QueryResult> results = interpreter.interpretProgram(program);
@@ -113,15 +115,15 @@ public class SignerAgent implements SignerAPI {
 
         SignedQueryRequest sqr = SignedQueryRequest.createNew(key, newQueryID, queryName, select, columns);
 
-        System.out.println("Created SignedQueryRequest");
+        logger.log("Created SignedQueryRequest");
 
         queryNames.add(queryName);
         columnNames.addAll(columns);
         installedQueries.put(newQueryID, sqr);
         queryToId.put(queryName, newQueryID);
 
-        System.out.println("Query accepted to install: " + query);
-        System.out.println("Columns of the query: " + columns);
+        logger.log("Query accepted to install: " + query);
+        logger.log("Columns of the query: " + columns);
 
         newQueryID++;
 
@@ -129,7 +131,7 @@ public class SignerAgent implements SignerAPI {
     }
 
     public SignedQueryRequest uninstallQueries(String queryName) {
-        System.out.println("Trying to uninstall query: " + queryName);
+        logger.log("Trying to uninstall query: " + queryName);
 
         if (!queryToId.containsKey(queryName)) {
             printThrow(new UninstallException(queryName));
@@ -142,7 +144,7 @@ public class SignerAgent implements SignerAPI {
         queryNames.remove(sqr.queryName);
         columnNames.removeAll(sqr.columns);
 
-        System.out.println("Query accepted to uninstall: " + queryName);
+        logger.log("Query accepted to uninstall: " + queryName);
 
         return sqr;
     }

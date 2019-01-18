@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.Value;
@@ -8,7 +9,7 @@ import java.util.Map;
 
 public class OvertimeHandler extends RMIHandler {
     public OvertimeHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("OVERTIME"));
     }
 
     @Override

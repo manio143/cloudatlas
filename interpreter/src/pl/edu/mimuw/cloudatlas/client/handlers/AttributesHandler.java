@@ -2,6 +2,7 @@ package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ZoneNotFoundException;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
@@ -13,7 +14,7 @@ import java.util.Map;
 
 public class AttributesHandler extends RMIHandler {
     public AttributesHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("ATTRIBUTES"));
     }
 
     @Override
@@ -36,7 +37,7 @@ public class AttributesHandler extends RMIHandler {
             } catch (AgentException e) {
                 response = e.getMessage();
             } catch (RemoteException e) {
-                Client.rebindCloudAtlas(structures);
+                Client.rebindCloudAtlas(structures, logger);
                 response = "RemoteException, trying to rebind!";
             }
         }

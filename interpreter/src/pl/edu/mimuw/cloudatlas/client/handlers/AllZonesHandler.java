@@ -1,5 +1,6 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.Attribute;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
@@ -9,7 +10,7 @@ import java.util.Map;
 
 public class AllZonesHandler extends RMIHandler {
     public AllZonesHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("ALL_ZONES"));
     }
 
     @Override

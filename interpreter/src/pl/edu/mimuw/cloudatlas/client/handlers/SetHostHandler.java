@@ -4,12 +4,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 
 public class SetHostHandler extends RMIHandler {
     public SetHostHandler(ClientStructures structures) {
-        super(structures);
+        super(structures, new Logger("SET_HOST"));
     }
 
     @Override
@@ -20,16 +21,16 @@ public class SetHostHandler extends RMIHandler {
         } else {
             String newHost = parameters.get("host");
             try {
-                System.out.println("Trying to connect to host: " + newHost);
+                logger.log("Trying to connect to host: " + newHost);
                 InetAddress ia = InetAddress.getByName(newHost);
                 structures.setHost(newHost);
-                Client.rebindCloudAtlas(structures);
+                Client.rebindCloudAtlas(structures, logger);
                 response = "Host set to " + newHost;
-                System.out.println(response);
             } catch (UnknownHostException e) {
                 response = "Error: host unreachable!";
             }
         }
+        logger.log(response);
         return response;
     }
 }
