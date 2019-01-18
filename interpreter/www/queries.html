@@ -34,7 +34,7 @@
                 url: url ,
             }).done(function (dataS) {
                 alert(dataS);
-                if (dataS.substring(0, 9).localeCompare("Successful")) {
+                if (!dataS.substring(0, 10).localeCompare("Successful")) {
                     $("#queryButton_" + query).remove();
                     $("#queryColumns_" + query).remove();
                 }
