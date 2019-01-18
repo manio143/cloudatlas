@@ -28,7 +28,7 @@ class InstallHandler extends RMIHandler {
             try {
                 String attribute = parameters.get("attribute");
                 String select = parameters.get("query");
-                String queries = "&" + attribute + ": " + select;
+                String queries = attribute + ": " + select;
                 SignedQueryRequest sqr = structures.signer.installQueries(queries);
                 signerResponded = true;
                 System.out.println("Signer accepted the query!");

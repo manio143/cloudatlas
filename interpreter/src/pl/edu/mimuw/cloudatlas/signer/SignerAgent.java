@@ -11,7 +11,6 @@ import pl.edu.mimuw.cloudatlas.model.ZMI;
 import pl.edu.mimuw.cloudatlas.signer.signerExceptions.*;
 
 import java.io.ByteArrayInputStream;
-import java.rmi.RemoteException;
 import java.security.PrivateKey;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -22,8 +21,13 @@ public class SignerAgent implements SignerAPI {
     private long newQueryID = 0;
 
     private final Map<Long, SignedQueryRequest> installedQueries = new HashMap<>();
+    private final Map<String, Long> queryToId = new HashMap<>();
+
+    private final Set<String> queryNames = new HashSet<>();
+    private final Set<String> columnNames = new HashSet<>();
 
     private final List<String> restrictedColumns = new LinkedList<>();
+
 
     public SignerAgent(PrivateKey key) {
         this.key = key;
@@ -55,7 +59,9 @@ public class SignerAgent implements SignerAPI {
         return attributes;
     }
 
-    public SignedQueryRequest installQueries(String query) throws RemoteException {
+    public SignedQueryRequest installQueries(String query) {
+        System.out.println("Trying to install query: " + query);
+
         String queryName = "";
         String select = "";
         Program program;
@@ -64,11 +70,8 @@ public class SignerAgent implements SignerAPI {
         try {
             String[] nameSelects = query.split(":");
             queryName = nameSelects[0];
-            for (Map.Entry<Long, SignedQueryRequest> entry : installedQueries.entrySet()) {
-                SignedQueryRequest sqr = entry.getValue();
-                if (queryName.compareTo(sqr.queryName) == 0) {
-                    printThrow(new QueryNameException());
-                }
+            if (queryNames.contains(queryName)) {
+                printThrow(new QueryNameException(queryName));
             }
             select = nameSelects[1];
             Yylex lex = new Yylex(new ByteArrayInputStream(select.getBytes()));
@@ -92,13 +95,8 @@ public class SignerAgent implements SignerAPI {
                     if (restrictedColumns.contains(column)) {
                         printThrow(new RestrictedColumn(column));
                     }
-                    for (Map.Entry<Long, SignedQueryRequest> entry : installedQueries.entrySet()) {
-                        SignedQueryRequest sqr = entry.getValue();
-                        for (String col : sqr.columns) {
-                            if (column.compareTo(col) == 0) {
-                                printThrow(new ColumnException(column));
-                            }
-                        }
+                    if (columnNames.contains(column)) {
+                        printThrow(new ColumnException(column));
                     }
                     columns.add(column);
                 }
@@ -113,26 +111,36 @@ public class SignerAgent implements SignerAPI {
             printThrow(new QueryFormatException());
         }
 
-        System.out.println("Query accepted to install: " + query);
-        System.out.println("Columns of the query: " + columns);
-
         SignedQueryRequest sqr = SignedQueryRequest.createNew(key, newQueryID, queryName, select, columns);
 
         System.out.println("Created SignedQueryRequest");
 
+        queryNames.add(queryName);
+        columnNames.addAll(columns);
         installedQueries.put(newQueryID, sqr);
+        queryToId.put(queryName, newQueryID);
+
+        System.out.println("Query accepted to install: " + query);
+        System.out.println("Columns of the query: " + columns);
 
         newQueryID++;
 
         return sqr;
     }
 
-    public SignedQueryRequest uninstallQueries(String queryName) throws RemoteException {
-        SignedQueryRequest sqr = installedQueries.get(queryName);
+    public SignedQueryRequest uninstallQueries(String queryName) {
+        System.out.println("Trying to uninstall query: " + queryName);
 
-        if (sqr == null) {
+        if (!queryToId.containsKey(queryName)) {
             printThrow(new UninstallException(queryName));
         }
+
+        long id = queryToId.remove(queryName);
+
+        SignedQueryRequest sqr = installedQueries.remove(id);
+
+        queryNames.remove(sqr.queryName);
+        columnNames.removeAll(sqr.columns);
 
         System.out.println("Query accepted to uninstall: " + queryName);
 

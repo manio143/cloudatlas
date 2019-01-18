@@ -4,6 +4,7 @@ import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
+import pl.edu.mimuw.cloudatlas.signer.signerExceptions.SignerException;
 
 import java.rmi.RemoteException;
 import java.util.Map;
@@ -18,7 +19,7 @@ public class UninstallHandler extends RMIHandler {
         String response = "";
 
         if (!parameters.containsKey("attribute")) {
-            response = "Error: attribute not specified!";
+            response = "Error: query name not specified!";
         } else {
             boolean signerResponded = false;
             try {
@@ -26,8 +27,12 @@ public class UninstallHandler extends RMIHandler {
                 signerResponded = true;
                 structures.cloudAtlas.uninstallQuery(sqr);
                 response = "Successful uninstall of " + parameters.get("attribute");
+            } catch (SignerException e) {
+                response = "SignerException: " + e.getMessage();
+                System.out.println(response);
             } catch (AgentException e) {
                 response = "AgentException: " + e.getMessage();
+                System.out.println(response);
             } catch (RemoteException e) {
                 if (signerResponded) {
                     Client.rebindCloudAtlas(structures);
