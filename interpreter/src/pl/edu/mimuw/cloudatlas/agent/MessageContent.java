@@ -1,6 +1,11 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.ContentPlaceholder;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.CopyNotImplementedException;
+
 import java.io.Serializable;
+
+import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.CONTENT_PLACEHOLDER;
 
 public abstract class MessageContent implements Serializable {
     public enum Operation {
@@ -49,6 +54,14 @@ public abstract class MessageContent implements Serializable {
     }
 
     public Operation operation;
+
+    public MessageContent() {
+
+    }
+
+    public MessageContent copy() {
+        throw new CopyNotImplementedException(operation);
+    }
 
     public boolean isTimed() { return false; }
 }

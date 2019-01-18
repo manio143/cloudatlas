@@ -9,4 +9,8 @@ public class ZMIKeeperRecomputeQueries extends MessageContent {
 
         operation = ZMI_KEEPER_RECOMPUTE_QUERIES;
     }
+
+    public ZMIKeeperRecomputeQueries copy() {
+        return new ZMIKeeperRecomputeQueries();
+    }
 }

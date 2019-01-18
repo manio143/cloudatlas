@@ -203,15 +203,17 @@ public class Timer extends Module {
     }
 
     public static class NotificationInfo {
-        public final MessageHandler handler;
-        public final MessageContent content;
-        public final Message.Module module;
-        public final long id;
-        public final long delay;
+        private final MessageHandler handler;
+        private final Logger logger;
+        private final MessageContent content;
+        private final Message.Module module;
+        private final long id;
+        private final long delay;
 
         public NotificationInfo(MessageHandler handler, Logger logger, MessageContent content,
                                 Message.Module module, long id, long delay) {
             this.handler = handler;
+            this.logger = logger;
             this.content = content;
             this.module = module;
             this.id = id;
@@ -219,26 +221,31 @@ public class Timer extends Module {
         }
     }
 
-    public static class Announcer implements Runnable, Serializable {
+    private static class Announcer implements Runnable, Serializable {
         private final NotificationInfo info;
         private final long timestamp;
 
-        public Announcer(NotificationInfo info, long timestamp) {
+        private Announcer(NotificationInfo info, long timestamp) {
             this.info = info;
             this.timestamp = timestamp;
         }
 
         public void run() {
-            // TODO: send a copy of info.content
-            info.handler.addMessage(new Message(TIMER, info.module, info.content));
+            try {
+                MessageContent contentCopy = info.content.copy();
 
-            long newTimestamp = timestamp + info.delay;
+                info.handler.addMessage(new Message(TIMER, info.module, contentCopy));
 
-            Announcer announcer = new Announcer(info, newTimestamp);
+                long newTimestamp = timestamp + info.delay;
 
-            TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, newTimestamp, announcer);
+                Announcer announcer = new Announcer(info, newTimestamp);
 
-            info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
+                TimerAddEvent timerAddEvent = new TimerAddEvent(info.id, info.delay, newTimestamp, announcer);
+
+                info.handler.addMessage(new Message(info.module, TIMER, timerAddEvent));
+            } catch (CopyNotImplementedException e) {
+                info.logger.errLog(e.toString());
+            }
         }
     }
 }

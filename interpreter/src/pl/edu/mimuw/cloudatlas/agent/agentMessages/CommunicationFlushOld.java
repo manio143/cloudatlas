@@ -9,4 +9,8 @@ public class CommunicationFlushOld extends MessageContent {
 
         operation = COMMUNICATION_FLUSH_OLD;
     }
+
+    public CommunicationFlushOld copy() {
+        return new CommunicationFlushOld();
+    }
 }
