@@ -8,15 +8,13 @@ import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import static java.lang.Thread.sleep;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
 
 public class Timer extends Module {
@@ -35,7 +33,7 @@ public class Timer extends Module {
 
             long wakeUp = content.timestamp + content.delay;
 
-            Event toAdd = new Event(content.id, wakeUp, content.toRun);
+            Event toAdd = new Event(message.src, content.id, wakeUp, content.toRun);
 
             controller.addEvent(toAdd);
 
@@ -54,7 +52,7 @@ public class Timer extends Module {
         try {
             TimerRemoveEvent content = (TimerRemoveEvent) message.content;
 
-            controller.removeEvent(content.id);
+            controller.removeEvent(message.src, content.id);
 
             TimerRemoveEventAck ackContent = new TimerRemoveEventAck(content.id);
 
@@ -91,11 +89,13 @@ public class Timer extends Module {
     }
 
     private class Event implements Comparable<Event> {
-        private long id;
+        private final Message.Module src;
+        private final long id;
         private long wakeUp;
         private Runnable toRun;
 
-        private Event (long id, long wakeUp, Runnable toRun) {
+        private Event (Message.Module src, long id, long wakeUp, Runnable toRun) {
+            this.src = src;
             this.id = id;
             this.wakeUp = wakeUp;
             this.toRun = toRun;
@@ -109,7 +109,7 @@ public class Timer extends Module {
 
     private class QueueController {
         private final PriorityBlockingQueue<Event> events = new PriorityBlockingQueue<>();
-        private final Set<Long> toRemove = new HashSet<>();
+        private final Set<PairModuleId> toRemove = new TreeSet<>();
 
         private synchronized void addEvent(Event event) {
             events.add(event);
@@ -136,12 +136,12 @@ public class Timer extends Module {
         }
 
 
-        private void removeEvent(long id) {
-            toRemove.add(id);
+        private void removeEvent(Message.Module src, long id) {
+            toRemove.add(new PairModuleId(src, id));
         }
 
-        private boolean isIdRemoved(long id) {
-            return toRemove.remove(id);
+        private boolean isRemoved(Event event) {
+            return toRemove.remove(new PairModuleId(event.src, event.id));
         }
 
         private synchronized void checkNearest(Event event, long difference) {
@@ -159,6 +159,25 @@ public class Timer extends Module {
             } else {
                 issueWait(difference);
             }
+        }
+    }
+
+    private class PairModuleId implements Comparable<PairModuleId> {
+        public Message.Module module;
+        public long id;
+
+        private PairModuleId(Message.Module module, long id) {
+            this.module = module;
+            this.id = id;
+        }
+
+        @Override
+        public int compareTo(PairModuleId other) {
+            int moduleCompare = module.toString().compareTo(other.module.toString());
+            if (moduleCompare != 0) {
+                return moduleCompare;
+            }
+            return Long.compare(id, other.id);
         }
     }
 
@@ -180,7 +199,7 @@ public class Timer extends Module {
                     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                     long difference = event.wakeUp - timestamp.getTime();
                     if (difference <= 0) {
-                        if (!controller.isIdRemoved(event.id)) {
+                        if (!controller.isRemoved(event)) {
                             executor.execute(event.toRun);
                         }
                         break;

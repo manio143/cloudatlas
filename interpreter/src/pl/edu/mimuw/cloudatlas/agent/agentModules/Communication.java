@@ -16,17 +16,16 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.sleep;
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.GOSSIP;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
-import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.COMMUNICATION_FLUSH_OLD;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
     private final SynchronizationController controller = new SynchronizationController();
+    private final Map<Key, MapValue> received = new TreeMap<>();
     private DatagramSocket sendingSocket;
     private Long sendCount = 0L;
 
-    private final Map<Key, MapValue> received = new TreeMap<>();
+    private final long messageTimeout;
+    private final long socketReviveDelay;
 
     private static final int UDP_PORT = 31337;
 
@@ -37,12 +36,13 @@ public class Communication extends Module {
     private static final int UDP_METADATA = BYTE_LENGTH + INT_LENGTH + LONG_LENGTH;
     private static final int UDP_PACKET_SPACE = UDP_PACKET_SIZE - UDP_METADATA;
 
-    private static final long MILISECONDS = 1000;
-    private static final long MESSAGE_TIMEOUT = 10 * MILISECONDS;
-    private static final long SOCKET_REVIVE_DELAY = 3 * MILISECONDS;
 
-    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages) {
+    public Communication(MessageHandler handler, LinkedBlockingQueue<Message> messages,
+                         long messageTimeout, long socketReviveDelay) {
         super(handler, messages);
+        this.messageTimeout = messageTimeout;
+        this.socketReviveDelay = socketReviveDelay;
+
         this.logger = new Logger(COMMUNICATION);
     }
 
@@ -154,7 +154,7 @@ public class Communication extends Module {
 
         for (Map.Entry<Key, MapValue> entry : received.entrySet()) {
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            if (timestamp.getTime() - entry.getValue().timestamp > MESSAGE_TIMEOUT) {
+            if (timestamp.getTime() - entry.getValue().timestamp > messageTimeout) {
                 toFlush.add(entry.getKey());
             }
         }
@@ -176,7 +176,7 @@ public class Communication extends Module {
                 logger.errLog("Sending socket not opened!");
                 e.printStackTrace();
                 try {
-                    sleep(SOCKET_REVIVE_DELAY);
+                    sleep(socketReviveDelay);
                     logger.log("Woke up to open the sending socket");
                 }  catch (InterruptedException ie) {
 
@@ -190,7 +190,7 @@ public class Communication extends Module {
         startSendingSocket();
 
         Timer.NotificationInfo info =
-                new Timer.NotificationInfo(handler, logger, new CommunicationFlushOld(), COMMUNICATION, 0, MESSAGE_TIMEOUT);
+                new Timer.NotificationInfo(handler, logger, new CommunicationFlushOld(), COMMUNICATION, 0, messageTimeout);
 
         Timer.scheduleNotification(info);
 
@@ -238,7 +238,7 @@ public class Communication extends Module {
                     logger.errLog("Listening socket not opened!");
                     e.printStackTrace();
                     try {
-                        sleep(SOCKET_REVIVE_DELAY);
+                        sleep(socketReviveDelay);
                         logger.log("Woke up to open the listening socket");
                     }  catch (InterruptedException ie) {
 

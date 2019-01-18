@@ -47,7 +47,7 @@ public class CloudAtlasPool {
         tester.execute(new Tester(messageHandler, keeper.testerQueue));
 
         ExecutorService communication = Executors.newSingleThreadExecutor();
-        communication.execute(new Communication(messageHandler, keeper.communicationQueue));
+        communication.execute(new Communication(messageHandler, keeper.communicationQueue, 10, 3));
 
         ExecutorService rmi = Executors.newSingleThreadExecutor();
         rmi.execute(new RMI(messageHandler, keeper.rmiQueue));

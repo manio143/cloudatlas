@@ -51,7 +51,7 @@ public class ZMIKeeper extends Module {
     private void scheduleCleanup() {
         Timer.NotificationInfo info =
                 new Timer.NotificationInfo(handler, logger,
-                        new ZMIKeeperCleanup(), ZMI_KEEPER, 0, cleanupFrequency);
+                        new ZMIKeeperCleanup(), ZMI_KEEPER, 1, cleanupFrequency);
 
         Timer.scheduleNotification(info);
     }
