@@ -35,10 +35,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
-    public CloudAtlasAgent(String pathName, PublicKey signerKey) throws IOException {
+    public CloudAtlasAgent(String pathName, String defaultContacts, String fallbackContacts, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
         currentNode = pathName;
         startNode(pathName);
+        startContacts(defaultContacts, fallbackContacts);
         preinstallPrograms();
         addRestrictedNames();
     }
@@ -48,6 +49,12 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         root.getAttributes().addOrChange("level", new ValueInt(0L));
         root.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
         reachZone(pathName, null, true);
+    }
+
+    private void startContacts(String defaultContacts, String fallbackContacts) {
+        contacts = (ValueSet) ModelReader.formValue("set contact", fallbackContacts);
+        ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", defaultContacts);
+        setAttribute(currentNode, "contacts", contactsSet);
     }
 
     private void preinstallPrograms() {

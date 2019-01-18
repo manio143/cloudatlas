@@ -20,7 +20,11 @@ public class CloudAtlasServer {
             X509EncodedKeySpec kspec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
-            CloudAtlasAgent agent = new CloudAtlasAgent(prop.getProperty("pathName"), kf.generatePublic(kspec));
+            String nodePath = prop.getProperty("nodePath");
+            String contacts = prop.getProperty("contacts");
+            String fallbackContacts = prop.getProperty("fallbackContacts");
+
+            CloudAtlasAgent agent = new CloudAtlasAgent(nodePath, contacts, fallbackContacts, kf.generatePublic(kspec));
 
             CloudAtlasPool threadPool = new CloudAtlasPool(agent, prop);
 

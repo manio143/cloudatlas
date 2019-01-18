@@ -27,15 +27,17 @@ public class CloudAtlasPool {
         long computationInterval = MILISECONDS * Long.parseLong(properties.getProperty("computationInterval"));
         long gossipFrequency = MILISECONDS * Integer.parseInt(properties.getProperty("gossipFrequency"));
         long cleanupFrequency = MILISECONDS * Integer.parseInt(properties.getProperty("cleanUpFrequency"));
+        long messageTimeout = MILISECONDS * Integer.parseInt(properties.getProperty("messageTimeout"));
+        long socketReviveDelay = MILISECONDS * Integer.parseInt(properties.getProperty("socketReviveDelay"));
         long repeatInterval = MILISECONDS * Integer.parseInt(properties.getProperty("gossipRetryInterval"));
         long repeatK = Integer.parseInt(properties.getProperty("gossipRetryTimes"));
 
-        String pathName = properties.getProperty("pathName");
+        String nodePath = properties.getProperty("nodePath");
         String strategyName = properties.getProperty("peerSelectionStrategy");
         InetAddress ip = InetAddress.getByName(properties.getProperty("ip"));
 
-        ValueContact thisMachine = new ValueContact(new PathName(pathName), ip);
-        GossipStrategy strategy = GossipStrategy.fromName(strategyName, pathName);
+        ValueContact thisMachine = new ValueContact(new PathName(nodePath), ip);
+        GossipStrategy strategy = GossipStrategy.fromName(strategyName, nodePath);
 
         QueueKeeper keeper = new QueueKeeper();
         MessageHandler messageHandler = new MessageHandler(keeper);
@@ -47,7 +49,7 @@ public class CloudAtlasPool {
         tester.execute(new Tester(messageHandler, keeper.testerQueue));
 
         ExecutorService communication = Executors.newSingleThreadExecutor();
-        communication.execute(new Communication(messageHandler, keeper.communicationQueue, 10, 3));
+        communication.execute(new Communication(messageHandler, keeper.communicationQueue, messageTimeout, socketReviveDelay));
 
         ExecutorService rmi = Executors.newSingleThreadExecutor();
         rmi.execute(new RMI(messageHandler, keeper.rmiQueue));

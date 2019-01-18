@@ -23,7 +23,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
-import static pl.edu.mimuw.cloudatlas.agent.MessageContent.Operation.GOSSIP_NEXT;
 
 public class Gossip extends Module {
     private final String nodePath;
