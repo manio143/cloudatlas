@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.ModelReader;
 import pl.edu.mimuw.cloudatlas.model.Value;
@@ -14,7 +15,7 @@ public class SetAttributeHandler extends RMIHandler {
     }
 
     @Override
-    public String prepareResponse(Map<String, String> parameters) throws RemoteException {
+    public String prepareResponse(Map<String, String> parameters) {
         String response = "";
         if (!parameters.containsKey("path")) {
             response = "Error: node path not specified!";
@@ -33,8 +34,11 @@ public class SetAttributeHandler extends RMIHandler {
                 Value val = ModelReader.formValue(parameters.get("type"), valueString);
                 structures.cloudAtlas.setAttribute(parameters.get("path"), parameters.get("name"), val);
                 response = "Attribute changed!";
-            } catch(AgentException e) {
+            } catch (AgentException e) {
                 response = e.getMessage();
+            } catch (RemoteException e) {
+                Client.rebindCloudAtlas(structures);
+                response = "RemoteException, trying to rebind!";
             }
         }
 

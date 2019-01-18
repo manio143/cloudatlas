@@ -1,10 +1,12 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 import pl.edu.mimuw.cloudatlas.signer.signerExceptions.SignerException;
 
+import java.rmi.RemoteException;
 import java.util.Map;
 
 public
@@ -22,11 +24,13 @@ class InstallHandler extends RMIHandler {
         } else if (!parameters.containsKey("query")) {
             response = "Error: query not specified!";
         } else {
+            boolean signerResponded = false;
             try {
                 String attribute = parameters.get("attribute");
                 String select = parameters.get("query");
                 String queries = "&" + attribute + ": " + select;
                 SignedQueryRequest sqr = structures.signer.installQueries(queries);
+                signerResponded = true;
                 System.out.println("Signer accepted the query!");
                 structures.cloudAtlas.installQueries(sqr);
                 response = "Successful install of " + attribute;
@@ -34,9 +38,13 @@ class InstallHandler extends RMIHandler {
                 response = "AgentException: " + e.getMessage();
             } catch (SignerException e) {
                 response = "SignerException: " + e.getMessage();
-            } catch (Exception e) {
-                e.printStackTrace();
-                response = "Error: " + e.getMessage();
+            } catch (RemoteException e) {
+                if (signerResponded) {
+                    Client.rebindCloudAtlas(structures);
+                } else {
+                    Client.rebindSigner(structures);
+                }
+                response = "RemoteException, trying to rebind!";
             }
         }
         return response;

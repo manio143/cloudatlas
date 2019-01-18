@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 
 import java.util.List;
@@ -38,8 +39,8 @@ public class QueriesHandler extends RMIHandler {
         } catch (AgentException e) {
             return "AgentException: " + e.getMessage();
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error: " + e.getMessage();
+            Client.rebindCloudAtlas(structures);
+            return "RemoteException, trying to rebind!";
         }
 
         response.append("\n\t]");

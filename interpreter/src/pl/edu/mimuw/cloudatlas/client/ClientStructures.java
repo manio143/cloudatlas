@@ -11,7 +11,16 @@ public class ClientStructures {
     public CloudAtlasAPI cloudAtlas;
     public SignerAPI signer;
     public final TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
+    private String host;
 
     public ClientStructures() {
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public String getHost() {
+        return host;
     }
 }

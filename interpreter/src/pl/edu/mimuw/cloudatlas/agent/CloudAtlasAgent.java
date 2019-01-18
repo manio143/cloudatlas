@@ -354,16 +354,22 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private List<ZMI> toRemove = new ArrayList<>();
+
     private void cleanUp(ZMI zmi, long now, long diff) {
-        for(ZMI son : zmi.getSons())
+        for(ZMI son : zmi.getSons()) {
             cleanUp(son, now, diff);
-        for(ZMI r : toRemove)
+        }
+        for(ZMI r : toRemove) {
             zmi.removeSon(r);
+        }
+
         ValueTime freshness = (ValueTime) zmi.getAttributes().getOrNull("freshness");
-        if(freshness != null && now - freshness.getValue() > diff) {
-            logger.log("Cleanup: Zone "+getFullName(zmi) + " is old");
-            if(zmi.getSons().size() == 0 && getFullName(zmi) != currentNode)
+
+        if (freshness != null && now - freshness.getValue() > diff) {
+            logger.log("Cleanup: Zone " + getFullName(zmi) + " is old");
+            if (zmi.getSons().size() == 0 && currentNode.compareTo(getFullName(zmi)) != 0) {
                 toRemove.add(zmi);
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 package pl.edu.mimuw.cloudatlas.client.handlers;
 
+import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
+import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.model.ModelReader;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
@@ -13,7 +15,7 @@ public class ContactsHandler extends RMIHandler {
     }
 
     @Override
-    public String prepareResponse(Map<String, String> parameters) throws RemoteException {
+    public String prepareResponse(Map<String, String> parameters) {
         String response = "";
         if (!parameters.containsKey("set")) {
             response = "Error: contacts not specified!";
@@ -24,8 +26,11 @@ public class ContactsHandler extends RMIHandler {
                                 .formValue("set contact", "{" + parameters.get("set") + "}");
                 structures.cloudAtlas.setFallbackContacts(contacts);
                 response = "Successfully set fallback contacts";
-            } catch (Exception e) {
+            } catch (AgentException e) {
                 response = "Error: " + e.getMessage();
+            } catch (RemoteException e) {
+                Client.rebindCloudAtlas(structures);
+                response = "RemoteException, trying to rebind!";
             }
         }
 

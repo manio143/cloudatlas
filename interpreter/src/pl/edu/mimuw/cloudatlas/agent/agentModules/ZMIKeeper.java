@@ -204,11 +204,11 @@ public class ZMIKeeper extends Module {
                             continue;
 
                         case ZMI_KEEPER_RECOMPUTE_QUERIES:
-                        try {
-                            resend = false;
+                            try {
+                                resend = false;
                                 agent.recomputeQueries();
                             } catch (Exception e) {
-                            e.printStackTrace();
+                                e.printStackTrace();
                             }
                             break;
 

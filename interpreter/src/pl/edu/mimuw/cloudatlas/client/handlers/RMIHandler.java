@@ -11,6 +11,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,6 +57,7 @@ public abstract class RMIHandler implements HttpHandler {
             return "\"" + val.toString() + "\"";
         }
     }
+
 
     @Override
     public void handle(HttpExchange t) throws IOException {
