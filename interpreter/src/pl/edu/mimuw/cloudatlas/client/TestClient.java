@@ -1,17 +1,11 @@
 package pl.edu.mimuw.cloudatlas.client;
 
-import pl.edu.mimuw.cloudatlas.agent.QueueKeeper;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
-import pl.edu.mimuw.cloudatlas.model.AttributesMap;
 import pl.edu.mimuw.cloudatlas.model.ValueInt;
 import pl.edu.mimuw.cloudatlas.model.ValueSet;
-import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
 import java.util.List;
 
 import static pl.edu.mimuw.cloudatlas.model.TypePrimitive.CONTACT;

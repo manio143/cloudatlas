@@ -3,22 +3,23 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 import pl.edu.mimuw.cloudatlas.agent.*;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
-import pl.edu.mimuw.cloudatlas.agent.agentExceptions.NotSingletonZoneException;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
-import pl.edu.mimuw.cloudatlas.interpreter.query.Absyn.Program;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.rmi.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper.*;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
 import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
-import java.io.Serializable;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
 
 public class ZMIKeeper extends Module {
     private CloudAtlasAgent agent;

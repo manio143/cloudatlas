@@ -2,7 +2,8 @@ package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentModules.*;
 import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.GossipStrategy;
-import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.RRCFGossipStrategy;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.QueueKeeper;
 import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 

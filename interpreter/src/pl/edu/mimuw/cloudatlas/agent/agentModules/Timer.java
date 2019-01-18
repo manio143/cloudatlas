@@ -1,10 +1,14 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEvent;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEventAck;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerRemoveEvent;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerRemoveEventAck;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -15,7 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.TIMER;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.TIMER;
 
 public class Timer extends Module {
     private final QueueController controller = new QueueController();

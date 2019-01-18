@@ -1,9 +1,13 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.communication.CommunicationSend;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEvent;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEventAck;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerRemoveEvent;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerRemoveEventAck;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -11,7 +15,7 @@ import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
 
 public class Tester extends Module {
     public Tester(MessageHandler handler, LinkedBlockingQueue<Message> messages) {

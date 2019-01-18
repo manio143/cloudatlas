@@ -1,8 +1,9 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.*;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipInterFreshness;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipSiblings;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.GossipInterFreshness;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.GossipSiblings;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
 import pl.edu.mimuw.cloudatlas.interpreter.QueryResult;

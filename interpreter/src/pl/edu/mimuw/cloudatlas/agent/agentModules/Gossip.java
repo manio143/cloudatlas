@@ -2,27 +2,26 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
-import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipContacts;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.GossipSiblings;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.*;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
 
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.ZMIKeeperSiblings;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper.*;
 
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.communication.CommunicationSend;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimerAddEvent;
 import pl.edu.mimuw.cloudatlas.agent.gossipStrategies.GossipStrategy;
 import pl.edu.mimuw.cloudatlas.model.*;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.*;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.*;
 
 public class Gossip extends Module {
     private final String nodePath;

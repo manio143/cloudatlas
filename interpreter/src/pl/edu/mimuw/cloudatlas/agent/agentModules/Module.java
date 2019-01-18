@@ -1,8 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
 
 import java.util.concurrent.LinkedBlockingQueue;
 

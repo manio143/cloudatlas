@@ -1,9 +1,11 @@
 package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
-import pl.edu.mimuw.cloudatlas.agent.Logger;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.*;
-import pl.edu.mimuw.cloudatlas.agent.Message;
-import pl.edu.mimuw.cloudatlas.agent.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
+import pl.edu.mimuw.cloudatlas.agent.utility.Message;
+import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.communication.CommunicationFlushOld;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.communication.CommunicationSend;
+import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimedGossipMessage;
 
 import java.io.*;
 import java.net.*;
@@ -15,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static java.lang.Thread.sleep;
-import static pl.edu.mimuw.cloudatlas.agent.Message.Module.COMMUNICATION;
+import static pl.edu.mimuw.cloudatlas.agent.utility.Message.Module.COMMUNICATION;
 
 public class Communication extends Module {
     private final ExecutorService listener = Executors.newSingleThreadExecutor();
