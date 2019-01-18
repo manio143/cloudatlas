@@ -385,7 +385,7 @@ class Functions {
 					throw new IllegalArgumentException("First argument must have type " + TypePrimitive.INTEGER
 							+ " and be >= 0.");
 				} else if (arguments.size() == 1) {
-					ValueList list = (ValueList) arguments.get(0).transformOperation(UNFOLD).getValue();
+					ValueList list = (ValueList) arguments.get(0).getList();
 					if(list.getValue().size() == 0)
 						throw new IllegalArgumentException("First on an empty collection");
 					return Result.from(list.getValue().get(0));

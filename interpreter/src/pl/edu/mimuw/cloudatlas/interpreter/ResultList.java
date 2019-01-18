@@ -103,6 +103,8 @@ class ResultList extends Result {
 
 	@Override
 	public Result convertTo(Type to) {
+		if (getType().isCollection())
+			return Result.from(value.convertTo(to));
 		return new ResultList(map(new Transform() {
             public Value transform(Value v) {
                 return v.convertTo(to);

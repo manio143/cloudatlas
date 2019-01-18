@@ -97,6 +97,7 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_SIBLINGS:
 
+                        resend = false;
                             ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
 
                             List<GossipSiblings.Sibling> data = agent.siblings(zmiKeeperSiblings.level,
@@ -154,6 +155,7 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_FALLBACK_CONTACTS_GOSSIP:
 
+                            resend = false;
                             ValueSet contacts = agent.getFallbackContacts();
                             List<ValueContact> lvc = new ArrayList<>();
                             for (Value v : contacts)
@@ -163,12 +165,14 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_FRESHNESS_FOR_CONTACT:
 
+                            resend = false;
                             ZMIKeeperFreshnessForContact zmiKeeperFreshnessForContact = (ZMIKeeperFreshnessForContact) message.content;
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact, agent.interestingNodes(zmiKeeperFreshnessForContact.contact))));
                             continue;
 
                         case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
 
+                            resend = false;
                             ZMIKeeperSiblingsForGossip zmiKeeperSiblingsForGossip = (ZMIKeeperSiblingsForGossip) message.content;
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
                                     new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, agent.interestingNodes(zmiKeeperSiblingsForGossip.msg.responseContact))));
@@ -176,6 +180,7 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_PROVIDE_DETAILS:
 
+                            resend = false;
                             ZMIKeeperProvideDetails zmiKeeperProvideDetails = (ZMIKeeperProvideDetails) message.content;
                             Map<PathName, AttributesMap> details = new HashMap<>();
                             for (PathName pn : zmiKeeperProvideDetails.msg.nodes) {
@@ -187,6 +192,7 @@ public class ZMIKeeper extends Module {
 
                         case ZMI_KEEPER_UPDATE_ZMI:
 
+                            resend = false;
                             ZMIKeeperUpdateZMI zmiKeeperUpdateZMI = (ZMIKeeperUpdateZMI) message.content;
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet()) {
                                 AttributesMap map1 = entry.getValue();

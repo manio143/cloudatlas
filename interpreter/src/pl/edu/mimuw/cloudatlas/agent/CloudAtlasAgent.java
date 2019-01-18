@@ -31,10 +31,13 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     private final Logger logger = new Logger("AGENT");
     private final PublicKey publicKey;
 
+    private final String currentNode;
+
     private ValueSet contacts = new ValueSet(new HashSet<>(), TypePrimitive.CONTACT);
 
     public CloudAtlasAgent(String pathName, PublicKey signerKey) throws IOException {
         publicKey = signerKey;
+        currentNode = pathName;
         startNode(pathName);
         preinstallPrograms();
         addRestrictedNames();
@@ -49,9 +52,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private void preinstallPrograms() {
         List<String> selects = new LinkedList<>();
-        selects.add("SELECT first(1, name) AS owner ORDER BY timestamp ASC NULLS LAST");
-        selects.add("SELECT first(1, timestamp) AS timestamp ORDER BY timestamp ASC NULLS LAST");
-        selects.add("SELECT random(7, unfold(contacts)) AS contacts");
+        selects.add("SELECT first(owner) AS owner ORDER BY timestamp ASC NULLS LAST");
+        selects.add("SELECT first(timestamp) AS timestamp ORDER BY timestamp ASC NULLS LAST");
+        selects.add("SELECT to_set(random(7, unfold(contacts))) AS contacts");
         selects.add("SELECT sum(cardinality) AS cardinality");
 
         for (String select : selects) {
@@ -80,11 +83,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private String getFullName(ZMI zmi) {
-        Stack<String> names = new Stack<>();
+        Deque<String> names = new ArrayDeque<>();
         while(zmi != null) {
             String name = getName(zmi);
             if(name != null)
-                names.push(name);
+                names.addFirst(name);
             zmi = zmi.getFather();
         }
         return new PathName(names).toString();
@@ -347,11 +350,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         for(ZMI son : zmi.getSons())
             cleanUp(son, now, diff);
         for(ZMI r : toRemove)
-            r.getFather().removeSon(r);
+            zmi.removeSon(r);
         ValueTime freshness = (ValueTime) zmi.getAttributes().getOrNull("freshness");
         if(freshness != null && now - freshness.getValue() > diff) {
             logger.log("Cleanup: Zone "+getFullName(zmi) + " is old");
-            if(zmi.getSons().size() == 0)
+            if(zmi.getSons().size() == 0 && getFullName(zmi) != currentNode)
                 toRemove.add(zmi);
         }
     }
