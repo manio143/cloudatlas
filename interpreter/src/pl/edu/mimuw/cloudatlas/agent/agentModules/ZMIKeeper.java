@@ -197,6 +197,7 @@ public class ZMIKeeper extends Module {
                             for (Map.Entry<PathName, AttributesMap> entry : zmiKeeperUpdateZMI.details.entrySet()) {
                                 AttributesMap map1 = entry.getValue();
                                 ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
+                                logger.log("ZMIKeeper received update for " + entry.getKey() + "  " + timestamp);
                                 if (timestamp == null)
                                     continue;
                                 timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
