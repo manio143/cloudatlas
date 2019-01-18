@@ -84,55 +84,31 @@ public class Fetcher implements Runnable {
                 pr.waitFor();
 
                 for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
-
-                    System.out.println("Zone: " + zone.getKey());
-
-<<<<<<< 83a0babd801a3de451d1ea8c612fb26b6cbb47e6
-                for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
-                    System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
-                    stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
-                    try {
-                        stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
-                    } catch (AgentException e) {
-                        System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
-                        System.out.println(e.getMessage());
-=======
                     for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
-                        System.out.println("Entry: " + entry);
-
+                        System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
+                        stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                         try {
                             stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                         } catch (AgentException e) {
                             System.out.println("Agent exception while adding: " + entry + " to " + zone.getKey());
                             System.out.println(e.getMessage());
                         }
->>>>>>> Minor print fix
                     }
                 }
             } catch (InterruptedException e) {
                 System.out.println("Interrupted exception");
-
-<<<<<<< 83a0babd801a3de451d1ea8c612fb26b6cbb47e6
-            System.out.println();
-
-        } catch (IOException e) {
-            System.out.println("Exception during execution of: " +toExec);
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            System.out.println("Interrupted exception");
-        } catch (AgentException e) {
-            System.out.println("Agent exception while setting fallback contacts:");
-            System.out.println(e.getMessage());
-        } catch (Exception other) {
-            System.out.println("Unexpected exception occured!");
-            other.printStackTrace();
-=======
             } catch (IOException e) {
-                System.out.println("Exception during execution of: " + toExec);
+                System.out.println("Exception during execution of: " +toExec);
+                e.printStackTrace();
+            } catch (AgentException e) {
+                System.out.println("Agent exception while setting fallback contacts:");
+                System.out.println(e.getMessage());
+            } catch (Exception other) {
+                System.out.println("Unexpected exception occured!");
+                other.printStackTrace();
             }
         } catch (RemoteException e) {
             System.out.println("Remote exception");
->>>>>>> Minor print fix
         }
     }
 
