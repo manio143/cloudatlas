@@ -1,1 +1,5 @@
-java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=localhost -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.signer.SignerServer utility/priv.key
+#!/bin/bash
+
+HOST=${1:-localhost}
+
+java -cp $PWD/bin:lib/cup.jar:lib/JLex.jar -Djava.rmi.server.codebase=file:$PWD/bin -Djava.rmi.server.hostname=$HOST -Djava.security.policy=utility/general.policy pl.edu.mimuw.cloudatlas.signer.SignerServer utility/priv.key

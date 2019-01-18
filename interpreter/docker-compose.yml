@@ -1,10 +1,27 @@
 version: '3'
 services:
-    i1:
-        image:  cloudatlas
+    signer:
+        image: cloudatlas
+        command: ["./signer_node"]
+        expose: ["1099"]
         networks:
             - cloud
-        ports: ["8001:8000"]
+        volumes:
+            - ${PWD}/test_config/signer/database:/cloudatlas/signerdb
+    client:
+        image: cloudatlas
+        command: ["./client_node"]
+        depends_on: ["signer"]
+        ports: ["8000:8000"]
+        networks:
+            - cloud
+        volumes:
+            - ${PWD}/test_config/client/client.ini:/cloudatlas/utility/client.ini
+    i1:
+        image:  cloudatlas
+        expose: ["1099"]
+        networks:
+            - cloud
         volumes:
             - ${PWD}/test_config/i1/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i1/fetcher.ini:/cloudatlas/utility/fetcher.ini
@@ -12,9 +29,9 @@ services:
             - ${PWD}/test_config/i1/fetcher.log:/cloudatlas/fetcher.log
     i2:
         image:  cloudatlas
+        expose: ["1099"]
         networks:
             - cloud
-        ports: ["8002:8000"]
         volumes:
             - ${PWD}/test_config/i2/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i2/fetcher.ini:/cloudatlas/utility/fetcher.ini
@@ -22,9 +39,9 @@ services:
             - ${PWD}/test_config/i2/fetcher.log:/cloudatlas/fetcher.log
     i3:
         image:  cloudatlas
+        expose: ["1099"]
         networks:
             - cloud
-        ports: ["8003:8000"]
         volumes:
             - ${PWD}/test_config/i3/server.ini:/cloudatlas/utility/server.ini
             - ${PWD}/test_config/i3/fetcher.ini:/cloudatlas/utility/fetcher.ini

@@ -159,6 +159,7 @@ public class Client implements Runnable {
 
         } catch (RemoteException e) {
             System.out.println("Remote exception during results update!");
+            System.out.println(e.getMessage());
             rebindCloudAtlas(structures);
         }
     }
