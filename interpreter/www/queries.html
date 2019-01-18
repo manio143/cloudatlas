@@ -34,12 +34,33 @@
                 url: url ,
             }).done(function (dataS) {
                 alert(dataS);
-                getQueries();
+                if (dataS.substring(0, 9).localeCompare("Successful")) {
+                    $("#queryButton_" + query).remove();
+                    $("#queryColumns_" + query).remove();
+                }
             });
         }
         function uninstallQueryButton() {
             uninstallQuery($("#uninstallAttribute").val());
         }
+        function addQuery(query) {
+            var button = "<button type='button' id='queryButton_" + query.name + "' class='btn' style='margin:10px' "
+                + "onclick='uninstallQuery(\"" + query.name + "\")'>" + query.name + "</button>";
+            var line = "Columns: ";
+            var first = true;
+            for (var column of query.columns) {
+                if (first) {
+                    line += column;
+                    first = false;
+                } else {
+                    line += ", " + column;
+                }
+            }
+            var div = "<div class='row' id='queryColumns_" + query.name + "'>" + button
+                + "<p>" + line + "</p></div>";
+            $("#queryDiv").append(div);
+        }
+
         function getQueries() {
             var url = "/rmi/queries";
             $.ajax({
@@ -52,21 +73,7 @@
                 let data = JSON.parse(dataS);
                 let queries = data.Queries;
                 for (var query of queries) {
-                    var button = "<button type='button' class='btn' style='margin:10px' "
-                        + "onclick='uninstallQuery(\"" + query.name + "\")'>" + query.name + "</button>";
-                    var line = "Columns: ";
-                    var first = true;
-                    for (var column of query.columns) {
-                        if (first) {
-                            line += column;
-                            first = false;
-                        } else {
-                            line += ", " + column;
-                        }
-                    }
-                    var div = "<div class='row' id='query_" + query.name + "'>" + button
-                        + "<p>" + line + "</p></div>";
-                    $("#queryDiv").append(div);
+                    addQuery(query);
                 }
             });
         }
