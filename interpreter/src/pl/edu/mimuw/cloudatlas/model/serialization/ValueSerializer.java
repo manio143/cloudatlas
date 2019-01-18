@@ -1,4 +1,6 @@
-package pl.edu.mimuw.cloudatlas.model;
+package pl.edu.mimuw.cloudatlas.model.serialization;
+
+import pl.edu.mimuw.cloudatlas.model.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

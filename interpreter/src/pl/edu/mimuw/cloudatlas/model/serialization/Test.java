@@ -1,8 +1,9 @@
-package pl.edu.mimuw.cloudatlas.model;
+package pl.edu.mimuw.cloudatlas.model.serialization;
+
+import pl.edu.mimuw.cloudatlas.model.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;

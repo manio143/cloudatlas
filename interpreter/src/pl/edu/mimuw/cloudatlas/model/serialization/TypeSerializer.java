@@ -1,4 +1,8 @@
-package pl.edu.mimuw.cloudatlas.model;
+package pl.edu.mimuw.cloudatlas.model.serialization;
+
+import pl.edu.mimuw.cloudatlas.model.Type;
+import pl.edu.mimuw.cloudatlas.model.TypeCollection;
+import pl.edu.mimuw.cloudatlas.model.TypePrimitive;
 
 import java.io.IOException;
 import java.io.InputStream;
