@@ -19,7 +19,7 @@ KERNEL_VER="$(uname -r)"
 LOGGED_USERS="$(users | wc -w)"
 DNS_NAME="$(dnsdomainname)"
 
-echo ${nodePath}
+echo ${nodePath} > ${metricsFile}
 echo "cpu_load : double = ${CPU_LOAD}" >> ${metricsFile}
 echo "free_disk : integer = ${FREE_DISK}" >> ${metricsFile}
 echo "total_disk : integer = ${TOTAL_DISK}" >> ${metricsFile}

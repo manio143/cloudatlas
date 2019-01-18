@@ -57,9 +57,11 @@ public class Fetcher implements Runnable {
         try {
             if (fallback) {
                 ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", fallbackContacts);
+                System.out.println("Setting fallback contacts = " + contactsSet);
                 stub.setFallbackContacts(contactsSet);
             } else {
                 ValueSet contactsSet = (ValueSet) ModelReader.formValue("set contact", contacts);
+                System.out.println("Setting contacts = " + contactsSet);
                 stub.setAttribute(nodePath, "contacts", contactsSet);
             }
         } catch (AgentException e) {
@@ -86,9 +88,12 @@ public class Fetcher implements Runnable {
             for (Map.Entry<String, AttributesMap> zone : ModelReader.readAttributes(metricsFile).entrySet()) {
 
                 for (Map.Entry<Attribute, Value> entry : zone.getValue()) {
+                    System.out.println("Setting " + entry.getKey().getName() + " = " + entry.getValue());
                     stub.setAttribute(zone.getKey(), entry.getKey().getName(), entry.getValue());
                 }
             }
+
+            System.out.println();
 
         } catch (IOException e) {
             System.out.println("Exception during execution of: " +toExec);
@@ -98,6 +103,9 @@ public class Fetcher implements Runnable {
         } catch (AgentException e) {
             System.out.println("Agent exception while setting fallback contacts:");
             System.out.println(e.getMessage());
+        } catch (Exception other) {
+            System.out.println("Unexpected exception occured!");
+            other.printStackTrace();
         }
     }
 
