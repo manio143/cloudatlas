@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.signer;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -11,7 +12,7 @@ import javax.crypto.Cipher;
 public class SignedQueryRequest implements Serializable {
     private final byte[] signature;
 
-    public final long queryID;
+    public final Long queryID;
     public final String queryName;
     public final String select;
     public final List<String> columns;
@@ -26,11 +27,28 @@ public class SignedQueryRequest implements Serializable {
         this.columns = columns;
     }
 
+    private static byte[] getBytes(String select, String queryName, Long queryID) {
+        List<Byte> bytes = new LinkedList<>();
+        for (byte b : select.getBytes()) {
+            bytes.add(b);
+        }
+        for (byte b : queryName.getBytes()) {
+            bytes.add(b);
+        }
+        for (byte b : new BigInteger(queryID.toString()).toByteArray()) {
+            bytes.add(b);
+        }
+        byte[] byteArray = new byte[bytes.size()];
+        for (int i = 0; i < bytes.size(); i++) {
+            byteArray[i] = bytes.get(i);
+        }
+        return byteArray;
+    }
+
     public boolean isValid(PublicKey pub) {
         try {
             MessageDigest digestGenerator = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = select.getBytes();
-            byte[] digest = digestGenerator.digest(bytes);
+            byte[] digest = digestGenerator.digest(getBytes(select, queryName, queryID));
 
             Cipher verifyCipher = Cipher.getInstance("RSA");
             verifyCipher.init(Cipher.DECRYPT_MODE, pub);
@@ -56,8 +74,7 @@ public class SignedQueryRequest implements Serializable {
                                                List<String> columns) {
         try {
             MessageDigest digestGenerator = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = select.getBytes();
-            byte[] digest = digestGenerator.digest(bytes);
+            byte[] digest = digestGenerator.digest(getBytes(select, queryName, queryID));
 
             Cipher signCipher = Cipher.getInstance("RSA");
             signCipher.init(Cipher.ENCRYPT_MODE, priv);

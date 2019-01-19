@@ -296,7 +296,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         logger.log("Trying to install query: " + query.queryName);
 
         for (SignedQueryRequest sqr : installed.keySet()) {
-            if (query.queryID == sqr.queryID) {
+            if (query.queryID.equals(sqr.queryID)) {
                 logger.log("Query already installed: " + query.queryName);
 
                 return;
@@ -313,7 +313,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         logger.log("Got query to install");
 
         for (SignedQueryRequest i : installed.keySet())
-            if (i.queryID == sqr.queryID) {
+            if (i.queryID.equals(sqr.queryID)) {
                 logger.log("Query already installed.");
                 return;
             }

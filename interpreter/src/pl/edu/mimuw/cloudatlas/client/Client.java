@@ -155,7 +155,6 @@ public class Client implements Runnable {
                     logger.log("Got already installed queries, count: " + alreadyInstalled.size());
                 } catch (RemoteException e) {
                     logger.errLog("Failed to get already installed queries!");
-                    e.printStackTrace();
                 }
 
                 try {
