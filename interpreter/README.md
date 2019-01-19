@@ -1,4 +1,4 @@
-#CloudAtlas
+# CloudAtlas
 
 Distributed system for collecting metrics and calculating queries on these, based on a real system named CloudAtlas. 
 The scheme of the system is very similar: each node stores the attributes of itself and its siblings for each zone it belongs to.
@@ -12,27 +12,27 @@ The queries are written in SQL-like language, which is customly interpreted in o
 
 Have fun!
 
-##Build
+## Build
 
     ant
 
-##RMI registry
+## RMI registry
 
     cd bin
     rmiregistry &
     cd -
 
-##Keys generation
+## Keys generation
     
     ./generateKeys
 
-##Agent
+## Agent
 
 Configured in utility/server.ini
 
     ./server
 
-##Fetcher
+## Fetcher
 
 Configured in utility/fetcher.ini
 
@@ -40,7 +40,7 @@ Metrics gathered using utility/metrics_file
 
     ./fetcher
 
-##Client
+## Client
 
 Configured in utility/client.ini
 
@@ -48,30 +48,30 @@ By default the Client WWW interface can be accessed at localhost:8000
 
     ./client
     
-##Signer
+## Signer
 
     ./signer    
 
-##Docker
+## Docker
     
-###Build
+### Build
 
     docker build . -t cloudatlas
 
-###Compose
+### Compose
 
     docker-compose up -d  
     
 
-##Interpreter
+## Interpreter
 
 
-###Standalone
+### Standalone
 
     ./interpreter
     ./interpreter < tests_standalone/1.in
 
-###Tests for single query interpreter
+### Tests for single query interpreter
 
 Note: 
 Different syntax than the regular standalone interpreter!
@@ -80,7 +80,7 @@ Different syntax than the regular standalone interpreter!
 
     ./run_tests
 
-###Tests for standalone interpreter
+### Tests for standalone interpreter
 
 Note: 
 Different behaviour than the regular standalone interpreter!
