@@ -20,7 +20,7 @@
     <script src="bootstrap.min.js"></script>
     <script>
         function installQuery() {
-            var url = "/rmi/install?attribute=" + $("#installAttribute").val() + "&query=" + $("#query").val();
+            var url = "/rmi/install?attribute=" + $("#installAttribute").val() + "&query=" + encodeURIComponent($("#query").val());
             $.ajax({
                 url: url ,
             }).done(function (dataS) {
