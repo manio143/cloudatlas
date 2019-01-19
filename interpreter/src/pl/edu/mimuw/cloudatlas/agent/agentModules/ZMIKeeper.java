@@ -108,6 +108,14 @@ public class ZMIKeeper extends Module {
                             content = new RMIQueries(queries);
                             break;
 
+                        case ZMI_KEEPER_TRY_INSTALL_QUERY:
+                            ZMIKeeperTryInstallQuery zmiKeeperTryInstallQuery = (ZMIKeeperTryInstallQuery) message.content;
+
+                            agent.tryInstallQuery(zmiKeeperTryInstallQuery.query);
+
+                            content = new RMITryInstallQuery();
+                            break;
+
                         case ZMI_KEEPER_INSTALL_QUERY:
 
                             ZMIKeeperInstallQueries zmiKeeperInstallQueries = (ZMIKeeperInstallQueries) message.content;
@@ -162,7 +170,9 @@ public class ZMIKeeper extends Module {
 
                             resend = false;
                             ZMIKeeperFreshnessForContact zmiKeeperFreshnessForContact = (ZMIKeeperFreshnessForContact) message.content;
-                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact, agent.interestingNodes(zmiKeeperFreshnessForContact.contact))));
+                            handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
+                                    new GossipFreshnessToSend(zmiKeeperFreshnessForContact.contact,
+                                            agent.interestingNodes(zmiKeeperFreshnessForContact.contact))));
                             continue;
 
                         case ZMI_KEEPER_SIBLINGS_FOR_GOSSIP:
@@ -170,7 +180,8 @@ public class ZMIKeeper extends Module {
                             resend = false;
                             ZMIKeeperSiblingsForGossip zmiKeeperSiblingsForGossip = (ZMIKeeperSiblingsForGossip) message.content;
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
-                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg, agent.interestingNodes(zmiKeeperSiblingsForGossip.msg.responseContact))));
+                                    new GossipSiblingsFreshness(zmiKeeperSiblingsForGossip.msg,
+                                            agent.interestingNodes(zmiKeeperSiblingsForGossip.msg.responseContact))));
                             continue;
 
                         case ZMI_KEEPER_PROVIDE_DETAILS:
@@ -193,8 +204,9 @@ public class ZMIKeeper extends Module {
                                 AttributesMap map1 = entry.getValue();
                                 ValueTime timestamp = (ValueTime) map1.getOrNull("freshness");
                                 logger.log("ZMIKeeper received update for " + entry.getKey() + "  " + timestamp);
-                                if (timestamp == null)
+                                if (timestamp == null) {
                                     continue;
+                                }
                                 timestamp = new ValueTime(timestamp.getValue() + zmiKeeperUpdateZMI.delay);
                                 map1.addOrChange("freshness", timestamp);
                                 agent.setAttributes(entry.getKey().toString(), map1);
@@ -214,8 +226,8 @@ public class ZMIKeeper extends Module {
                             break;
 
                         case ZMI_KEEPER_CLEANUP:
-                        resend = false;
-                        agent.cleanUp(cleanupFrequency);
+                            resend = false;
+                            agent.cleanUp(cleanupFrequency);
                         break;
 
                         case TIMER_ADD_EVENT_ACK:

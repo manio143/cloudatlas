@@ -11,18 +11,20 @@ public class ClientStructures {
     public CloudAtlasAPI cloudAtlas;
     public SignerAPI signer;
     public final TreeMap<Long,Map<String, AttributesMap>> results = new TreeMap<>();
-    private String host;
+    private String agentHost;
     private String signerHost;
+    private boolean isAgentSet;
+    private boolean isSignerSet;
 
     public ClientStructures() {
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    public void setAgentHost(String agentHost) {
+        this.agentHost = agentHost;
     }
 
-    public String getHost() {
-        return host;
+    public String getAgentHost() {
+        return agentHost;
     }
 
     public void setSignerHost(String host) {
@@ -31,5 +33,21 @@ public class ClientStructures {
 
     public String getSignerHost() {
         return signerHost;
+    }
+
+    public void setIsAgentSet(boolean isAgentSet) {
+        this.isAgentSet = isAgentSet;
+    }
+
+    public boolean getIsAgentSet() {
+        return isAgentSet;
+    }
+
+    public void setIsSignerSet(boolean isSignerSet) {
+        this.isSignerSet = isSignerSet;
+    }
+
+    public boolean getIsSignerSet() {
+        return isSignerSet;
     }
 }

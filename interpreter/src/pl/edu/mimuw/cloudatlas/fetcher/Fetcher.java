@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Fetcher implements Runnable {
-    private boolean set = false;
+    private boolean isSet = false;
 
     private final String metricsFile;
     private final String nodePath;
@@ -41,6 +41,7 @@ public class Fetcher implements Runnable {
             Registry registry = LocateRegistry.getRegistry(agentHost);
             cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             logger.log("CloudAtlas bound");
+            isSet = true;
 
         } catch (RemoteException e) {
             logger.errLog("Failed to get registry!");
@@ -66,18 +67,21 @@ public class Fetcher implements Runnable {
             }
         } catch (AgentException e) {
             logger.errLog("Agent exception while setting " + append + "contacts:");
-            logger.errLog(e.getMessage());
         }
     }
 
     @Override
     public void run() {
-        if (!set) {
+        if (!isSet) {
+            bindCloudAtlas();
+            if (!isSet) {
+                return;
+            }
+
             try {
-                bindCloudAtlas();
                 setContacts(true);
                 setContacts(false);
-                set = true;
+                isSet = true;
             } catch (RemoteException e) {
                 logger.errLog("RemoteException, will try to rebind CloudAtlas");
                 return;
@@ -118,7 +122,7 @@ public class Fetcher implements Runnable {
             logger.errLog(e.getMessage());
         } catch (RemoteException e) {
             logger.errLog("RemoteException, trying to rebind CloudAtlas");
-            set = false;
+            isSet = false;
         } catch (InterruptedException e) {
             logger.errLog("Interrupted exception");
         } catch (IOException e) {

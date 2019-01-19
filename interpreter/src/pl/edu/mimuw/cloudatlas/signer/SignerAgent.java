@@ -14,6 +14,7 @@ import pl.edu.mimuw.cloudatlas.signer.signerExceptions.*;
 import java.io.ByteArrayInputStream;
 import java.security.PrivateKey;
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -147,5 +148,17 @@ public class SignerAgent implements SignerAPI {
         logger.log("Query accepted to uninstall: " + queryName);
 
         return sqr;
+    }
+
+    public Collection<SignedQueryRequest> getInstalledQueries() {
+        logger.log("Get installed queries request");
+
+        List<SignedQueryRequest> quries = new LinkedList<>();
+
+        for (SignedQueryRequest sqr : installedQueries.values()) {
+            quries.add(sqr);
+        }
+
+        return quries;
     }
 }

@@ -17,7 +17,7 @@ public class ClientServer {
             Properties prop = new Properties();
             prop.load(new FileInputStream(args[0]));
             Long interval = Long.parseLong(prop.getProperty("collectionInterval"));
-            String host = prop.getProperty("host");
+            String host = prop.getProperty("agentHost");
             String signerHost = prop.getProperty("signerHost");
             Integer port = Integer.parseInt(prop.getProperty("port"));
             Integer maxResultsSize = Integer.parseInt(prop.getProperty("maxResultsSize"));

@@ -20,7 +20,7 @@
     <script src="bootstrap.min.js"></script>
     <script>
         function setAgentHost() {
-            var url = "/setHost?host=" + $("#host").val();
+            var url = "/connect?agentHost=" + $("#agentHost").val();
             $.ajax({
                 url: url ,
             }).done(function (dataS) {
@@ -61,14 +61,14 @@
 
 <div class="container">
     <div class="row">
-        <h4>Connect to the agent on host*</h4>
+        <h4>Connect to the agent on agentHost*</h4>
         <div class="form-group">
-            <input type="text" class="form-control" id="host">
+            <input type="text" class="form-control" id="agentHost">
         </div>
         <button type="button" class="btn" onclick="setAgentHost()">Connect</button>
     </div>
     <div class="row">
-        <h5>*Site might freeze for some time if the host cannot be reached.</h5>
+        <h5>*Site might freeze for some time if the agentHost cannot be reached.</h5>
     </div>
 </div>
 

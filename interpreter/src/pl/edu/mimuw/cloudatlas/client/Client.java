@@ -1,13 +1,13 @@
 package pl.edu.mimuw.cloudatlas.client;
 
 import com.sun.net.httpserver.HttpServer;
-import pl.edu.mimuw.cloudatlas.agent.CloudAtlasAgent;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.AgentException;
 import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.client.handlers.*;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.SignerAPI;
 import pl.edu.mimuw.cloudatlas.model.AttributesMap;
+import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,10 +17,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
+import java.util.*;
 
 public class Client implements Runnable {
     private int port;
@@ -44,7 +41,7 @@ public class Client implements Runnable {
             server.createContext("/set", new FileHandler("www/setAttribute.html"));
             server.createContext("/contacts", new FileHandler("www/fallback.html"));
             server.createContext("/host", new FileHandler("www/host.html"));
-            server.createContext("/setHost", new SetHostHandler(structures));
+            server.createContext("/connect", new SetHostHandler(structures));
             server.createContext("/rmi/all", new AllZonesHandler(structures));
             server.createContext("/rmi/overtime", new OvertimeHandler(structures));
             server.createContext("/rmi/zones", new ZonesHandler(structures));
@@ -77,27 +74,32 @@ public class Client implements Runnable {
     }
 
     private static void bindCloudAtlas(Registry registry, ClientStructures structures, Logger logger) {
+        structures.setIsAgentSet(false);
         try {
             structures.cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             logger.log("CloudAtlas bound");
+            structures.setIsAgentSet(true);
 
         } catch (NotBoundException e) {
-            System.out.print("NotBoundException during CloudAtlas binding!");
+            logger.errLog("NotBoundException during CloudAtlas binding!");
         } catch (AccessException e) {
-            System.out.print("AccessException during CloudAtlas binding!");
+            logger.errLog("AccessException during CloudAtlas binding!");
         } catch (RemoteException e) {
             logger.errLog("RemoteException during CloudAtlas binding!");
         }
     }
 
     private static void bindSigner(Registry registry, ClientStructures structures, Logger logger) {
+        structures.setIsSignerSet(false);
         try {
             structures.signer = (SignerAPI) registry.lookup("SignerAPI");
             logger.log("Signer bound");
+            structures.setIsSignerSet(true);
+
         } catch (NotBoundException e) {
-            System.out.print("NotBoundException during Signer binding!");
+            logger.errLog("NotBoundException during Signer binding!");
         } catch (AccessException e) {
-            System.out.print("AccessException during Signer binding!");
+            logger.errLog("AccessException during Signer binding!");
         } catch (RemoteException e) {
             logger.errLog("RemoteException during Signer binding!");
         }
@@ -105,9 +107,8 @@ public class Client implements Runnable {
 
     public static void rebindCloudAtlas(ClientStructures structures, Logger logger) {
         try {
-            Registry registry = LocateRegistry.getRegistry(structures.getHost());
+            Registry registry = LocateRegistry.getRegistry(structures.getAgentHost());
             bindCloudAtlas(registry, structures, logger);
-            logger.log("CloudAtlas rebound");
         } catch (RemoteException re) {
             logger.errLog("Failed to rebind CloudAtlas");
         }
@@ -117,7 +118,6 @@ public class Client implements Runnable {
         try {
             Registry registry = LocateRegistry.getRegistry(structures.getSignerHost());
             bindSigner(registry, structures, logger);
-            logger.log("Signer rebound");
         } catch (RemoteException re) {
             logger.errLog("Failed to rebind Signer");
         }
@@ -128,25 +128,50 @@ public class Client implements Runnable {
         this.interval = interval;
         this.maxResultsSize = maxResultsSize;
 
-        this.structures.setHost(host);
+        this.structures.setAgentHost(host);
         this.structures.setSignerHost(signerHost);
-
-        try {
-            Registry registry = LocateRegistry.getRegistry(host);
-            bindCloudAtlas(registry, structures, logger);
-            Registry signerRegistry = LocateRegistry.getRegistry(signerHost);
-            bindSigner(signerRegistry, structures, logger);
-
-        } catch (RemoteException e) {
-            logger.errLog("Remote exception while locating registry!");
-            e.printStackTrace();
-        }
 
         createServer();
     }
 
     @Override
     public void run() {
+        if (!structures.getIsAgentSet()) {
+            rebindCloudAtlas(structures, logger);
+
+            if (!structures.getIsAgentSet()) {
+                logger.errLog("Client run closes!");
+                return;
+            }
+
+            if (!structures.getIsSignerSet()) {
+                rebindSigner(structures, logger);
+            }
+
+            if (structures.getIsSignerSet()) {
+                Collection<SignedQueryRequest> alreadyInstalled = new LinkedList<>();
+                try {
+                    alreadyInstalled = structures.signer.getInstalledQueries();
+                    logger.log("Got already installed queries, count: " + alreadyInstalled.size());
+                } catch (RemoteException e) {
+                    logger.errLog("Failed to get already installed queries!");
+                    e.printStackTrace();
+                }
+
+                try {
+                    for (SignedQueryRequest sqr : alreadyInstalled) {
+                        logger.log("Trying to install: " + sqr.queryName);
+                        structures.cloudAtlas.tryInstallQuery(sqr);
+                    }
+                } catch (RemoteException e) {
+                    logger.errLog("Failed to get already installed queries!");
+                }
+
+            } else {
+                logger.errLog("Failed to connect to signer!");
+            }
+        }
+
         try {
             if (structures.results.size() > maxResultsSize) {
                 structures.results.remove(structures.results.firstKey());
@@ -167,7 +192,6 @@ public class Client implements Runnable {
 
         } catch (RemoteException e) {
             logger.errLog("Remote exception during results update!");
-            logger.errLog(e.getMessage());
             rebindCloudAtlas(structures, logger);
         }
     }

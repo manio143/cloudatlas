@@ -291,6 +291,24 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return queries;
     }
 
+
+    public void tryInstallQuery(SignedQueryRequest query) {
+        logger.log("Trying to install query: " + query.queryName);
+
+        for (SignedQueryRequest sqr : installed.keySet()) {
+            if (query.queryID == sqr.queryID) {
+                logger.log("Query already installed: " + query.queryName);
+
+                return;
+            }
+        }
+
+        logger.log("Proceeding to installation");
+
+        installQueries(query);
+    }
+
+
     public void installQueries(SignedQueryRequest sqr) {
         logger.log("Got query to install");
 

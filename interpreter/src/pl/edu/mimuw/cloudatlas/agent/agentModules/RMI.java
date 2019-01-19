@@ -28,6 +28,18 @@ public class RMI extends Module {
     }
 
     public void run() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Registry registry = LocateRegistry.getRegistry();
+                    registry.unbind("CloudAtlasAPI");
+                } catch (Exception e) {
+                }
+            }
+        });
+
+
         try {
             CloudAtlasRMI object = new CloudAtlasRMI(handler, rmi, controller);
             CloudAtlasAPI stub =
@@ -52,6 +64,12 @@ public class RMI extends Module {
         } catch (RemoteException e) {
             logger.errLog("RemoteException exception!");
             e.printStackTrace();
+        } finally {
+            try {
+                Registry registry = LocateRegistry.getRegistry();
+                registry.unbind("CloudAtlasAPI");
+            } catch (Exception e) {
+            }
         }
 
     }

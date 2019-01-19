@@ -93,6 +93,12 @@ public class CloudAtlasRMI implements CloudAtlasAPI {
         return ((RMIQueries) content).queries;
     }
 
+    public synchronized void tryInstallQuery(SignedQueryRequest query) {
+        ZMIKeeperTryInstallQuery toKeeper = new ZMIKeeperTryInstallQuery(query);
+
+        handleMessages(toKeeper, RMI_TRY_INSTALL_QUERY);
+    }
+
     public synchronized void installQueries(SignedQueryRequest queries) {
         ZMIKeeperInstallQueries toKeeper = new ZMIKeeperInstallQueries(queries);
 

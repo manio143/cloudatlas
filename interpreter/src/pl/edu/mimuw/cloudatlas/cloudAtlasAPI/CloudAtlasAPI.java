@@ -17,6 +17,8 @@ public interface CloudAtlasAPI extends Remote {
 
     void installQueries(SignedQueryRequest queries) throws RemoteException;
 
+    void tryInstallQuery(SignedQueryRequest query) throws RemoteException;
+
     void uninstallQuery(SignedQueryRequest queryName) throws RemoteException;
 
     void setAttribute(String pathName, String attr, Value val) throws RemoteException;

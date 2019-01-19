@@ -9,7 +9,6 @@ import java.rmi.registry.Registry;
 import java.util.Map;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
-import pl.edu.mimuw.cloudatlas.client.Client;
 import pl.edu.mimuw.cloudatlas.client.ClientStructures;
 import pl.edu.mimuw.cloudatlas.cloudAtlasAPI.CloudAtlasAPI;
 
@@ -24,27 +23,27 @@ public class SetHostHandler extends RMIHandler {
         if (!parameters.containsKey("host")) {
             response = "Error: host not specified!";
         } else {
-            String prevHost = structures.getHost();
+            String prevHost = structures.getAgentHost();
             String newHost = parameters.get("host");
             try {
                 logger.log("Trying to connect to host: " + newHost);
                 InetAddress ia = InetAddress.getByName(newHost);
-                structures.setHost(newHost);
-                Registry registry = LocateRegistry.getRegistry(structures.getHost());
+                structures.setAgentHost(newHost);
+                Registry registry = LocateRegistry.getRegistry(structures.getAgentHost());
                 structures.cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
                 logger.log("CloudAtlas bound");
                 response = "Host set to " + newHost;
 
             } catch (UnknownHostException e) {
-                structures.setHost(prevHost);
+                structures.setAgentHost(prevHost);
                 response = "Error: host unreachable!";
 
             } catch (RemoteException e) {
-                structures.setHost(prevHost);
+                structures.setAgentHost(prevHost);
                 response = "Error: remote exception!";
 
             } catch (NotBoundException e) {
-                structures.setHost(prevHost);
+                structures.setAgentHost(prevHost);
                 response = "Error: CloudAtlas not bound!";
             }
         }
