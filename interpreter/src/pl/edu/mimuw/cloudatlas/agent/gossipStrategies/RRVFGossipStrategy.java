@@ -8,18 +8,18 @@ public class RRVFGossipStrategy extends GossipStrategy {
 
     protected RRVFGossipStrategy(int levels) {
         this.levels = levels;
-        currentLevel = levels;
-        exponentialCounter = (int)Math.pow(levels, EXPONENT);
+        currentLevel = 1;
+        exponentialCounter = (int)Math.pow(levels - 1, EXPONENT);
     }
 
     public int nextLevel() {
         if(exponentialCounter == 0) {
-            if (currentLevel == 1) {
-                currentLevel = levels;
+            if (currentLevel == levels) {
+                currentLevel = 1;
             } else {
-                currentLevel--;
+                currentLevel++;
             }
-            exponentialCounter = (int)Math.pow(currentLevel, EXPONENT);
+            exponentialCounter = (int)Math.pow(levels - currentLevel, EXPONENT);
         }
         exponentialCounter--;
         return currentLevel;

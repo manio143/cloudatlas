@@ -15,9 +15,9 @@ public class RVPGossipStrategy extends GossipStrategy {
         this.levels = levels;
         double toAdd = 1;
         for (int i = 0; i < levels; i++) {
-            toAdd *= EXPONENT;
             probabilitiesSum += toAdd;
             levelProbabilites.add(probabilitiesSum);
+            toAdd *= EXPONENT;
         }
     }
 
@@ -25,7 +25,7 @@ public class RVPGossipStrategy extends GossipStrategy {
         double random = rand.nextDouble() * probabilitiesSum;
         for (int i = 0; i < levels; i++) {
             if (levelProbabilites.get(i) > random) {
-                return i + 1;
+                return levels - i;
             }
         }
         return levels;

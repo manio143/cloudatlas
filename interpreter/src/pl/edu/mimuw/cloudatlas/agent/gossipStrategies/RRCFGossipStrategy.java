@@ -7,13 +7,16 @@ public class RRCFGossipStrategy extends GossipStrategy {
 
     protected RRCFGossipStrategy(int levels) {
         this.levels = levels;
-        currentLevel = levels;
+        currentLevel = 0;
     }
 
     public int nextLevel() {
-        if (currentLevel == 0) {
-            currentLevel = levels;
+        if (currentLevel == levels) {
+            currentLevel = 0;
         }
-        return currentLevel--;
+
+        currentLevel++;
+
+        return currentLevel;
     }
 }
