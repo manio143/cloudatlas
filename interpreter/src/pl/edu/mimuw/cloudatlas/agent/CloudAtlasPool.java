@@ -46,9 +46,6 @@ public class CloudAtlasPool {
         ExecutorService timer = Executors.newSingleThreadExecutor();
         timer.execute(new Timer(messageHandler, keeper.timerQueue));
 
-        ExecutorService tester = Executors.newSingleThreadExecutor();
-        tester.execute(new Tester(messageHandler, keeper.testerQueue));
-
         ExecutorService communication = Executors.newSingleThreadExecutor();
         communication.execute(new Communication(messageHandler, keeper.communicationQueue, messageTimeout, socketReviveDelay));
 
@@ -60,5 +57,8 @@ public class CloudAtlasPool {
 
         ExecutorService gossip = Executors.newSingleThreadExecutor();
         gossip.execute(new Gossip(messageHandler, keeper.gossipQueue, thisMachine, strategy, gossipFrequency, repeatK, repeatInterval));
+
+//        ExecutorService tester = Executors.newSingleThreadExecutor();
+//        tester.execute(new Tester(messageHandler, keeper.testerQueue));
     }
 }

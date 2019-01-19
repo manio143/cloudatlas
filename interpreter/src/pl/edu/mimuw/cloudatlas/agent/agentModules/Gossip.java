@@ -2,14 +2,13 @@ package pl.edu.mimuw.cloudatlas.agent.agentModules;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
-import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.*;
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.IncorrectMessageContent;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.*;
-import pl.edu.mimuw.cloudatlas.agent.utility.Message;
 
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper.*;
 
@@ -32,7 +31,7 @@ public class Gossip extends Module {
 
     private final Random rand = new Random();
     private int currentOutGossipLevel;
-    private final Map<String, List<GossipInterFreshness.Node>> freshness = new HashMap<>();
+    private final Map<String, List<Node>> freshness = new HashMap<>();
     private final Map<String, Long> delay = new HashMap<>();
 
     private final GossipState[] gossips = new GossipState[100];
@@ -68,30 +67,57 @@ public class Gossip extends Module {
 
                 logger.log("Received a message from: " + message.src);
 
+                MessageContent content;
+                Message forHandler;
+
+                Message communicationMessage;
+                MessageContent communicationContent;
+                Message forCommunication;
+
+                GossipInterFreshness gossipInterFreshness;
+                GossipUpdate gossipUpdate;
+
+                InetAddress address;
+                String contactName;
+
                 switch (message.content.operation) {
 
                     //local
                     case GOSSIP_NEXT:
                         currentOutGossipLevel = strategy.nextLevel();
                         logger.log("Initiating gossip at level:  " + currentOutGossipLevel);
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperSiblings(currentOutGossipLevel, nodePath)));
+
+                        content = new ZMIKeeperSiblings(currentOutGossipLevel, nodePath);
+                        forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+                        handler.addMessage(forHandler);
                         break;
 
                     //local
                     case GOSSIP_SIBLINGS:
                         GossipSiblings gossipSiblings = (GossipSiblings) message.content;
+
                         List<List<ValueContact>> nonEmptyContacts = new ArrayList<>();
-                        for (GossipSiblings.Sibling sibling : gossipSiblings.siblings) {
+                        for (Sibling sibling : gossipSiblings.siblings) {
                             if (sibling.contacts.size() > 0) {
                                 nonEmptyContacts.add(sibling.contacts);
                             }
                         }
+
                         if (nonEmptyContacts.size() > 0) {
                             int idx = rand.nextInt(nonEmptyContacts.size());
-                            logger.log("Gossip: sibling with contacts "+nonEmptyContacts.get(idx));
-                            handler.addMessage(new Message(GOSSIP, GOSSIP, new GossipContacts(nonEmptyContacts.get(idx))));
+
+                            List<ValueContact> contactsList = nonEmptyContacts.get(idx);
+
+                            logger.log("Sibling with contacts " + contactsList);
+
+                            content =  new GossipContacts(contactsList);
+                            forHandler = new Message(GOSSIP, GOSSIP, content);
+                            handler.addMessage(forHandler);
+
                         } else {
-                            handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperFallbackContactsGossip()));
+                            content = new ZMIKeeperFallbackContactsGossip();
+                            forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+                            handler.addMessage(forHandler);
                         }
                         break;
 
@@ -99,75 +125,151 @@ public class Gossip extends Module {
                     case GOSSIP_CONTACTS:
                         GossipContacts gossipContacts = (GossipContacts) message.content;
                         try {
-                            int idx = rand.nextInt(gossipContacts.contacts.size());
-                            ValueContact chosen = gossipContacts.contacts.get(idx);
-                            logger.log("Gossip: chosen "+chosen+" to gossip with.");
-                            handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperFreshnessForContact(chosen)));
+                            int range = gossipContacts.contacts.size();
+                            if (range == 0) {
+                                logger.errLog("No contacts found!");
+
+                            } else {
+                                int idx = rand.nextInt(range);
+                                ValueContact chosen = gossipContacts.contacts.get(idx);
+                                logger.log("Chosen " + chosen + " to gossip with.");
+
+                                content = new ZMIKeeperFreshnessForContact(chosen);
+                                forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+                                handler.addMessage(forHandler);
+                            }
                         } catch (IllegalArgumentException e) {
-                            logger.errLog("Gossip: No contacts found!");
+                            logger.errLog("No contacts found!");
                         }
                         break;
 
                     //local
                     case GOSSIP_FRESHNESS_TO_SEND:
-                        GossipFreshnessToSend toSend = (GossipFreshnessToSend) message.content;
-                        freshness.put(toSend.contact.getName().toString(), toSend.nodes);
+                        GossipFreshnessToSend gossipFreshnessToSend = (GossipFreshnessToSend) message.content;
+                        contactName = gossipFreshnessToSend.contact.getName().toString();
+
+                        freshness.put(contactName, gossipFreshnessToSend.nodes);
                         int id = nextGossipId();
-                        message = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, currentOutGossipLevel, id));
-                        handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(toSend.contact.getAddress(), message)));
-                        handler.addMessage(new Message(GOSSIP, TIMER,
-                                new TimerAddEvent(id, repeatInterval, Instant.now().toEpochMilli(), new Repeat(id, toSend))));
+
+                        gossipInterFreshness = GossipInterFreshness.Start(gossipFreshnessToSend.nodes,
+                                                            currentNode, currentOutGossipLevel, id);
+
+                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
+
+                        address = gossipFreshnessToSend.contact.getAddress();
+
+                        communicationContent =
+                                new CommunicationSend(address, communicationMessage);
+
+                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+
+                        handler.addMessage(forCommunication);
+
+                        Repeat repeat = new Repeat(id, gossipFreshnessToSend);
+                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                        content = new TimerAddEvent(id, repeatInterval, timestamp.getTime(), repeat);
+                        forHandler = new Message(GOSSIP, TIMER, content);
+
+                        handler.addMessage(forHandler);
                         break;
 
                     //foreign
                     case GOSSIP_INTER_FRESHNESS_START:
-                        GossipInterFreshness gifs = (GossipInterFreshness) message.content;
-                        logger.log("Received gossip request from "+gifs.responseContact);
-                        if(gifs.responseContact.getName().equals(currentNode.getName())) {
+                        gossipInterFreshness = (GossipInterFreshness) message.content;
+                        logger.log("Received gossip request from " + gossipInterFreshness.responseContact);
+
+                        if(gossipInterFreshness.responseContact.getName().equals(currentNode.getName())) {
                             break; // do not exchange contacts with yourself
                         }
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperSiblingsForGossip(gifs)));
+                        content = new ZMIKeeperSiblingsForGossip(gossipInterFreshness);
+                        forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+                        handler.addMessage(forHandler);
+
                         break;
 
                     //foreign
                     case GOSSIP_SIBLINGS_FRESHNESS:
                         GossipSiblingsFreshness gossipSiblingsFreshness = (GossipSiblingsFreshness) message.content;
-                        GossipInterFreshness response = GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode, gossipSiblingsFreshness.sourceMsg.level, gossipSiblingsFreshness.sourceMsg.id);
-                        response.addTimestamps(gossipSiblingsFreshness.sourceMsg.timestamps);
-                        message = new Message(GOSSIP, GOSSIP, response);
-                        handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gossipSiblingsFreshness.sourceMsg.responseContact.getAddress(), message)));
-                        compareFreshness(gossipSiblingsFreshness.localData, gossipSiblingsFreshness.sourceMsg.nodes, gossipSiblingsFreshness.sourceMsg.responseContact.getAddress());
+                        gossipInterFreshness =
+                                GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode,
+                                        gossipSiblingsFreshness.sourceMsg.level, gossipSiblingsFreshness.sourceMsg.id);
+
+                        gossipInterFreshness.addTimestamps(gossipSiblingsFreshness.sourceMsg.timestamps);
+                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
+
+                        address = gossipSiblingsFreshness.sourceMsg.responseContact.getAddress();
+
+                        communicationContent = new CommunicationSend(address, communicationMessage);
+                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+
+                        handler.addMessage(forCommunication);
+
+                        compareFreshness(gossipSiblingsFreshness.localData, gossipSiblingsFreshness.sourceMsg.nodes, address);
                         break;
 
                     //local
                     case GOSSIP_INTER_FRESHNESS_RESPONSE:
-                        GossipInterFreshness gifr = (GossipInterFreshness) message.content;
-                        gossips[gifr.id].set();
-                        recordDelay(gifr.responseContact, gifr.timestamps);
-                        compareFreshness(freshness.get(gifr.responseContact.getName().toString()), gifr.nodes, gifr.responseContact.getAddress());
+                        gossipInterFreshness = (GossipInterFreshness) message.content;
+
+                        gossips[gossipInterFreshness.id].set();
+
+                        recordDelay(gossipInterFreshness.responseContact, gossipInterFreshness.timestamps);
+
+                        address = gossipInterFreshness.responseContact.getAddress();
+
+                        contactName = gossipInterFreshness.responseContact.getName().toString();
+
+                        compareFreshness(freshness.get(contactName), gossipInterFreshness.nodes, address);
                         break;
 
                     //foreign
                     case GOSSIP_REQUEST_DETAILS:
-                        GossipRequestDetails grd = (GossipRequestDetails) message.content;
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperProvideDetails(grd)));
+                        GossipRequestDetails gossipRequestDetails = (GossipRequestDetails) message.content;
+
+                        content = new ZMIKeeperProvideDetails(gossipRequestDetails);
+
+                        forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+
+                        handler.addMessage(forHandler);
                         break;
 
                     //foreign
                     case GOSSIP_PROVIDE_DETAILS:
-                        GossipProvideDetails gpd = (GossipProvideDetails) message.content;
-                        GossipUpdate up = new GossipUpdate(gpd.details, gpd.installedQueries, gpd.uninstalledQueries, currentNode);
-                        up.addTimestamps(gpd.sourceMsg.timestamps);
-                        message = new Message(GOSSIP, GOSSIP, up);
-                        handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gpd.sourceMsg.responseAddress, message)));
+                        GossipProvideDetails gossipProvideDetails = (GossipProvideDetails) message.content;
+                        gossipUpdate = new GossipUpdate(gossipProvideDetails.details,
+                                                        gossipProvideDetails.installedQueries,
+                                                        gossipProvideDetails.uninstalledQueries,
+                                                        currentNode);
+
+                        gossipUpdate.addTimestamps(gossipProvideDetails.sourceMsg.timestamps);
+                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipUpdate);
+                        address = gossipProvideDetails.sourceMsg.responseAddress;
+
+                        communicationContent = new CommunicationSend(address, communicationMessage);
+
+                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+
+                        handler.addMessage(forCommunication);
                         break;
 
                     //local
                     case GOSSIP_UPDATE:
-                        GossipUpdate update = (GossipUpdate) message.content;
-                        recordDelay(update.responseContact, update.timestamps);
-                        logger.log("Received "+update.details.size() + " updates.");
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, update.installedQueries, update.uninstalledQueries, delay.get(update.responseContact.getName().toString()))));
+                        gossipUpdate = (GossipUpdate) message.content;
+
+                        recordDelay(gossipUpdate.responseContact, gossipUpdate.timestamps);
+
+                        logger.log("Received " + gossipUpdate.details.size() + " updates.");
+
+                        contactName = gossipUpdate.responseContact.getName().toString();
+
+                        content = new ZMIKeeperUpdateZMI(gossipUpdate.details,
+                                                        gossipUpdate.installedQueries,
+                                                        gossipUpdate.uninstalledQueries,
+                                                        delay.get(contactName));
+
+                        forHandler = new Message(GOSSIP, ZMI_KEEPER, content);
+
+                        handler.addMessage(forHandler);
                         break;
 
                     case TIMER_ADD_EVENT_ACK:
@@ -228,12 +330,12 @@ public class Gossip extends Module {
         }
     }
 
-    private void compareFreshness(List<GossipInterFreshness.Node> local, List<GossipInterFreshness.Node> remote, InetAddress target) {
+    private void compareFreshness(List<Node> local, List<Node> remote, InetAddress target) {
         logger.log("Comparing freshness of local "+local.size()+" nodes with remote "+remote.size()+" nodes.");
         List<PathName> myUpdates = new ArrayList<>();
-        for (GossipInterFreshness.Node n : remote) {
+        for (Node n : remote) {
             boolean found = false;
-            for (GossipInterFreshness.Node s : local) {
+            for (Node s : local) {
                 if (n.pathName.equals(s.pathName)) {
                     if (n.freshness.getValue() > s.freshness.getValue()) {
                         myUpdates.add(n.pathName);

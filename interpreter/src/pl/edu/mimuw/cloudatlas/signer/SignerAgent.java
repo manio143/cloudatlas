@@ -100,6 +100,7 @@ public class SignerAgent implements SignerAPI {
         restrictedColumns.add("contacts");
         restrictedColumns.add("cardinality");
         restrictedColumns.add("freshness");
+        restrictedColumns.add("isNode");
     }
 
     private void printThrow(SignerException exception) {

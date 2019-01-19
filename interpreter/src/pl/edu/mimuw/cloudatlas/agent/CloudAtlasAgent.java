@@ -1,8 +1,8 @@
 package pl.edu.mimuw.cloudatlas.agent;
 
 import pl.edu.mimuw.cloudatlas.agent.agentExceptions.*;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.GossipInterFreshness;
-import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.GossipSiblings;
+import pl.edu.mimuw.cloudatlas.agent.utility.Node;
+import pl.edu.mimuw.cloudatlas.agent.utility.Sibling;
 import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
 import pl.edu.mimuw.cloudatlas.interpreter.Interpreter;
 import pl.edu.mimuw.cloudatlas.interpreter.InterpreterException;
@@ -86,6 +86,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         restricted.add("owner");
         restricted.add("cardinality");
         restricted.add("timestamp");
+        restricted.add("isNode");
     }
 
     private String getName(ZMI zmi) {
@@ -241,9 +242,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         return zmi.getAttributes();
     }
 
-    public List<GossipSiblings.Sibling> siblings(int level, String pathName) {
+    public List<Sibling> siblings(int level, String pathName) {
         ZMI zmi = reachZone(pathName, level, false);
-        List<GossipSiblings.Sibling> res = new ArrayList<>();
+        List<Sibling> res = new ArrayList<>();
         String fatherName = getFullName(zmi.getFather());
         if (fatherName.equals("/")) {
             fatherName = "";
@@ -260,20 +261,20 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                         lvc.add((ValueContact) v);
                     }
                 }
-                res.add(new GossipSiblings.Sibling(new PathName(zone), lvc, timestamp));
+                res.add(new Sibling(new PathName(zone), lvc, timestamp));
             }
         }
         return res;
     }
 
-    public List<GossipInterFreshness.Node> interestingNodes(ValueContact contact) {
+    public List<Node> interestingNodes(ValueContact contact) {
         int levels = contact.getName().getComponents().size();
         String pathName = contact.getName().toString();
-        List<GossipInterFreshness.Node> nodes = new ArrayList<>();
+        List<Node> nodes = new ArrayList<>();
         for (int l = 1; l <= levels; l++) {
             try {
-                for (GossipSiblings.Sibling sib : siblings(l, pathName)) {
-                    nodes.add(new GossipInterFreshness.Node(sib.pathName,
+                for (Sibling sib : siblings(l, pathName)) {
+                    nodes.add(new Node(sib.pathName,
                             sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
                 }
             } catch (ZoneNotFoundException e) {
@@ -286,7 +287,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     String name = getName(son);
                     String zone = fatherName + "/" + name;
                     ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
-                    nodes.add(new GossipInterFreshness.Node(new PathName(zone), timestamp != null ? timestamp : new ValueTime(0L)));
+                    nodes.add(new Node(new PathName(zone), timestamp != null ? timestamp : new ValueTime(0L)));
                 }
                 break;
             }

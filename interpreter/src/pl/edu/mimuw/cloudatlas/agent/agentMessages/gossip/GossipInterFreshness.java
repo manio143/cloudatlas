@@ -1,12 +1,10 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip;
 
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.timer.TimedGossipMessage;
+import pl.edu.mimuw.cloudatlas.agent.utility.Node;
 import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
-import pl.edu.mimuw.cloudatlas.model.PathName;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
-import pl.edu.mimuw.cloudatlas.model.ValueTime;
 
-import java.io.Serializable;
 import java.util.List;
 
 public class GossipInterFreshness extends TimedGossipMessage {
@@ -14,15 +12,6 @@ public class GossipInterFreshness extends TimedGossipMessage {
     public final ValueContact responseContact;
     public final int level;
     public final int id;
-
-    public static class Node implements Serializable {
-        public final PathName pathName;
-        public final ValueTime freshness;
-        public Node(PathName pathName, ValueTime freshness) {
-            this.freshness = freshness;
-            this.pathName = pathName;
-        }
-    }
 
     private GossipInterFreshness(List<Node> nodes, ValueContact responseContact, int level, Operation operation, int id) {
         this.nodes = nodes;

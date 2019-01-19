@@ -1,6 +1,7 @@
 package pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip;
 
 import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
+import pl.edu.mimuw.cloudatlas.agent.utility.Node;
 import pl.edu.mimuw.cloudatlas.agent.utility.Operation;
 import pl.edu.mimuw.cloudatlas.model.ValueContact;
 
@@ -8,9 +9,9 @@ import java.util.List;
 
 public class GossipFreshnessToSend extends MessageContent {
     public final ValueContact contact;
-    public final List<GossipInterFreshness.Node> nodes;
+    public final List<Node> nodes;
 
-    public GossipFreshnessToSend(ValueContact contact, List<GossipInterFreshness.Node> nodes) {
+    public GossipFreshnessToSend(ValueContact contact, List<Node> nodes) {
         this.contact = contact;
         this.nodes = nodes;
 

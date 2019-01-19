@@ -31,11 +31,12 @@ public class RMI extends Module {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                try {
-                    Registry registry = LocateRegistry.getRegistry();
-                    registry.unbind("CloudAtlasAPI");
-                } catch (Exception e) {
-                }
+            try {
+                Registry registry = LocateRegistry.getRegistry();
+                registry.unbind("CloudAtlasAPI");
+                logger.log("Unbinding CloudAtlasAPI");
+            } catch (Exception e) {
+            }
             }
         });
 
@@ -68,6 +69,7 @@ public class RMI extends Module {
             try {
                 Registry registry = LocateRegistry.getRegistry();
                 registry.unbind("CloudAtlasAPI");
+                logger.log("Unbinding CloudAtlasAPI");
             } catch (Exception e) {
             }
         }

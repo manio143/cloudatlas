@@ -6,10 +6,7 @@ import pl.edu.mimuw.cloudatlas.agent.agentExceptions.ContentNotInitialized;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.gossip.*;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.rmi.*;
 import pl.edu.mimuw.cloudatlas.agent.agentMessages.zmiKeeper.*;
-import pl.edu.mimuw.cloudatlas.agent.utility.Logger;
-import pl.edu.mimuw.cloudatlas.agent.utility.Message;
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageContent;
-import pl.edu.mimuw.cloudatlas.agent.utility.MessageHandler;
+import pl.edu.mimuw.cloudatlas.agent.utility.*;
 import pl.edu.mimuw.cloudatlas.model.*;
 import pl.edu.mimuw.cloudatlas.signer.SignedQueryRequest;
 
@@ -95,7 +92,7 @@ public class ZMIKeeper extends Module {
                         resend = false;
                             ZMIKeeperSiblings zmiKeeperSiblings = (ZMIKeeperSiblings) message.content;
 
-                            List<GossipSiblings.Sibling> data = agent.siblings(zmiKeeperSiblings.level,
+                            List<Sibling> data = agent.siblings(zmiKeeperSiblings.level,
                                     zmiKeeperSiblings.pathName);
 
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP, new GossipSiblings(data)));
