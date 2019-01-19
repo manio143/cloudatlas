@@ -70,8 +70,8 @@ public class Gossip extends Module {
                 MessageContent content;
                 Message forHandler;
 
-                Message communicationMessage;
-                MessageContent communicationContent;
+                Message communicationInternal;
+                CommunicationSend communicationSend;
                 Message forCommunication;
 
                 GossipInterFreshness gossipInterFreshness;
@@ -151,26 +151,30 @@ public class Gossip extends Module {
                         freshness.put(contactName, gossipFreshnessToSend.nodes);
                         int id = nextGossipId();
 
-                        gossipInterFreshness = GossipInterFreshness.Start(gossipFreshnessToSend.nodes,
-                                                            currentNode, currentOutGossipLevel, id);
+                        if (id >= 0) {
+                            gossipInterFreshness =
+                                    GossipInterFreshness.Start(gossipFreshnessToSend.nodes,
+                                            currentNode,
+                                            currentOutGossipLevel,
+                                            id);
 
-                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
+                            communicationInternal = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
 
-                        address = gossipFreshnessToSend.contact.getAddress();
+                            address = gossipFreshnessToSend.contact.getAddress();
 
-                        communicationContent =
-                                new CommunicationSend(address, communicationMessage);
+                            communicationSend = new CommunicationSend(address, communicationInternal);
 
-                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+                            forCommunication = new Message(GOSSIP, COMMUNICATION, communicationSend);
 
-                        handler.addMessage(forCommunication);
+                            handler.addMessage(forCommunication);
 
-                        Repeat repeat = new Repeat(id, gossipFreshnessToSend);
-                        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                        content = new TimerAddEvent(id, repeatInterval, timestamp.getTime(), repeat);
-                        forHandler = new Message(GOSSIP, TIMER, content);
+                            Repeat repeat = new Repeat(id, gossipFreshnessToSend);
+                            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                            content = new TimerAddEvent(id, repeatInterval, timestamp.getTime(), repeat);
+                            forHandler = new Message(GOSSIP, TIMER, content);
 
-                        handler.addMessage(forHandler);
+                            handler.addMessage(forHandler);
+                        }
                         break;
 
                     //foreign
@@ -191,16 +195,18 @@ public class Gossip extends Module {
                     case GOSSIP_SIBLINGS_FRESHNESS:
                         GossipSiblingsFreshness gossipSiblingsFreshness = (GossipSiblingsFreshness) message.content;
                         gossipInterFreshness =
-                                GossipInterFreshness.Response(gossipSiblingsFreshness.localData, currentNode,
-                                        gossipSiblingsFreshness.sourceMsg.level, gossipSiblingsFreshness.sourceMsg.id);
+                                GossipInterFreshness.Response(gossipSiblingsFreshness.localData,
+                                                            currentNode,
+                                                            gossipSiblingsFreshness.sourceMsg.level,
+                                                            gossipSiblingsFreshness.sourceMsg.id);
 
                         gossipInterFreshness.addTimestamps(gossipSiblingsFreshness.sourceMsg.timestamps);
-                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
+                        communicationInternal = new Message(GOSSIP, GOSSIP, gossipInterFreshness);
 
                         address = gossipSiblingsFreshness.sourceMsg.responseContact.getAddress();
 
-                        communicationContent = new CommunicationSend(address, communicationMessage);
-                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+                        communicationSend = new CommunicationSend(address, communicationInternal);
+                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationSend);
 
                         handler.addMessage(forCommunication);
 
@@ -242,12 +248,13 @@ public class Gossip extends Module {
                                                         currentNode);
 
                         gossipUpdate.addTimestamps(gossipProvideDetails.sourceMsg.timestamps);
-                        communicationMessage = new Message(GOSSIP, GOSSIP, gossipUpdate);
+
+                        communicationInternal = new Message(GOSSIP, GOSSIP, gossipUpdate);
                         address = gossipProvideDetails.sourceMsg.responseAddress;
 
-                        communicationContent = new CommunicationSend(address, communicationMessage);
+                        communicationSend = new CommunicationSend(address, communicationInternal);
 
-                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationContent);
+                        forCommunication = new Message(GOSSIP, COMMUNICATION, communicationSend);
 
                         handler.addMessage(forCommunication);
                         break;
@@ -315,7 +322,9 @@ public class Gossip extends Module {
                 gossipId = (gossipId + 1) % gossips.length;
             }
         }
-        throw new RuntimeException("No more space for gossips");
+
+        logger.errLog("No more space for gossips");
+        return -1;
     }
 
     private class GossipState {
@@ -331,31 +340,36 @@ public class Gossip extends Module {
     }
 
     private void compareFreshness(List<Node> local, List<Node> remote, InetAddress target) {
-        logger.log("Comparing freshness of local "+local.size()+" nodes with remote "+remote.size()+" nodes.");
-        List<PathName> myUpdates = new ArrayList<>();
-        for (Node n : remote) {
+        logger.log("Comparing freshness of local " + local.size()
+                        + " nodes with remote " + remote.size() + " nodes.");
+        List<PathName> updates = new ArrayList<>();
+        for (Node fromRemote : remote) {
             boolean found = false;
-            for (Node s : local) {
-                if (n.pathName.equals(s.pathName)) {
-                    if (n.freshness.getValue() > s.freshness.getValue()) {
-                        myUpdates.add(n.pathName);
+            for (Node fromLocal : local) {
+                if (fromRemote.pathName.equals(fromLocal.pathName)) {
+                    if (fromRemote.freshness.getValue() > fromLocal.freshness.getValue()) {
+                        updates.add(fromRemote.pathName);
                     }
                     found = true;
                 }
             }
             if (!found) {
-                myUpdates.add(n.pathName);
+                updates.add(fromRemote.pathName);
             }
         }
 
-        if (myUpdates.size() == 0) {
+        if (updates.size() == 0) {
             return; //do not send any requests
         }
 
-        String updates = myUpdates.stream().map(Object::toString).collect(Collectors.joining(", "));
-        logger.log("Foreign node has updates for:" + updates);
-        Message message = new Message(GOSSIP, GOSSIP, new GossipRequestDetails(myUpdates, ip));
-        handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(target, message)));
+        String updatesString = updates.stream().map(Object::toString).collect(Collectors.joining(", "));
+        logger.log("Foreign node has updates for:" + updatesString);
+
+        GossipRequestDetails gossipRequestDetails = new GossipRequestDetails(updates, ip);
+        Message internal = new Message(GOSSIP, GOSSIP, gossipRequestDetails);
+        CommunicationSend communicationSend = new CommunicationSend(target, internal);
+        Message message = new Message(GOSSIP, COMMUNICATION, communicationSend);
+        handler.addMessage(message);
     }
 
     public class Repeat implements Runnable, Serializable {
@@ -368,17 +382,31 @@ public class Gossip extends Module {
         }
 
         public void run() {
-            logger.log("Gossip: Checking if gossip with id "+id+" has been completed.");
+            logger.log("Repeat: checking if gossip with id " + id + " has been completed.");
+
             if (!gossips[id].isSet() && gossips[id].tryAgain()) {
 
-                logger.log("Gossip: retrying ("+gossips[id].tryNum+"/"+repeatK+")");
-                Message msg = new Message(GOSSIP, GOSSIP, GossipInterFreshness.Start(toSend.nodes, currentNode, -1, id));
-                handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(toSend.contact.getAddress(), msg)));
-                handler.addMessage(new Message(GOSSIP, TIMER,
-                        new TimerAddEvent(id, repeatInterval, Instant.now().toEpochMilli(), this)));
+                String log = "Repeat: retrying (" + gossips[id].tryNum + "/" + repeatK + ")";
+
+                logger.log(log);
+
+                GossipInterFreshness gossipInterFreshness =
+                        GossipInterFreshness.Start(toSend.nodes, currentNode, -1, id);
+                Message communicationInternal = new Message(TIMER, GOSSIP, gossipInterFreshness);
+                InetAddress address = toSend.contact.getAddress();
+                CommunicationSend communicationSend = new CommunicationSend(address, communicationInternal);
+                Message forCommunication = new Message(GOSSIP, COMMUNICATION, communicationSend);
+
+                handler.addMessage(forCommunication);
+
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                TimerAddEvent timerAddEvent = new TimerAddEvent(id, repeatInterval, timestamp.getTime(), this);
+                Message forTimer = new Message(GOSSIP, TIMER, timerAddEvent);
+
+                handler.addMessage(forTimer);
 
             } else {
-                logger.log("Gossip: completed.");
+                logger.log("Repeat completed.");
             }
         }
     }
