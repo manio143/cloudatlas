@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Random;
 
 public class RVPGossipStrategy extends GossipStrategy {
-    private final double EXPONENT = 1.3;
+    private final double EXPONENT = 1.42;
 
     private final Random rand = new Random();
     private final List<Double> levelProbabilites = new ArrayList<>();

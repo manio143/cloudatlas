@@ -34,7 +34,9 @@ public class Gossip extends Module {
     private final Map<String, List<Node>> freshness = new HashMap<>();
     private final Map<String, Long> delay = new HashMap<>();
 
-    private final GossipState[] gossips = new GossipState[100];
+    private final int MAX_GOSSIPS = 100;
+
+    private final GossipState[] gossips = new GossipState[MAX_GOSSIPS];
     private int gossipId;
 
     private final long repeatK;

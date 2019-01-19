@@ -53,6 +53,10 @@ By default the Client WWW interface can be accessed at localhost:8000
     ./signer    
 
 ## Docker
+
+Docker runs three agents and their fetchers, a client and a signer.
+Their .ini files are located in test_config directory.
+The logs are also collected in that directory.
     
 ### Build
 
@@ -62,6 +66,9 @@ By default the Client WWW interface can be accessed at localhost:8000
 
     docker-compose up -d  
     
+### Kill
+
+    docker kill $(docker ps -q)    
 
 ## Interpreter
 
