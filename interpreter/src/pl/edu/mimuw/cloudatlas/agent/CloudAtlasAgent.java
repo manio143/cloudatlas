@@ -273,9 +273,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         List<Node> nodes = new ArrayList<>();
         for (int l = 1; l <= levels; l++) {
             try {
-                for (Sibling sib : siblings(l, pathName)) {
-                    nodes.add(new Node(sib.pathName,
-                            sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+                for (Sibling sibling : siblings(l, pathName)) {
+                    nodes.add(new Node(sibling.pathName,
+                            sibling.timestamp != null ? sibling.timestamp : new ValueTime(0L)));
                 }
             } catch (ZoneNotFoundException e) {
                 ZMI zmi = reachZone(pathName, l - 1, false);
