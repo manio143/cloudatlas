@@ -49,7 +49,8 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         root.getAttributes().addOrChange("name", new ValueString(null));
         root.getAttributes().addOrChange("level", new ValueInt(0L));
         root.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
-        reachZone(pathName, null, true);
+        ZMI node = reachZone(pathName, null, true);
+        node.getAttributes().addOrChange("isNode", new ValueBoolean(true));
     }
 
     private void startContacts(String defaultContacts, String fallbackContacts) {
@@ -64,6 +65,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         selects.add("SELECT first(timestamp) AS timestamp ORDER BY timestamp ASC NULLS LAST");
         selects.add("SELECT to_set(random(7, unfold(contacts))) AS contacts");
         selects.add("SELECT sum(cardinality) AS cardinality");
+        selects.add("SELECT false AS isNode");
 
         for (String select : selects) {
             Yylex lex = new Yylex(new ByteArrayInputStream(select.getBytes()));
@@ -114,7 +116,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
     }
 
     private void removeAttribute(ZMI zmi, String attribute) {
-        if (!zmi.getSons().isEmpty()) {
+        if (! ((ValueBoolean)zmi.getAttributes().get("isNode")).getValue()) {
             for (ZMI son : zmi.getSons()) {
                 removeAttribute(son, attribute);
             }
