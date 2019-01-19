@@ -11,16 +11,20 @@ import pl.edu.mimuw.cloudatlas.model.ValueNull;
 import pl.edu.mimuw.cloudatlas.model.ZMI;
 import pl.edu.mimuw.cloudatlas.signer.signerExceptions.*;
 
-import java.io.ByteArrayInputStream;
+import javax.swing.*;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SignerAgent implements SignerAPI {
     private final PrivateKey key;
     private long newQueryID = 0;
+
+    private final String queriesFile;
 
     private final Map<Long, SignedQueryRequest> installedQueries = new HashMap<>();
     private final Map<String, Long> queryToId = new HashMap<>();
@@ -32,9 +36,60 @@ public class SignerAgent implements SignerAPI {
 
     private final Logger logger = new Logger("SIGNER");
 
-    public SignerAgent(PrivateKey key) {
+    private final String LEFT_MARKER = "&";
+    private final String RIGHT_MARKER = "#";
+
+    public SignerAgent(PrivateKey key, String queriesFile) {
         this.key = key;
+        this.queriesFile = queriesFile;
         setRestrictedColumns();
+        readQueriesFile();
+    }
+
+    private void readQueriesFile() {
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(queriesFile)));
+
+            String[] fragments = content.split(LEFT_MARKER);
+
+            for (int i = 1; i < fragments.length; i++) {
+                logger.log("Next record: " + fragments[i]);
+
+                String[] typeQuery = fragments[i].split(RIGHT_MARKER);
+                try {
+                    String type = typeQuery[0];
+                    logger.log(type);
+                    String query = typeQuery[1];
+                    logger.log(query);
+
+                    switch (type) {
+                        case "INSTALL":
+                            try {
+                                installQueries(query, false);
+                            } catch (SignerException e) {
+                                logger.errLog("Exception while installing from record: " + e.getMessage());
+                            }
+                            break;
+                        case "UNINSTALL":
+                            try {
+                                uninstallQueries(query, false);
+                            } catch (SignerException e) {
+                                logger.errLog("Exception while uninstalling from record: " + e.getMessage());
+                            }
+                            break;
+                        default:
+                            logger.errLog("Incorrect type of record: " + type);
+                    }
+                } catch (IndexOutOfBoundsException e) {
+                    logger.errLog("Index out of bounds exception, malformed query: " + fragments[i]);
+                }
+
+            }
+
+        } catch (IOException e) {
+            logger.errLog("IOException while trying to read: " + queriesFile);
+
+        }
     }
 
     private void setRestrictedColumns() {
@@ -62,7 +117,23 @@ public class SignerAgent implements SignerAPI {
         return attributes;
     }
 
+    private void tryRecord(String toRecord) {
+        try(FileWriter fw = new FileWriter(queriesFile, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw))
+        {
+            out.println(toRecord);
+            logger.log("Recorded: " + toRecord);
+        } catch (IOException e) {
+            logger.errLog("Failed to record: " + toRecord);
+        }
+    }
+
     public SignedQueryRequest installQueries(String query) {
+        return installQueries(query, true);
+    }
+
+    private SignedQueryRequest installQueries(String query, boolean record) {
         logger.log("Trying to install query: " + query);
 
         String queryName = "";
@@ -104,9 +175,8 @@ public class SignerAgent implements SignerAPI {
                     columns.add(column);
                 }
             } catch (SignerException e) {
-                printThrow(e);
+                throw e;
             } catch (Exception e) {
-                e.printStackTrace();
                 printThrow(new ParserException(select));
             }
 
@@ -123,6 +193,11 @@ public class SignerAgent implements SignerAPI {
         installedQueries.put(newQueryID, sqr);
         queryToId.put(queryName, newQueryID);
 
+        if (record) {
+            String toRecord = LEFT_MARKER + "INSTALL" + RIGHT_MARKER + query;
+            tryRecord(toRecord);
+        }
+
         logger.log("Query accepted to install: " + query);
         logger.log("Columns of the query: " + columns);
 
@@ -132,6 +207,10 @@ public class SignerAgent implements SignerAPI {
     }
 
     public SignedQueryRequest uninstallQueries(String queryName) {
+        return uninstallQueries(queryName, true);
+    }
+
+    public SignedQueryRequest uninstallQueries(String queryName, boolean record) {
         logger.log("Trying to uninstall query: " + queryName);
 
         if (!queryToId.containsKey(queryName)) {
@@ -144,6 +223,11 @@ public class SignerAgent implements SignerAPI {
 
         queryNames.remove(sqr.queryName);
         columnNames.removeAll(sqr.columns);
+
+        if (record) {
+            String toRecord = LEFT_MARKER + "UNINSTALL" + RIGHT_MARKER + queryName;
+            tryRecord(toRecord);
+        }
 
         logger.log("Query accepted to uninstall: " + queryName);
 

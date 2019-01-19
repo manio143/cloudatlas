@@ -73,12 +73,42 @@ public class Client implements Runnable {
         }
     }
 
+    private static void tryGetAlreadyInstalled(ClientStructures structures, Logger logger) {
+        if (!structures.getIsSignerSet()) {
+            rebindSigner(structures, logger);
+        }
+
+        if (structures.getIsSignerSet()) {
+            Collection<SignedQueryRequest> alreadyInstalled = new LinkedList<>();
+            try {
+                alreadyInstalled = structures.signer.getInstalledQueries();
+                logger.log("Got already installed queries, count: " + alreadyInstalled.size());
+            } catch (RemoteException e) {
+                logger.errLog("Failed to get already installed queries!");
+            }
+
+            try {
+                for (SignedQueryRequest sqr : alreadyInstalled) {
+                    logger.log("Trying to install: " + sqr.queryName);
+                    structures.cloudAtlas.tryInstallQuery(sqr);
+                }
+            } catch (RemoteException e) {
+                logger.errLog("Failed to get already installed queries!");
+            }
+
+        } else {
+            logger.errLog("Failed to connect to signer!");
+        }
+    }
+
     private static void bindCloudAtlas(Registry registry, ClientStructures structures, Logger logger) {
         structures.setIsAgentSet(false);
         try {
             structures.cloudAtlas = (CloudAtlasAPI) registry.lookup("CloudAtlasAPI");
             logger.log("CloudAtlas bound");
             structures.setIsAgentSet(true);
+
+            tryGetAlreadyInstalled(structures, logger);
 
         } catch (NotBoundException e) {
             logger.errLog("NotBoundException during CloudAtlas binding!");
@@ -142,32 +172,6 @@ public class Client implements Runnable {
             if (!structures.getIsAgentSet()) {
                 logger.errLog("Client run closes!");
                 return;
-            }
-
-            if (!structures.getIsSignerSet()) {
-                rebindSigner(structures, logger);
-            }
-
-            if (structures.getIsSignerSet()) {
-                Collection<SignedQueryRequest> alreadyInstalled = new LinkedList<>();
-                try {
-                    alreadyInstalled = structures.signer.getInstalledQueries();
-                    logger.log("Got already installed queries, count: " + alreadyInstalled.size());
-                } catch (RemoteException e) {
-                    logger.errLog("Failed to get already installed queries!");
-                }
-
-                try {
-                    for (SignedQueryRequest sqr : alreadyInstalled) {
-                        logger.log("Trying to install: " + sqr.queryName);
-                        structures.cloudAtlas.tryInstallQuery(sqr);
-                    }
-                } catch (RemoteException e) {
-                    logger.errLog("Failed to get already installed queries!");
-                }
-
-            } else {
-                logger.errLog("Failed to connect to signer!");
             }
         }
 

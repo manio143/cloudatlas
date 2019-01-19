@@ -22,7 +22,7 @@ public class SignerServer {
             PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
-            SignerAgent object = new SignerAgent(kf.generatePrivate(kspec));
+            SignerAgent object = new SignerAgent(kf.generatePrivate(kspec), args[1]);
             SignerAPI stub =
                     (SignerAPI) UnicastRemoteObject.exportObject(object, 0);
             Registry registry = LocateRegistry.getRegistry();
