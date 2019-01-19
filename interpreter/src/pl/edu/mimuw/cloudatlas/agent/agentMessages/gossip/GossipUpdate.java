@@ -13,12 +13,14 @@ import java.util.Set;
 public class GossipUpdate extends TimedGossipMessage {
     public final Map<PathName, AttributesMap> details;
     public final Set<SignedQueryRequest> installedQueries;
+    public final Set<Long> uninstalledQueries;
     public final ValueContact responseContact;
 
-    public GossipUpdate(Map<PathName, AttributesMap> details, Set<SignedQueryRequest> installedQueries, ValueContact responseContact)
+    public GossipUpdate(Map<PathName, AttributesMap> details, Set<SignedQueryRequest> installedQueries, Set<Long> uninstalledQueries, ValueContact responseContact)
     {
         this.details = details;
         this.installedQueries = installedQueries;
+        this.uninstalledQueries = uninstalledQueries;
         this.responseContact = responseContact;
 
         this.operation = Operation.GOSSIP_UPDATE;

@@ -93,7 +93,7 @@ public class Client implements Runnable {
                     structures.cloudAtlas.tryInstallQuery(sqr);
                 }
             } catch (RemoteException e) {
-                logger.errLog("Failed to get already installed queries!");
+                logger.errLog("Failed to install queries!\n"+e.getMessage());
             }
 
         } else {

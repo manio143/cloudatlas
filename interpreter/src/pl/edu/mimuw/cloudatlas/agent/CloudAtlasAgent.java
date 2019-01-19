@@ -92,9 +92,9 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     private String getFullName(ZMI zmi) {
         Deque<String> names = new ArrayDeque<>();
-        while(zmi != null) {
+        while (zmi != null) {
             String name = getName(zmi);
-            if(name != null)
+            if (name != null)
                 names.addFirst(name);
             zmi = zmi.getFather();
         }
@@ -103,6 +103,14 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
 
     public Set<SignedQueryRequest> getInstalledQueries() {
         return new HashSet<>(installed.keySet());
+    }
+
+    public Set<Long> getUninstalledQueries() {
+        return new HashSet<>(uninstalled);
+    }
+
+    public void safeUninstallQueryById(Long queryId) {
+        uninstalled.add(queryId);
     }
 
     private void removeAttribute(ZMI zmi, String attribute) {
@@ -122,7 +130,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 for (QueryResult r : result) {
                     zmi.getAttributes().addOrChange(r.getName(), r.getValue());
                 }
-                if(result.size() > 0) {
+                if (result.size() > 0) {
                     updateTimestamp(zmi);
                 }
             } catch (InterpreterException exception) {
@@ -205,7 +213,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                     ZMI z = new ZMI(candidate);
                     candidate.addSon(z);
                     z.getAttributes().addOrChange("name", new ValueString(comp.get(which)));
-                    z.getAttributes().addOrChange("level", new ValueInt((long)which + 1));
+                    z.getAttributes().addOrChange("level", new ValueInt((long) which + 1));
                     z.getAttributes().addOrChange("freshness", new ValueTime(Instant.now().toEpochMilli()));
 
                     if (which == comp.size() - 1) {
@@ -245,7 +253,7 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
                 ValueSet contacts = (ValueSet) zmi.getAttributes().getOrNull("contacts");
                 ValueTime timestamp = (ValueTime) zmi.getAttributes().getOrNull("freshness");
                 List<ValueContact> lvc = new ArrayList<>();
-                if(contacts != null) {
+                if (contacts != null) {
                     for (Value v : contacts) {
                         lvc.add((ValueContact) v);
                     }
@@ -260,10 +268,11 @@ public class CloudAtlasAgent implements CloudAtlasAPI {
         int levels = contact.getName().getComponents().size();
         String pathName = contact.getName().toString();
         List<GossipInterFreshness.Node> nodes = new ArrayList<>();
-        for(int l = 1; l <= levels; l++) {
+        for (int l = 1; l <= levels; l++) {
             try {
                 for (GossipSiblings.Sibling sib : siblings(l, pathName)) {
-                    nodes.add(new GossipInterFreshness.Node(sib.pathName, sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
+                    nodes.add(new GossipInterFreshness.Node(sib.pathName,
+                            sib.timestamp != null ? sib.timestamp : new ValueTime(0L)));
                 }
             } catch (ZoneNotFoundException e) {
                 ZMI zmi = reachZone(pathName, l - 1, false);

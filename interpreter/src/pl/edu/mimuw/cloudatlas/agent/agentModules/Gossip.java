@@ -156,7 +156,7 @@ public class Gossip extends Module {
                     //foreign
                     case GOSSIP_PROVIDE_DETAILS:
                         GossipProvideDetails gpd = (GossipProvideDetails) message.content;
-                        GossipUpdate up = new GossipUpdate(gpd.details, gpd.installedQueries, currentNode);
+                        GossipUpdate up = new GossipUpdate(gpd.details, gpd.installedQueries, gpd.uninstalledQueries, currentNode);
                         up.addTimestamps(gpd.sourceMsg.timestamps);
                         message = new Message(GOSSIP, GOSSIP, up);
                         handler.addMessage(new Message(GOSSIP, COMMUNICATION, new CommunicationSend(gpd.sourceMsg.responseAddress, message)));
@@ -167,7 +167,7 @@ public class Gossip extends Module {
                         GossipUpdate update = (GossipUpdate) message.content;
                         recordDelay(update.responseContact, update.timestamps);
                         logger.log("Received "+update.details.size() + " updates.");
-                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, update.installedQueries, delay.get(update.responseContact.getName().toString()))));
+                        handler.addMessage(new Message(GOSSIP, ZMI_KEEPER, new ZMIKeeperUpdateZMI(update.details, update.installedQueries, update.uninstalledQueries, delay.get(update.responseContact.getName().toString()))));
                         break;
 
                     case TIMER_ADD_EVENT_ACK:

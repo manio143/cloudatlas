@@ -193,7 +193,7 @@ public class ZMIKeeper extends Module {
                                 details.put(pn, agent.getAttributes(pn.toString()));
                             }
                             handler.addMessage(new Message(ZMI_KEEPER, GOSSIP,
-                                    new GossipProvideDetails(zmiKeeperProvideDetails.msg, details, agent.getInstalledQueries())));
+                                    new GossipProvideDetails(zmiKeeperProvideDetails.msg, details, agent.getInstalledQueries(), agent.getUninstalledQueries())));
                             continue;
 
                         case ZMI_KEEPER_UPDATE_ZMI:
@@ -213,6 +213,9 @@ public class ZMIKeeper extends Module {
                             }
                             for (SignedQueryRequest sqr : zmiKeeperUpdateZMI.installedQueries) {
                                 agent.installQueries(sqr);
+                            }
+                            for (Long queryId : zmiKeeperUpdateZMI.uninstalledQueries) {
+                                agent.safeUninstallQueryById(queryId);
                             }
                             continue;
 

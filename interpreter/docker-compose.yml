@@ -7,7 +7,7 @@ services:
         networks:
             - cloud
         volumes:
-            - ${PWD}/test_config/signer/database:/cloudatlas/signerdb
+            - ${PWD}/test_config/signer/database:/cloudatlas/utility/queries_file
     client:
         image: cloudatlas
         command: ["./client_node"]

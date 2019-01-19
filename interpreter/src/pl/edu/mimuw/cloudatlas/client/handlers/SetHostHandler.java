@@ -20,11 +20,11 @@ public class SetHostHandler extends RMIHandler {
     @Override
     public String prepareResponse(Map<String, String> parameters) {
         String response = "";
-        if (!parameters.containsKey("host")) {
+        if (!parameters.containsKey("agentHost")) {
             response = "Error: host not specified!";
         } else {
             String prevHost = structures.getAgentHost();
-            String newHost = parameters.get("host");
+            String newHost = parameters.get("agentHost");
             try {
                 logger.log("Trying to connect to host: " + newHost);
                 InetAddress ia = InetAddress.getByName(newHost);

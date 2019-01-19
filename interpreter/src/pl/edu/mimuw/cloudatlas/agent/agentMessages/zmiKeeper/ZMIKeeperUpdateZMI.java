@@ -12,12 +12,14 @@ import java.util.Set;
 public class ZMIKeeperUpdateZMI extends MessageContent {
     public final Map<PathName, AttributesMap> details;
     public final Set<SignedQueryRequest> installedQueries;
+    public final Set<Long> uninstalledQueries;
     public final long delay;
 
-    public ZMIKeeperUpdateZMI(Map<PathName, AttributesMap> details, Set<SignedQueryRequest> installedQueries, long delay)
+    public ZMIKeeperUpdateZMI(Map<PathName, AttributesMap> details, Set<SignedQueryRequest> installedQueries, Set<Long> uninstalledQueries, long delay)
     {
         this.details = details;
         this.installedQueries = installedQueries;
+        this.uninstalledQueries = uninstalledQueries;
         this.delay = delay;
 
         this.operation = Operation.ZMI_KEEPER_UPDATE_ZMI;
